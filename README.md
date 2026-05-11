@@ -2,7 +2,7 @@
 
 > A Claude Code skill for creating HTML artifacts as the source of truth: filters, charts, drag-and-drop boards, and buttons that turn browser edits back into prompts for Claude.
 >
-> Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935), with a small amount of shape-selection influence from [`clockless-org/html-anything`](https://github.com/clockless-org/html-anything).
+> Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935).
 
 **Live design system:** https://twidtwid.github.io/render-as-html/
 
@@ -18,7 +18,7 @@ My contribution here is the opinionated design system and page-shape contracts a
 
 ## Scope
 
-This is deliberately smaller than [`html-anything`](https://github.com/clockless-org/html-anything). `render-as-html` is a design system and Claude Code skill for writing and updating standalone HTML artifacts. It does not fetch URLs, parse arbitrary exports, crawl repos, or provide a standalone CLI.
+`render-as-html` is a design system and Claude Code skill for writing and updating standalone HTML artifacts. It does not fetch URLs, parse arbitrary exports, crawl repos, or provide a standalone CLI.
 
 ## What's in here
 
