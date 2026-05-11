@@ -5,7 +5,7 @@ description: Render a markdown file or piped content as a designed Apple-style H
 
 # render-as-html
 
-Turn markdown content into a **designed** HTML artifact — not a generic markdown render. The MD stays the source of truth; the HTML is a rendering, the same way `brain-pdf` produces PDFs.
+Turn markdown into a designed HTML artifact, not a generic markdown render. The markdown stays canonical. The HTML is a rendering, the same way a PDF would be.
 
 ## When to invoke
 
@@ -25,16 +25,16 @@ If multiple inputs possible, ask which.
 
 ## Output
 
-- Default path: `~/Reports/<YYYY-MM-DD>-<slug>.html` (or wherever the user wants — make it configurable)
-- Slug: kebab-case from the source filename or page title
-- Auto-`open` the file at the end so the browser pops the artifact
-- Footer should include a link back to the source MD path for easy navigation
+- Default path: `~/Reports/<YYYY-MM-DD>-<slug>.html`. Configurable.
+- Slug: kebab-case from the source filename or page title.
+- Auto-`open` the file at the end. The browser is where this thing lives.
+- Footer links back to the source MD path so you can find the canonical version.
 
 ### Sharing (optional)
 
-If the user wants this reachable on their network or the public internet, the static HTML can be served by anything — `python3 -m http.server`, nginx, Cloudflare Pages, GitHub Pages, Tailscale Serve, Tailscale Funnel, S3, etc. The skill itself doesn't require this; it just emits a self-contained `.html` file.
+The skill emits a self-contained `.html` file. Serve it however you want: locally, `python3 -m http.server`, Tailscale Serve, Tailscale Funnel, GitHub Pages, S3.
 
-A common pattern is two tiers: `private/` subdir for tailnet-only viewing, `public/` subdir explicitly synced to a public host only when the user uses an explicit trigger phrase like "publish this" or "make it public".
+A common pattern is two tiers: a `private/` subdir for tailnet-only viewing and a `public/` subdir explicitly synced to a public host only when the user uses a trigger phrase like "publish this" or "make it public".
 
 ### Sensitivity check (when publishing publicly)
 
@@ -50,11 +50,11 @@ If anything matches, list it to the user before publishing. They decide what to 
 
 ## The bar (read this every time)
 
-**If I converted this HTML back to markdown, what would be impossible to preserve?**
+**Convert it back to markdown. What disappears?**
 
-If the only answer is "the SVG diagram," it's styled markdown, not an HTML artifact. Failure.
+If only the SVG diagram disappears, it's styled markdown, not an HTML artifact. Try again.
 
-A passing artifact has 3+ features that physically cannot exist in MD:
+A real HTML artifact has 3+ features that physically cannot exist in MD:
 
 - Live filter / search input that hides rows as you type
 - Clickable elements that highlight related content elsewhere on the page
@@ -66,9 +66,9 @@ A passing artifact has 3+ features that physically cannot exist in MD:
 - Hover-for-detail tooltips on dense data
 - Click-to-copy buttons on individual rows / values
 - Sortable table headers
-- **Copy-as-prompt buttons that round-trip state back to the source** ← the killer pattern
+- **Copy-as-prompt buttons that round-trip state back to the source** ← the load-bearing one
 
-The MD source is the *report*; the HTML is the *instrument*. Build an instrument.
+The markdown source is the *report*. The HTML is the *instrument*. Build an instrument.
 
 ## The 8 information dimensions HTML can carry
 
@@ -87,9 +87,9 @@ Framing from [Thariq's "Unreasonable Effectiveness of HTML"](https://x.com/trq21
 
 **Self-check before saving:** which 4+ dimensions did I use? If I can only name 2, the artifact is under-leveraging the medium.
 
-## Copy-as-prompt (the killer pattern)
+## Copy-as-prompt
 
-Tune values in the browser, hit a button, get a **paste-able prompt** for Claude Code that applies those changes back to the source. The artifact becomes an editing surface, not just a viewer.
+Tune values in the browser, hit a button, get a paste-able prompt for Claude Code that applies those changes back to the source. The artifact becomes an editing surface instead of a viewer.
 
 **Examples:**
 - Action-items panel → toggle items, click "copy as prompt" → returns `"In <source.md>, mark these items resolved: …"`
@@ -115,11 +115,11 @@ The prompt should:
 - Be **minimal** — only the deltas, not the full source restated
 - Read naturally when pasted as a user message
 
-Cost: ~20 lines of JS. Value: real round-trip editing.
+Cost: ~20 lines of JS. The artifact gains a real edit loop.
 
 ## Page shapes (pick before designing)
 
-Different content wants different bones. Pick the shape FIRST from content signals, then design inside it. Framework idea borrowed from [`clockless-org/html-anything`](https://github.com/clockless-org/html-anything) — different aesthetic, same content-matched-shapes framing.
+Different content wants different bones. Pick the shape first from content signals, then design inside it. The content-matched-shapes idea comes from [`clockless-org/html-anything`](https://github.com/clockless-org/html-anything); the visual treatment here is mine.
 
 ### Shape selection
 
@@ -218,9 +218,9 @@ Interaction patterns that show up across multiple shapes — use where they fit:
 
 ## Design system
 
-The aesthetic is **Apple-quality typography and color discipline, Linear/Stripe-level density**. Beautiful AND information-rich — not a single-column magazine article. Wide screens exist; narrow columns waste them. Think `apple.com/mac` or Stripe docs or Linear's app, not iA Writer.
+Apple typography and color discipline, Linear / Stripe density. Beautiful and information-rich. Wide screens exist; narrow centered columns waste them. Think `apple.com/mac` or Stripe docs or Linear's app, not iA Writer.
 
-Slightly cute, non-corporate. Light profanity in body copy when it lands.
+Slightly cute. Non-corporate. Light profanity in body copy when it lands.
 
 **See `index.html` in this repo** for the canonical component gallery: color tokens, typography scale, all primitives shown live, plus an interactive copy-as-prompt slider demo. Pattern-match from there — don't re-derive CSS from scratch.
 
@@ -258,26 +258,22 @@ Slightly cute, non-corporate. Light profanity in body copy when it lands.
 
 ### Interactivity
 
-**Every filter needs a visible clear path.** If clicking activates a filter, the same gesture must deactivate it (toggle), AND a visible "× clear" affordance must appear while filtered. Never rely on double-click, escape, or "click outside" to reset — those are undiscoverable.
+**Every filter needs a visible clear path.** If clicking activates a filter, clicking again has to deactivate it (toggle), and a visible "× clear" affordance has to appear while the filter is active. Never rely on double-click, escape, or "click outside" to reset. Those gestures are undiscoverable.
 
-**Use real controls for real actions.** If the user is supposed to toggle, edit, pick, or trigger something, use a control that LOOKS like a control: native `<input type="checkbox">`, `<input type="range">`, `<select>`, `<button>`. Don't invent gestures on decorative elements (no "click this pill", "shift-click this badge", "double-tap this card"). Pills, badges, stat tiles read as static information; making them interactive is invisible and inscrutable. If a pill needs to be editable, add a real checkbox/button next to it; the pill stays read-only.
-
-### Signature mark
-
-A single emoji/glyph (a wren 🐦 in my case — pick whatever fits) at bottom-right of footer. **Only one per page.** Not in the title row, not in the meta line. Signature, not watermark.
+**Use real controls for real actions.** When something needs to be toggleable, editable, pickable, or clickable, use a control that looks like one: `<input type="checkbox">`, `<input type="range">`, `<select>`, `<button>`. Don't invent gestures on decorative elements ("click this pill", "shift-click this badge", "double-tap this card"). Pills and badges and stat tiles read as static information; making them interactive is invisible and inscrutable. If a pill needs editing, put a real checkbox or button next to it. The pill stays read-only.
 
 ### Anti-patterns
 
-- Multiple fonts beyond the 3 above
-- Drop shadows on everything; gradient-for-gradient's-sake
-- Emoji explosion (1-3 across whole doc, not 1 per heading)
+- Multiple fonts beyond the three above
+- Drop shadows on everything; gradients for their own sake
+- Emoji explosion (1-3 across the whole doc, not one per heading)
 - "AI slop" decoration: redundant boxes, "✨ Key Insights ✨" headers
 - Centered body text outside of titles
 - Tailwind utility-class soup (hand-written CSS reads better)
 - Narrow centered columns on data-heavy content
-- Excessive whitespace masquerading as design taste
+- Excessive whitespace as a stand-in for design taste
 - Running a generic markdown→html converter and calling it done
-- Pulling in a JS framework — single file, vanilla, mermaid CDN if needed
+- Pulling in a JS framework. Single file, vanilla, mermaid CDN if needed.
 
 ## Rendering process
 
@@ -296,5 +292,5 @@ A single emoji/glyph (a wren 🐦 in my case — pick whatever fits) at bottom-r
 
 ## Credits
 
-- The "two-way interaction" and copy-as-prompt pattern come from [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935)
-- The content-matched page-shapes framework is borrowed from [`clockless-org/html-anything`](https://github.com/clockless-org/html-anything) — different aesthetic, same framing
+- Two-way interaction and copy-as-prompt: [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935)
+- Content-matched-shapes idea: [`clockless-org/html-anything`](https://github.com/clockless-org/html-anything)

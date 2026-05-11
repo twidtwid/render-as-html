@@ -1,7 +1,6 @@
 # render-as-html
 
-> A Claude Code skill that turns markdown into dense, Apple-style HTML reports
-> with real interactivity — filters, drag-and-drop, copy-as-prompt round-trips.
+> A Claude Code skill. Renders markdown as actual HTML — filters, drag-and-drop, and a button that reads your edits back as a prompt for Claude.
 >
 > Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935).
 
@@ -11,38 +10,19 @@
 
 ## Why this exists
 
-Markdown's main historical benefit was that humans could hand-edit it. That benefit
-has collapsed: most of us aren't hand-editing files anymore — we're prompting
-Claude Code to edit them for us. Once that flips, markdown stops being the right
-medium for anything we actually want to *read*. It's just the source format.
+Markdown won when humans were hand-editing files. We're mostly not anymore. We ask Claude to edit them. Once you make that switch, markdown's main job (being easy for humans to type) goes away. It's just the format you and Claude both happen to speak.
 
-HTML carries information markdown can't: real tables, color, SVG, code highlighting,
-sliders, draggable cards, side-by-side diffs, copy-as-prompt buttons. The medium
-becomes an *instrument* — not a long scroll you skim, but a thing you can poke at,
-filter, drag, and push state back through.
-
-The killer pattern from Thariq's post: a button that takes whatever state you've
-mutated in the browser and emits a paste-able prompt for Claude Code. The artifact
-becomes an editing surface that round-trips back to the canonical source.
-
-This skill is one opinionated take on that. Different aesthetic from
-[clockless-org/html-anything](https://github.com/clockless-org/html-anything) (the
-other public project in this space) — denser, more opinionated about visuals, fewer
-named styles. Same content-matched-page-shapes framing.
+HTML can carry information markdown literally cannot. Tables. Color as data. SVG. Code highlighting. Live filters. Drag-and-drop. Sortable headers. The killer move is a button that takes whatever you mutated in the browser (a slider position, a checkbox state, a column re-order) and writes a paste-able instruction. You paste it into Claude Code, the markdown gets updated, you re-render. The HTML stops being a thing you read and becomes a thing you use.
 
 ## What's in here
 
-- **`SKILL.md`** — the actual skill. Read it. Page shapes, design system, the
-  copy-as-prompt pattern, the "would this die in markdown?" bar.
-- **`index.html`** — the design system. Open it in a browser (or visit the live
-  link above). Color tokens, typography, every primitive shown live, an interactive
-  copy-as-prompt slider demo, and shape-card previews for all 8 shapes.
-- **`LICENSE`** — MIT.
+- `SKILL.md` — read this first. Page shapes, design system, copy-as-prompt, the "would this die in markdown?" bar.
+- `index.html` — the design system as a single file. Live link above.
+- `LICENSE` — MIT.
 
 ## Page shapes
 
-Pick the shape from content signals before designing. Eight shapes, each with a
-contract (layout, required primitives, density, what to avoid):
+Pick the shape from content signals before designing. Eight shapes, each with a contract (layout, required primitives, density, what to avoid):
 
 | Shape | For | Distinct because |
 |---|---|---|
@@ -57,11 +37,7 @@ contract (layout, required primitives, density, what to avoid):
 
 ## The bar
 
-If you converted the artifact back to markdown, what would be impossible to preserve?
-If the only answer is "the SVG diagram," it's styled markdown — not a real HTML
-artifact. Aim for **at least 3 features that physically cannot exist in MD**: live
-filter, click-to-cross-highlight, inline charts, toggle controls, copy-as-prompt,
-drag-and-drop, etc.
+Convert the artifact back to markdown. What disappears? If only the SVG diagram, it's styled markdown, not a real HTML artifact. Try again. Aim for at least three things that physically cannot exist in MD: live filter, click-to-cross-highlight, inline charts, toggles, copy-as-prompt, drag-and-drop, you get the idea.
 
 ## Install (Claude Code)
 
@@ -69,31 +45,18 @@ drag-and-drop, etc.
 git clone https://github.com/twidtwid/render-as-html ~/.claude/skills/render-as-html
 ```
 
-Restart Claude Code. Then say `render <file>.md as html` or `make me a pretty
-version of <file>` or `/render-as-html`.
+Restart Claude Code. Then say `render <file>.md as html` or `make me a pretty version of <file>` or `/render-as-html`.
 
-The skill emits a single self-contained HTML file at
-`~/Reports/<YYYY-MM-DD>-<slug>.html` by default and opens it in your browser.
-The MD source stays the canonical version; the HTML is a rendering, like a PDF.
+Output lands at `~/Reports/<YYYY-MM-DD>-<slug>.html` by default and opens in your browser. Markdown stays canonical. The HTML is a rendering, like a PDF.
 
 ## Sharing the output
 
-The skill emits a vanilla `.html` file. Serve it however you like:
-
-- Open locally (`open <file>.html`)
-- Tailscale Serve for tailnet-only viewing
-- Tailscale Funnel / GitHub Pages / Cloudflare Pages / S3 for public sharing
-- `python3 -m http.server` for ad-hoc LAN sharing
-
-If you want a publish-on-explicit-trigger pattern (private by default, public only
-when the user says "make this public" or "publish this"), the SKILL.md has a
-sketch of how to wire it up.
+The skill emits a vanilla `.html` file. Serve it however you want — locally, Tailscale Serve, Tailscale Funnel, GitHub Pages, S3, `python3 -m http.server`, whatever. SKILL.md sketches a private-by-default, publish-on-explicit-trigger pattern if you want one.
 
 ## Credits
 
 - Concept and copy-as-prompt pattern: [@trq212](https://x.com/trq212), ["The Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935)
-- Content-matched-shapes framework: [clockless-org/html-anything](https://github.com/clockless-org/html-anything)
-- Built by [@twidtwid](https://github.com/twidtwid) with Claude Code
+- Content-matched-shapes idea: [clockless-org/html-anything](https://github.com/clockless-org/html-anything)
 
 ## License
 

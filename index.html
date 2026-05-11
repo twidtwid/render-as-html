@@ -211,7 +211,6 @@ tr:last-child td { border-bottom: none; }
 
 /* ─── Footer ─────────────────────────────────────────────────── */
 footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--faint); font-size: 0.76rem; font-family: 'JetBrains Mono', monospace; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-footer .wren-end { opacity: 0.5; font-size: 1.1rem; }
 footer a { color: var(--faint); }
 </style>
 </head>
@@ -253,8 +252,7 @@ footer a { color: var(--faint); }
     <div class="sample">
       <p style="margin-top:0"><strong>Wide. Dense. Opinionated.</strong> Studio Displays exist; narrow centered columns waste them. 14-16px body, 1.45-1.55 line-height, tight padding. Information density is a feature.</p>
       <p>The medium isn't markdown-styled. Thariq: <em>"there is almost no set of information that Claude can read that you cannot fairly efficiently represent with HTML."</em> Lean into tables, SVG, CSS-as-data, interactivity. If converting back to MD loses nothing but a diagram, the artifact failed.</p>
-      <p><strong>The real reason for all this:</strong> staying in the loop. As Claude does more work, the temptation is to skim-and-approve plans you'd otherwise read carefully. A well-built HTML artifact pulls you back into the loop — you actually <em>read</em> it, poke at the controls, push state back via copy-as-prompt. The doc becomes a conversation surface, not a deliverable to rubber-stamp.</p>
-      <p>One wren at bottom-right of footer. <strong>One.</strong> Not in the title row, not in the hero. It's a signature, not a watermark.</p>
+      <p><strong>The real reason for all this:</strong> staying in the loop. As Claude does more work, the temptation is to skim-and-approve plans you'd otherwise read carefully. A well-built HTML artifact pulls you back in. You actually <em>read</em> it, poke at the controls, push state back via copy-as-prompt. The doc becomes a conversation surface, not a deliverable to rubber-stamp.</p>
     </div>
 
     <h2 id="shapes">Page shapes</h2>
@@ -759,7 +757,6 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
       <li><strong>Invented gestures on decorative elements.</strong> Don't put click handlers on pills, badges, stat tiles. They read as static info. If editing needed, add a real checkbox/button.</li>
       <li><strong>Hidden keyboard modifiers</strong> (shift-click, alt-click) for primary actions. Undiscoverable. Use visible controls instead.</li>
       <li><strong>Filter without a clear path.</strong> Every activate gesture must also deactivate, AND show an explicit "× clear" affordance while filtered.</li>
-      <li><strong>Multiple wren glyphs.</strong> One only, bottom-right of footer.</li>
       <li><strong>Generous whitespace as taste.</strong> Information density is a feature.</li>
       <li><strong>Emoji explosion.</strong> 1-3 per doc, not 1 per heading.</li>
       <li><strong>Tailwind utility soup.</strong> Hand-written CSS reads better, renders the same.</li>
@@ -777,14 +774,12 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
         <li><strong>Pattern-match components</strong> from this gallery — don't re-derive</li>
         <li><strong>Plan the MD-impossible features</strong> — write down 3+ before opening the editor</li>
         <li><strong>Add copy-as-prompt</strong> if there's mutable state worth round-tripping</li>
-        <li><strong>One wren</strong> at bottom-right of footer. One only.</li>
         <li><strong>Validate</strong> against the bar — what would die in MD? If &lt;3, redesign.</li>
       </ol>
     </div>
 
     <footer>
       <span>design system v2 · 2026-05-11 · inspiration from <a href="https://github.com/clockless-org/html-anything">clockless-org/html-anything</a></span>
-      <span class="wren-end">🐦</span>
     </footer>
   </article>
 </div>
