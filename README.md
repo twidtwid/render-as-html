@@ -37,8 +37,8 @@ Pick the shape from content signals before designing. Eight shapes, each with a 
 | `timeline` | Diaries, logs, retros, project histories | Vertical spine + date markers + event cards |
 | `runbook` | DR, deploy guides, machine rebuilds | Sticky progress bar, per-step checkboxes, code-block copy buttons |
 | `comparison` | "X vs Y vs Z" decision matrices | Items as **columns**, criteria as **rows**, weight sliders |
-| `network-map` | People graphs, brain backlinks, dependencies | Big SVG canvas, click-to-focus, edge highlights |
-| `triage-board` | GTD reorg, inbox triage | Drag cards between Now/Next/Later/Cut columns |
+| <code>network&#8209;map</code> | People graphs, brain backlinks, dependencies | Big SVG canvas, click-to-focus, edge highlights |
+| <code>triage&#8209;board</code> | GTD reorg, inbox triage | Drag cards between Now/Next/Later/Cut columns |
 | `developer` | PR writeups, code review | Annotated diffs, severity findings, file nav |
 
 ## The bar
