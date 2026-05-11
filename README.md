@@ -10,11 +10,11 @@
 
 ## Why this exists
 
-HTML is the file you keep. Not an export, not a preview, not a PDF-like rendering of another canonical document. The browser artifact is the working surface and the source of truth.
+This repo is an implementation of [@trq212's HTML-artifact philosophy](https://x.com/trq212/status/2052809885763747935), not my attempt to rebrand it. The claim I am borrowing is: HTML can be the file you keep, not an export, preview, or PDF-like rendering of another canonical document. The browser artifact becomes the working surface and the source of truth.
 
-HTML lets the artifact control layout, styling, state, interaction, and round-trip edits directly. Use the browser for the parts where it is clearly better: live filters, sortable headers, SVG charts, cross-highlighting, drag-and-drop, sliders, checkboxes, and copy-as-prompt buttons. You mutate state in the browser, copy a precise instruction, paste it into Claude Code, update the `.html` file, and keep going.
+Thariq's key move is that HTML lets the artifact control layout, styling, state, interaction, and round-trip edits directly. Use the browser for the parts where it is clearly better: live filters, sortable headers, SVG charts, cross-highlighting, drag-and-drop, sliders, checkboxes, and copy-as-prompt buttons. You mutate state in the browser, copy a precise instruction, paste it into Claude Code, update the `.html` file, and keep going.
 
-The goal is not to make a prettier document. The goal is to make a local, inspectable, editable HTML artifact that can carry enough structure and interaction to stay useful after the first read.
+My contribution here is the opinionated design system and page-shape contracts around that idea. The goal is not to make a prettier document. The goal is to make a local, inspectable, editable HTML artifact that can carry enough structure and interaction to stay useful after the first read.
 
 ## Scope
 
