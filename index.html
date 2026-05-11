@@ -4,19 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>render-as-html · design system</title>
-<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 <style>
 :root {
   --bg: #fafaf7; --surface: #ffffff; --surface-2: #f3f1ea;
-  --text: #1a1a1a; --muted: #6b6b6b; --faint: #9a9a9a;
+  --text: #1a1a1a; --muted: #6b6b6b; --faint: #737373;
   --border: #e8e5dd; --border-strong: #d8d4c8;
-  --accent: #e85d4f; --accent-soft: rgba(232, 93, 79, 0.10);
-  --ok: #4a9c5e; --ok-soft: rgba(74, 156, 94, 0.13);
-  --warn: #d98e2b; --warn-soft: rgba(217, 142, 43, 0.13);
-  --note: #4a90e2; --note-soft: rgba(74, 144, 226, 0.10);
-  --purple: #9b6dd9; --purple-soft: rgba(155, 109, 217, 0.13);
-  --pink: #d96da4; --pink-soft: rgba(217, 109, 164, 0.13);
-  --teal: #2db89a; --teal-soft: rgba(45, 184, 154, 0.13);
+  --accent: #c74438; --accent-soft: rgba(199, 68, 56, 0.10);
+  --ok: #2f7d44; --ok-soft: rgba(47, 125, 68, 0.13);
+  --warn: #9b641d; --warn-soft: rgba(155, 100, 29, 0.13);
+  --note: #2f6fb3; --note-soft: rgba(47, 111, 179, 0.10);
+  --purple: #7650b3; --purple-soft: rgba(118, 80, 179, 0.13);
+  --pink: #a83f78; --pink-soft: rgba(168, 63, 120, 0.13);
+  --teal: #047f6d; --teal-soft: rgba(4, 127, 109, 0.13);
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -33,12 +32,12 @@
   }
 }
 * { box-sizing: border-box; }
-html { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; }
+html { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; }
 body { margin: 0; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.55; }
 
 /* ─── Doc layout ──────────────────────────────────────────────── */
 .doc { display: grid; grid-template-columns: 220px minmax(0, 900px); gap: 48px; max-width: 1200px; margin: 0 auto; padding: 48px 28px 100px; }
-@media (max-width: 900px) { .doc { grid-template-columns: 1fr; gap: 16px; padding: 24px 18px 60px; } .toc { position: relative !important; top: 0 !important; } }
+@media (max-width: 900px) { .doc { grid-template-columns: 1fr; gap: 16px; padding: 24px 18px 60px; } .toc { display: none; } }
 
 /* ─── TOC ─────────────────────────────────────────────────────── */
 .toc { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; font-size: 0.84rem; align-self: start; }
@@ -137,10 +136,14 @@ tr:last-child td { border-bottom: none; }
 .search { background: var(--surface); border: 1px solid var(--border-strong); padding: 6px 12px; border-radius: 999px; font: inherit; font-size: 0.85rem; color: var(--text); min-width: 220px; }
 .search:focus { outline: none; border-color: var(--accent); }
 .chips { display: flex; gap: 4px; flex-wrap: wrap; }
-.chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 0.76rem; font-weight: 600; background: var(--surface); border: 1px solid var(--border); color: var(--muted); cursor: pointer; user-select: none; transition: all 0.12s; }
+.chip { appearance: none; -webkit-appearance: none; font: inherit; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 0.76rem; font-weight: 600; background: var(--surface); border: 1px solid var(--border); color: var(--muted); cursor: pointer; user-select: none; transition: all 0.12s; }
 .chip:hover { color: var(--text); border-color: var(--border-strong); }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .chip .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .chip.on { color: var(--text); background: var(--surface-2); }
+.clear-filters { appearance: none; -webkit-appearance: none; font: inherit; font-size: 0.76rem; font-weight: 600; border: 1px solid var(--accent); color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.clear-filters[hidden] { display: none; }
+.filter-status { font-size: 0.76rem; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
 .toggle { font: inherit; font-size: 0.78rem; font-weight: 600; background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; border-radius: 999px; cursor: pointer; user-select: none; }
 .toggle:hover { color: var(--text); border-color: var(--border-strong); }
 .toggle.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
@@ -192,12 +195,14 @@ tr:last-child td { border-bottom: none; }
 .cap-row .val { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text); text-align: right; }
 .cap-preview { display: flex; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; min-height: 160px; padding: 20px; }
 .cap-swatch { width: 100%; height: 100%; min-height: 120px; border-radius: 12px; background: var(--demo-accent, var(--accent)); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: white; font-weight: 600; }
-.cap-output { margin-top: 12px; background: var(--surface-2); padding: 10px 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; color: var(--text); white-space: pre-wrap; word-break: break-word; min-height: 80px; }
+.cap-output { display: block; width: 100%; margin-top: 12px; background: var(--surface-2); padding: 10px 12px; border: 1px solid transparent; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; line-height: 1.5; color: var(--text); white-space: pre-wrap; word-break: break-word; min-height: 80px; resize: vertical; }
+.cap-output:focus { outline: none; border-color: var(--accent); }
 .cap-actions { display: flex; gap: 6px; margin-top: 10px; }
 .copy-btn { font: inherit; font-size: 0.82rem; font-weight: 600; padding: 6px 14px; border-radius: 999px; background: var(--accent); color: white; border: none; cursor: pointer; }
 .copy-btn:hover { filter: brightness(0.95); }
 .copy-btn.secondary { background: var(--surface); color: var(--muted); border: 1px solid var(--border-strong); }
 .copy-btn.copied { background: var(--ok); color: white; }
+.copy-status { font-size: 0.76rem; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
 
 /* ─── Topology pattern preview ──────────────────────────────── */
 .topo-prev { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
@@ -230,7 +235,7 @@ footer a { color: var(--faint); }
       <li><a href="#components">Static components</a></li>
       <li><a href="#controls">Real controls</a></li>
       <li><a href="#copy-prompt">Copy-as-prompt (live)</a></li>
-      <li><a href="#section-copy">Section copy-as-MD</a></li>
+      <li><a href="#section-copy">Section copy</a></li>
       <li><a href="#charts">Charts &amp; diagrams</a></li>
       <li><a href="#antipatterns">Anti-patterns</a></li>
       <li><a href="#usage">Using this file</a></li>
@@ -244,14 +249,14 @@ footer a { color: var(--faint); }
   <article class="body">
 
     <h1>render-as-html · design system</h1>
-    <p class="subtitle">Canonical reference for the <code>render-as-html</code> skill. Components, patterns, and the principles behind them. Copy patterns from here rather than re-deriving CSS — that's how aesthetic drift starts.</p>
+    <p class="subtitle">Canonical reference for the <code>render-as-html</code> skill. Components, patterns, and the principles behind them. Copy patterns from here rather than re-deriving CSS — generated artifacts should feel like one system.</p>
     <p class="byline">v2 · 2026-05-11 · informed by Thariq's <a href="https://x.com/trq212/status/2052809885763747935">"unreasonable effectiveness of HTML"</a></p>
 
     <h2 id="philosophy">Philosophy</h2>
     <p class="h2-sub">Apple-quality typography and color, Linear/Stripe density.</p>
     <div class="sample">
       <p style="margin-top:0"><strong>Wide. Dense. Opinionated.</strong> Studio Displays exist; narrow centered columns waste them. 14-16px body, 1.45-1.55 line-height, tight padding. Information density is a feature.</p>
-      <p>The medium isn't markdown-styled. Thariq: <em>"there is almost no set of information that Claude can read that you cannot fairly efficiently represent with HTML."</em> Lean into tables, SVG, CSS-as-data, interactivity. If converting back to MD loses nothing but a diagram, the artifact failed.</p>
+      <p>The medium is the source of truth. Thariq: <em>"there is almost no set of information that Claude can read that you cannot fairly efficiently represent with HTML."</em> Lean into tables, SVG, CSS-as-data, and interaction. If flattening the artifact loses nothing but a diagram, the artifact is probably still too close to static prose.</p>
       <p><strong>The real reason for all this:</strong> staying in the loop. As Claude does more work, the temptation is to skim-and-approve plans you'd otherwise read carefully. A well-built HTML artifact pulls you back in. You actually <em>read</em> it, poke at the controls, push state back via copy-as-prompt. The doc becomes a conversation surface, not a deliverable to rubber-stamp.</p>
     </div>
 
@@ -304,7 +309,7 @@ footer a { color: var(--faint); }
             <line x1="52" y1="74" x2="170" y2="74" stroke="var(--muted)"/>
           </svg>
         </div>
-        <div class="when"><strong>Pick when:</strong> plans, specs, essays, meeting notes, anything prose-heavy you'd read paragraph-to-paragraph. <strong>Max-width:</strong> 880px. <strong>Body:</strong> 16px. <strong>Required:</strong> sticky TOC, per-section copy-as-MD, footnote pattern.</div>
+        <div class="when"><strong>Pick when:</strong> plans, specs, essays, meeting notes, anything prose-heavy you'd read paragraph-to-paragraph. <strong>Max-width:</strong> 880px. <strong>Body:</strong> 16px. <strong>Required:</strong> sticky TOC, per-section copy, footnote pattern.</div>
       </div>
 
       <div class="shape-card">
@@ -317,10 +322,10 @@ footer a { color: var(--faint); }
             <circle cx="34" cy="34" r="3" fill="var(--note)"/>
             <circle cx="34" cy="54" r="3" fill="var(--note)"/>
             <circle cx="34" cy="74" r="3" fill="var(--muted)"/>
-            <text x="6" y="17" font-family="JetBrains Mono" font-size="6" fill="var(--muted)">May 11</text>
-            <text x="6" y="37" font-family="JetBrains Mono" font-size="6" fill="var(--muted)">May 8</text>
-            <text x="6" y="57" font-family="JetBrains Mono" font-size="6" fill="var(--muted)">May 3</text>
-            <text x="6" y="77" font-family="JetBrains Mono" font-size="6" fill="var(--muted)">Apr 22</text>
+            <text x="6" y="17" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="6" fill="var(--muted)">May 11</text>
+            <text x="6" y="37" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="6" fill="var(--muted)">May 8</text>
+            <text x="6" y="57" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="6" fill="var(--muted)">May 3</text>
+            <text x="6" y="77" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="6" fill="var(--muted)">Apr 22</text>
             <rect x="46" y="8" width="148" height="14" rx="2" fill="var(--accent-soft)" stroke="var(--accent)"/>
             <rect x="46" y="28" width="148" height="14" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="46" y="48" width="148" height="14" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
@@ -337,18 +342,18 @@ footer a { color: var(--faint); }
           <svg viewBox="0 0 200 90" xmlns="http://www.w3.org/2000/svg">
             <rect x="4" y="4" width="192" height="10" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="4" y="4" width="80" height="10" rx="2" fill="var(--ok-soft)" stroke="var(--ok)"/>
-            <text x="186" y="11" font-family="JetBrains Mono" font-size="6" fill="var(--muted)" text-anchor="end">3/7</text>
+            <text x="186" y="11" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="6" fill="var(--muted)" text-anchor="end">3/7</text>
             <rect x="4" y="20" width="192" height="20" rx="3" fill="var(--surface-2)" stroke="var(--border)"/>
             <circle cx="14" cy="30" r="4" fill="var(--ok)"/>
             <path d="M11.5 30 L13.5 32 L17 28" stroke="white" stroke-width="1" fill="none"/>
-            <text x="24" y="33" font-family="Inter" font-size="6" fill="var(--text)">Step 1 · pull latest backup</text>
+            <text x="24" y="33" font-family="system-ui" font-size="6" fill="var(--text)">Step 1 · pull latest backup</text>
             <rect x="4" y="44" width="192" height="20" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/>
             <rect x="10" y="56" width="60" height="4" rx="1" fill="var(--bg)"/>
-            <text x="24" y="53" font-family="Inter" font-size="6" fill="var(--text)">Step 4 · run migration</text>
-            <text x="186" y="58" font-family="JetBrains Mono" font-size="5" fill="var(--accent)" text-anchor="end">⎘ copy</text>
+            <text x="24" y="53" font-family="system-ui" font-size="6" fill="var(--text)">Step 4 · run migration</text>
+            <text x="186" y="58" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" fill="var(--accent)" text-anchor="end">⎘ copy</text>
             <rect x="4" y="68" width="192" height="18" rx="3" fill="var(--surface-2)" stroke="var(--border)"/>
             <circle cx="14" cy="77" r="4" fill="var(--bg)" stroke="var(--border-strong)" stroke-width="1.5"/>
-            <text x="24" y="80" font-family="Inter" font-size="6" fill="var(--muted)">Step 5 · verify health</text>
+            <text x="24" y="80" font-family="system-ui" font-size="6" fill="var(--muted)">Step 5 · verify health</text>
           </svg>
         </div>
         <div class="when"><strong>Pick when:</strong> the user is *doing* the procedure, not reading about it. <strong>Required:</strong> step cards with checkboxes, per-code-block copy buttons, sticky progress bar, "stuck" copy-as-prompt.</div>
@@ -363,29 +368,29 @@ footer a { color: var(--faint); }
             <rect x="48" y="4" width="46" height="12" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="98" y="4" width="46" height="12" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="148" y="4" width="48" height="12" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
-            <text x="52" y="12" font-family="Inter" font-size="6" font-weight="700" fill="var(--text)">Opt A</text>
-            <text x="102" y="12" font-family="Inter" font-size="6" font-weight="700" fill="var(--text)">Opt B</text>
-            <text x="152" y="12" font-family="Inter" font-size="6" font-weight="700" fill="var(--text)">Opt C</text>
+            <text x="52" y="12" font-family="system-ui" font-size="6" font-weight="700" fill="var(--text)">Opt A</text>
+            <text x="102" y="12" font-family="system-ui" font-size="6" font-weight="700" fill="var(--text)">Opt B</text>
+            <text x="152" y="12" font-family="system-ui" font-size="6" font-weight="700" fill="var(--text)">Opt C</text>
             <rect x="4" y="20" width="40" height="14" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="48" y="20" width="46" height="14" rx="2" fill="var(--accent-soft)" stroke="var(--accent)"/>
             <rect x="98" y="20" width="46" height="14" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="148" y="20" width="48" height="14" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
-            <text x="8" y="29" font-family="Inter" font-size="5" fill="var(--muted)">cost ⚖ 3</text>
+            <text x="8" y="29" font-family="system-ui" font-size="5" fill="var(--muted)">cost ⚖ 3</text>
             <rect x="4" y="38" width="40" height="14" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="48" y="38" width="46" height="14" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="98" y="38" width="46" height="14" rx="2" fill="var(--accent-soft)" stroke="var(--accent)"/>
             <rect x="148" y="38" width="48" height="14" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
-            <text x="8" y="47" font-family="Inter" font-size="5" fill="var(--muted)">speed ⚖ 5</text>
+            <text x="8" y="47" font-family="system-ui" font-size="5" fill="var(--muted)">speed ⚖ 5</text>
             <rect x="4" y="56" width="40" height="14" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="48" y="56" width="46" height="14" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="98" y="56" width="46" height="14" rx="2" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="148" y="56" width="48" height="14" rx="2" fill="var(--accent-soft)" stroke="var(--accent)"/>
-            <text x="8" y="65" font-family="Inter" font-size="5" fill="var(--muted)">UX ⚖ 4</text>
+            <text x="8" y="65" font-family="system-ui" font-size="5" fill="var(--muted)">UX ⚖ 4</text>
             <rect x="4" y="74" width="192" height="12" rx="2" fill="var(--ok-soft)" stroke="var(--ok)"/>
-            <text x="8" y="82" font-family="Inter" font-size="5" font-weight="700" fill="var(--ok)">∑ score</text>
-            <text x="68" y="82" font-family="JetBrains Mono" font-size="5" fill="var(--text)" text-anchor="middle">22</text>
-            <text x="120" y="82" font-family="JetBrains Mono" font-size="5" font-weight="700" fill="var(--ok)" text-anchor="middle">28</text>
-            <text x="172" y="82" font-family="JetBrains Mono" font-size="5" fill="var(--text)" text-anchor="middle">24</text>
+            <text x="8" y="82" font-family="system-ui" font-size="5" font-weight="700" fill="var(--ok)">∑ score</text>
+            <text x="68" y="82" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" fill="var(--text)" text-anchor="middle">22</text>
+            <text x="120" y="82" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" font-weight="700" fill="var(--ok)" text-anchor="middle">28</text>
+            <text x="172" y="82" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" fill="var(--text)" text-anchor="middle">24</text>
           </svg>
         </div>
         <div class="when"><strong>Pick when:</strong> "which one do I pick" questions. <strong>The axis flip:</strong> items go on the X axis as columns, criteria on Y as rows. <strong>Required:</strong> weight inputs, live winner highlight, aggregate score row.</div>
@@ -397,19 +402,19 @@ footer a { color: var(--faint); }
         <div class="preview">
           <svg viewBox="0 0 200 90" xmlns="http://www.w3.org/2000/svg">
             <rect x="4" y="4" width="46" height="82" rx="3" fill="var(--surface-2)" stroke="var(--border)"/>
-            <text x="27" y="14" font-family="Inter" font-size="6" font-weight="700" fill="var(--accent)" text-anchor="middle">NOW</text>
+            <text x="27" y="14" font-family="system-ui" font-size="6" font-weight="700" fill="var(--accent)" text-anchor="middle">NOW</text>
             <rect x="8" y="20" width="38" height="14" rx="2" fill="var(--accent-soft)" stroke="var(--accent)"/>
             <rect x="8" y="38" width="38" height="14" rx="2" fill="var(--accent-soft)" stroke="var(--accent)"/>
             <rect x="54" y="4" width="46" height="82" rx="3" fill="var(--surface-2)" stroke="var(--border)"/>
-            <text x="77" y="14" font-family="Inter" font-size="6" font-weight="700" fill="var(--note)" text-anchor="middle">NEXT</text>
+            <text x="77" y="14" font-family="system-ui" font-size="6" font-weight="700" fill="var(--note)" text-anchor="middle">NEXT</text>
             <rect x="58" y="20" width="38" height="14" rx="2" fill="var(--note-soft)" stroke="var(--note)"/>
             <rect x="58" y="38" width="38" height="14" rx="2" fill="var(--note-soft)" stroke="var(--note)"/>
             <rect x="58" y="56" width="38" height="14" rx="2" fill="var(--note-soft)" stroke="var(--note)"/>
             <rect x="104" y="4" width="46" height="82" rx="3" fill="var(--surface-2)" stroke="var(--border)"/>
-            <text x="127" y="14" font-family="Inter" font-size="6" font-weight="700" fill="var(--warn)" text-anchor="middle">LATER</text>
+            <text x="127" y="14" font-family="system-ui" font-size="6" font-weight="700" fill="var(--warn)" text-anchor="middle">LATER</text>
             <rect x="108" y="20" width="38" height="14" rx="2" fill="var(--warn-soft)" stroke="var(--warn)"/>
             <rect x="154" y="4" width="42" height="82" rx="3" fill="var(--surface-2)" stroke="var(--border)"/>
-            <text x="175" y="14" font-family="Inter" font-size="6" font-weight="700" fill="var(--muted)" text-anchor="middle">CUT</text>
+            <text x="175" y="14" font-family="system-ui" font-size="6" font-weight="700" fill="var(--muted)" text-anchor="middle">CUT</text>
             <rect x="158" y="20" width="34" height="14" rx="2" fill="var(--bg)" stroke="var(--border)" stroke-dasharray="2 2"/>
             <rect x="158" y="38" width="34" height="14" rx="2" fill="var(--bg)" stroke="var(--border)" stroke-dasharray="2 2"/>
           </svg>
@@ -423,22 +428,22 @@ footer a { color: var(--faint); }
         <div class="preview">
           <svg viewBox="0 0 200 90" xmlns="http://www.w3.org/2000/svg">
             <rect x="4" y="4" width="40" height="82" rx="3" fill="var(--surface-2)" stroke="var(--border)"/>
-            <text x="8" y="14" font-family="JetBrains Mono" font-size="5" fill="var(--muted)">files</text>
+            <text x="8" y="14" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" fill="var(--muted)">files</text>
             <line x1="8" y1="18" x2="40" y2="18" stroke="var(--border)"/>
-            <text x="8" y="26" font-family="JetBrains Mono" font-size="5" fill="var(--accent)">▸ api.ts</text>
-            <text x="8" y="34" font-family="JetBrains Mono" font-size="5" fill="var(--text)">  router.go</text>
-            <text x="8" y="42" font-family="JetBrains Mono" font-size="5" fill="var(--text)">  cache.go</text>
+            <text x="8" y="26" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" fill="var(--accent)">▸ api.ts</text>
+            <text x="8" y="34" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" fill="var(--text)">  router.go</text>
+            <text x="8" y="42" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" fill="var(--text)">  cache.go</text>
             <rect x="48" y="4" width="148" height="22" rx="3" fill="var(--accent-soft)" stroke="var(--accent)"/>
             <circle cx="56" cy="15" r="3" fill="var(--accent)"/>
-            <text x="64" y="17" font-family="Inter" font-size="6" font-weight="700" fill="var(--accent)">CRITICAL</text>
-            <text x="100" y="17" font-family="Inter" font-size="6" fill="var(--text)">unguarded null deref @ L42</text>
+            <text x="64" y="17" font-family="system-ui" font-size="6" font-weight="700" fill="var(--accent)">CRITICAL</text>
+            <text x="100" y="17" font-family="system-ui" font-size="6" fill="var(--text)">unguarded null deref @ L42</text>
             <rect x="48" y="30" width="148" height="56" rx="3" fill="var(--surface-2)" stroke="var(--border)"/>
             <rect x="48" y="40" width="148" height="8" fill="var(--ok-soft)"/>
-            <text x="52" y="46" font-family="JetBrains Mono" font-size="5" fill="var(--ok)">+ if err != nil {</text>
+            <text x="52" y="46" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" fill="var(--ok)">+ if err != nil {</text>
             <rect x="48" y="50" width="148" height="8" fill="var(--accent-soft)"/>
-            <text x="52" y="56" font-family="JetBrains Mono" font-size="5" fill="var(--accent)">-   return</text>
-            <text x="52" y="66" font-family="JetBrains Mono" font-size="5" fill="var(--text)">    return err</text>
-            <text x="52" y="76" font-family="JetBrains Mono" font-size="5" fill="var(--text)">  }</text>
+            <text x="52" y="56" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" fill="var(--accent)">-   return</text>
+            <text x="52" y="66" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" fill="var(--text)">    return err</text>
+            <text x="52" y="76" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="5" fill="var(--text)">  }</text>
           </svg>
         </div>
         <div class="when"><strong>Pick when:</strong> reviewing or explaining code. <strong>Required:</strong> syntax-highlighted diffs (+/− gutters), severity-coded findings (critical/warn/nit), file navigator rail, inline margin annotations.</div>
@@ -461,7 +466,7 @@ footer a { color: var(--faint); }
             <circle cx="60" cy="70" r="6" fill="var(--teal-soft)" stroke="var(--teal)"/>
             <circle cx="140" cy="64" r="7" fill="var(--accent-soft)" stroke="var(--accent)"/>
             <rect x="158" y="4" width="38" height="82" rx="3" fill="var(--surface-2)" stroke="var(--border)"/>
-            <text x="162" y="14" font-family="Inter" font-size="5" font-weight="700" fill="var(--text)">detail</text>
+            <text x="162" y="14" font-family="system-ui" font-size="5" font-weight="700" fill="var(--text)">detail</text>
             <line x1="162" y1="20" x2="190" y2="20" stroke="var(--border)"/>
             <line x1="162" y1="28" x2="186" y2="28" stroke="var(--muted)"/>
             <line x1="162" y1="34" x2="190" y2="34" stroke="var(--muted)"/>
@@ -475,7 +480,7 @@ footer a { color: var(--faint); }
     </div>
 
     <h2 id="dimensions">The 8 information dimensions (Thariq)</h2>
-    <p class="h2-sub">HTML can carry information markdown can't. Every artifact should leverage at least 4 of these — if &lt;3, redesign before saving.</p>
+    <p class="h2-sub">HTML can express state, interaction, layout, and visual relationships inside the file itself. Aim for at least 4 of these dimensions; if you only used 1-2, redesign before saving.</p>
     <div class="dims">
       <div class="dim"><span class="icon">▦</span><div class="name">Tables</div><div class="ex">Real rows &amp; columns</div></div>
       <div class="dim"><span class="icon">⌬</span><div class="name">Design</div><div class="ex">Color, type, spacing as info</div></div>
@@ -489,8 +494,8 @@ footer a { color: var(--faint); }
 
     <h2 id="bar">The bar (read this every time)</h2>
     <div class="sample">
-      <p style="margin-top:0"><strong>If I converted this HTML back to markdown, what would be impossible to preserve?</strong></p>
-      <p>If the only answer is "the SVG diagram," it's styled markdown, not an HTML artifact. Failure. A passing artifact has 3+ features that physically cannot exist in MD:</p>
+      <p style="margin-top:0"><strong>If I flattened this HTML to static text, what would be impossible to preserve?</strong></p>
+      <p>If the only answer is "the SVG diagram," it's styled prose, not an HTML artifact. A passing artifact has 3+ HTML-native features:</p>
       <ul style="font-size:0.88rem">
         <li>Live filter / search input</li>
         <li>Clickable elements that cross-highlight other content</li>
@@ -500,39 +505,39 @@ footer a { color: var(--faint); }
         <li>Toggle controls (show/hide columns, dark/light)</li>
         <li>Side-by-side visual diffs</li>
         <li>Click-to-copy / sortable headers</li>
-        <li><strong>Copy-as-prompt buttons that round-trip state back to the source</strong> ← Thariq's killer pattern</li>
+        <li><strong>Copy-as-prompt buttons that round-trip state back to the HTML file</strong> ← Thariq's killer pattern</li>
       </ul>
     </div>
 
     <h2 id="tokens">Color tokens</h2>
-    <p class="h2-sub">All colors via CSS variables; both modes via <code>prefers-color-scheme</code>. No corporate blue.</p>
+    <p class="h2-sub">All colors via CSS variables; both modes via <code>prefers-color-scheme</code>. Text-use colors meet WCAG AA on light backgrounds.</p>
     <div class="sample">
       <div class="swatches">
         <div class="sw-card"><div class="sw-fill" style="background:var(--bg)"></div><div class="sw-meta"><div class="name">--bg</div><div class="hex">#fafaf7 · #141413</div></div></div>
         <div class="sw-card"><div class="sw-fill" style="background:var(--surface)"></div><div class="sw-meta"><div class="name">--surface</div><div class="hex">#ffffff · #1c1c1a</div></div></div>
         <div class="sw-card"><div class="sw-fill" style="background:var(--surface-2)"></div><div class="sw-meta"><div class="name">--surface-2</div><div class="hex">#f3f1ea · #25251f</div></div></div>
         <div class="sw-card"><div class="sw-fill" style="background:var(--text)"></div><div class="sw-meta"><div class="name">--text</div><div class="hex">#1a1a1a · #f0eee8</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--accent)"></div><div class="sw-meta"><div class="name">--accent</div><div class="hex">coral · #e85d4f</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--ok)"></div><div class="sw-meta"><div class="name">--ok</div><div class="hex">#4a9c5e</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--warn)"></div><div class="sw-meta"><div class="name">--warn</div><div class="hex">#d98e2b</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--note)"></div><div class="sw-meta"><div class="name">--note</div><div class="hex">#4a90e2</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--purple)"></div><div class="sw-meta"><div class="name">--purple</div><div class="hex">#9b6dd9</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--teal)"></div><div class="sw-meta"><div class="name">--teal</div><div class="hex">#2db89a</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--pink)"></div><div class="sw-meta"><div class="name">--pink</div><div class="hex">#d96da4</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--accent)"></div><div class="sw-meta"><div class="name">--accent</div><div class="hex">coral · #c74438</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--ok)"></div><div class="sw-meta"><div class="name">--ok</div><div class="hex">#2f7d44</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--warn)"></div><div class="sw-meta"><div class="name">--warn</div><div class="hex">#9b641d</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--note)"></div><div class="sw-meta"><div class="name">--note</div><div class="hex">#2f6fb3</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--purple)"></div><div class="sw-meta"><div class="name">--purple</div><div class="hex">#7650b3</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--teal)"></div><div class="sw-meta"><div class="name">--teal</div><div class="hex">#047f6d</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--pink)"></div><div class="sw-meta"><div class="name">--pink</div><div class="hex">#a83f78</div></div></div>
       </div>
     </div>
 
     <h2 id="typography">Typography</h2>
-    <p class="h2-sub">One display, one body, one mono. Both display and body are Inter (rsms.me). No more faces.</p>
+    <p class="h2-sub">One display, one body, one mono. Display and body use the system font stack, so generated artifacts stay self-contained.</p>
     <div class="sample">
       <div style="display:grid;grid-template-columns:90px 1fr;gap:14px 18px;align-items:baseline">
-        <div style="color:var(--muted);font-family:JetBrains Mono,monospace;font-size:0.72rem">h1</div>
+        <div style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem">h1</div>
         <div style="font-size:2rem;font-weight:800;letter-spacing:-0.025em;line-height:1.05">New Home Network</div>
-        <div style="color:var(--muted);font-family:JetBrains Mono,monospace;font-size:0.72rem">h2</div>
+        <div style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem">h2</div>
         <div style="font-size:1.3rem;font-weight:700;letter-spacing:-0.018em">Surveillance &amp; security</div>
-        <div style="color:var(--muted);font-family:JetBrains Mono,monospace;font-size:0.72rem">body</div>
+        <div style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem">body</div>
         <div>Default body copy. 15-16px depending on shape, 1.45-1.55 line-height. <code>cv11</code> &amp; <code>ss01</code> features on for the right "g" and "1".</div>
-        <div style="color:var(--muted);font-family:JetBrains Mono,monospace;font-size:0.72rem">mono</div>
+        <div style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem">mono</div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">192.168.1.225 · d4:6a:91:18:8b:b2</div>
       </div>
     </div>
@@ -559,7 +564,7 @@ footer a { color: var(--faint); }
         <span class="pill note">note</span>
         <span class="pill danger">danger</span>
       </div>
-      <div class="callout warn" style="margin-top:12px"><strong>Anti-pattern.</strong> Do not put click handlers on pills. They read as static information labels — making them interactive is invisible and inscrutable. If a status needs to be editable, put a real checkbox or button next to it; the pill stays read-only. <em>(Learned 2026-05-11.)</em></div>
+      <div class="callout warn" style="margin-top:12px"><strong>Anti-pattern.</strong> Do not put click handlers on pills. They read as static information labels — making them interactive is invisible and inscrutable. If a status needs to be editable, put a real checkbox or button next to it; the pill stays read-only.</div>
     </div>
 
     <h3>Callouts</h3>
@@ -582,8 +587,8 @@ footer a { color: var(--faint); }
     <div class="sample">
       <table>
         <tr><th>IP</th><th>Device</th><th>MAC</th><th>Notes</th></tr>
-        <tr><td><code>.254</code></td><td>BGW620-700</td><td style="font-family:JetBrains Mono,monospace;color:var(--faint);font-size:0.78rem">—</td><td style="color:var(--muted)">gateway · multigig WAN</td></tr>
-        <tr><td><code>.225</code></td><td>core · M2 Ultra</td><td style="font-family:JetBrains Mono,monospace;color:var(--faint);font-size:0.78rem">a4:fc:14:xx:xx:xx</td><td style="color:var(--muted)">2.5 GbE wired</td></tr>
+        <tr><td><code>.254</code></td><td>BGW620-700</td><td style="font-family:'JetBrains Mono',monospace;color:var(--faint);font-size:0.78rem">—</td><td style="color:var(--muted)">gateway · multigig WAN</td></tr>
+        <tr><td><code>.225</code></td><td>core · M2 Ultra</td><td style="font-family:'JetBrains Mono',monospace;color:var(--faint);font-size:0.78rem">a4:fc:14:xx:xx:xx</td><td style="color:var(--muted)">2.5 GbE wired</td></tr>
       </table>
     </div>
 
@@ -597,12 +602,14 @@ footer a { color: var(--faint); }
 
     <h3>Filter chips <span style="font-size:0.7rem;color:var(--muted);font-weight:500">— every filter needs a visible clear path</span></h3>
     <div class="sample">
-      <div class="chips" id="demo-chips">
-        <span class="chip on" data-cat="infra"><span class="dot" style="background:var(--note)"></span>infra</span>
-        <span class="chip on" data-cat="surveil"><span class="dot" style="background:var(--accent)"></span>surveil</span>
-        <span class="chip" data-cat="av"><span class="dot" style="background:var(--purple)"></span>A/V</span>
-        <span class="chip on" data-cat="iot"><span class="dot" style="background:var(--teal)"></span>IoT</span>
+      <div class="chips" id="demo-chips" role="group" aria-label="Device category filters">
+        <button type="button" class="chip on" data-cat="infra" aria-pressed="true"><span class="dot" style="background:var(--note)"></span>infra</button>
+        <button type="button" class="chip on" data-cat="surveil" aria-pressed="true"><span class="dot" style="background:var(--accent)"></span>surveil</button>
+        <button type="button" class="chip on" data-cat="av" aria-pressed="true"><span class="dot" style="background:var(--purple)"></span>A/V</button>
+        <button type="button" class="chip on" data-cat="iot" aria-pressed="true"><span class="dot" style="background:var(--teal)"></span>IoT</button>
+        <button type="button" class="clear-filters" id="clear-demo-filters" hidden>× clear</button>
       </div>
+      <div class="filter-status" id="filter-status" aria-live="polite">All categories visible.</div>
       <p style="font-size:0.8rem;color:var(--muted);margin-top:10px">Click to toggle. When ≥1 chip is OFF, an explicit "× clear" affordance appears nearby. Never rely on double-click / escape / click-outside to reset.</p>
     </div>
 
@@ -627,7 +634,7 @@ footer a { color: var(--faint); }
     </div>
 
     <h2 id="copy-prompt">Copy-as-prompt <span style="font-size:0.85rem;font-weight:400;color:var(--accent)">— the killer pattern</span></h2>
-    <p class="h2-sub">Thariq's two-way loop: tune values in the browser → click a button → paste-able prompt for Claude Code that applies the changes back to the source. Try the live demo below.</p>
+    <p class="h2-sub">Thariq's two-way loop: tune values in the browser → click a button → paste-able prompt for Claude Code that applies the changes back to the HTML artifact. Try the live demo below.</p>
     <div class="sample">
       <div class="cap-demo">
         <div>
@@ -662,38 +669,56 @@ footer a { color: var(--faint); }
           </div>
         </div>
       </div>
-      <div class="cap-output" id="cap-output">In ~/.claude/skills/render-as-html/SKILL.md, update the accent color to hsl(11 78% 61%) and the default card border-radius to 12px.</div>
+      <textarea class="cap-output" id="cap-output" readonly rows="3">In ~/Reports/private/render-as-html-design-system.html, update the accent color to hsl(11 78% 61%) and the default card border-radius to 12px.</textarea>
       <div class="cap-actions">
         <button class="copy-btn" id="cap-copy">copy as prompt</button>
         <button class="copy-btn secondary" id="cap-reset">reset</button>
       </div>
+      <div class="copy-status" id="copy-status" aria-live="polite"></div>
       <details class="src" style="margin-top:14px">
-        <summary>pattern source (the 20 lines that make this work)</summary>
+        <summary>pattern code (the 20 lines that make this work)</summary>
 <pre>// Read state from your controls, format as instruction
-function buildPrompt() {
+async function copyPrompt() {
   const h = +$('#hue').value, s = +$('#sat').value, l = +$('#lig').value;
-  return `In ${SOURCE_FILE}, update --accent to hsl(${h} ${s}% ${l}%)`;
+  const prompt = `In ${ARTIFACT_PATH}, update --accent to hsl(${h} ${s}% ${l}%)`;
+  $('#prompt-output').value = prompt;
+  try {
+    await navigator.clipboard.writeText(prompt);
+  } catch {
+    $('#prompt-output').focus();
+    $('#prompt-output').select();
+  }
 }
-$('#copy-btn').onclick = () =&gt; navigator.clipboard.writeText(buildPrompt());
+$('#copy-btn').onclick = copyPrompt;
 
 // The prompt MUST:
-// - name the source file (so Claude knows what to edit)
-// - state deltas, not the full source
-// - read naturally when pasted as a user message</pre>
+// - name the HTML artifact file (so Claude knows what to edit)
+// - state deltas, not the full HTML
+// - read naturally when pasted as a user message
+// - remain selectable when clipboard access is blocked</pre>
       </details>
     </div>
 
-    <h2 id="section-copy">Per-section copy-as-MD <span style="font-size:0.85rem;font-weight:400;color:var(--muted)">— document-shape pattern</span></h2>
-    <p class="h2-sub">For document-shape artifacts, every h2 should have a quiet "copy section" button that lands clean MD on the clipboard — paste into Slack, brain page, or another doc.</p>
+    <h2 id="section-copy">Per-section copy <span style="font-size:0.85rem;font-weight:400;color:var(--muted)">— document-shape pattern</span></h2>
+    <p class="h2-sub">For document-shape artifacts, every h2 should have a quiet "copy section" button that lands the section's HTML on the clipboard for reuse or follow-up edits.</p>
     <div class="sample">
-      <p style="font-size:0.88rem">Implementation: per-section MD strings live in JS (not parsed from DOM), button reveals on h2 hover via CSS opacity. See the plan render at <code>/private/2026-05-11-render-as-html-plan.html</code> for a working example.</p>
+      <p style="font-size:0.88rem">Implementation: copy the section's HTML directly from the DOM, and reveal the button on h2 hover via CSS opacity. Keep a visible fallback text area for browsers that block clipboard writes.</p>
       <details class="src">
-        <summary>pattern source</summary>
-<pre>&lt;h2&gt;Workstreams &lt;button class="copy-section" data-section="workstreams"&gt;copy section&lt;/button&gt;&lt;/h2&gt;
+        <summary>pattern code</summary>
+<pre>&lt;section id="workstreams"&gt;
+  &lt;h2&gt;Workstreams &lt;button class="copy-section" data-section="workstreams"&gt;copy section&lt;/button&gt;&lt;/h2&gt;
+  ...
+&lt;/section&gt;
+&lt;textarea id="copy-fallback" hidden readonly&gt;&lt;/textarea&gt;
 
-const SECTIONS = { workstreams: `## Workstreams\n\n1. ...` };
 $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
-  navigator.clipboard.writeText(SECTIONS[btn.dataset.section]);
+  const html = $('#' + btn.dataset.section).outerHTML;
+  navigator.clipboard.writeText(html).catch(() =&gt; {
+    $('#copy-fallback').hidden = false;
+    $('#copy-fallback').value = html;
+    $('#copy-fallback').focus();
+    $('#copy-fallback').select();
+  });
 });</pre>
       </details>
     </div>
@@ -710,7 +735,7 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
           <circle r="15.9" cx="21" cy="21" fill="transparent" stroke="var(--accent)" stroke-width="6" stroke-dasharray="20 80" stroke-dashoffset="-10"/>
           <circle r="15.9" cx="21" cy="21" fill="transparent" stroke="var(--teal)" stroke-width="6" stroke-dasharray="15 85" stroke-dashoffset="-30"/>
           <circle r="15.9" cx="21" cy="21" fill="transparent" stroke="var(--purple)" stroke-width="6" stroke-dasharray="30 70" stroke-dashoffset="-45"/>
-          <text x="21" y="22" text-anchor="middle" font-size="6" font-weight="700" fill="var(--text)" font-family="Inter">100</text>
+          <text x="21" y="22" text-anchor="middle" font-size="6" font-weight="700" fill="var(--text)" font-family="system-ui">100</text>
         </svg>
         <div class="donut-legend">
           <div class="row"><span class="sw" style="background:var(--note)"></span>Infrastructure<span class="n">35</span></div>
@@ -733,15 +758,15 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
     <div class="topo-prev">
       <svg viewBox="0 0 500 180">
         <rect x="10" y="70" width="60" height="40" rx="6" fill="var(--surface-2)" stroke="var(--border-strong)"/>
-        <text x="40" y="95" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="var(--text)">A</text>
+        <text x="40" y="95" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="var(--text)">A</text>
         <rect x="120" y="70" width="80" height="40" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
-        <text x="160" y="95" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="var(--text)">B (core)</text>
+        <text x="160" y="95" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="var(--text)">B (core)</text>
         <rect x="250" y="70" width="80" height="40" rx="6" fill="var(--note-soft)" stroke="var(--note)"/>
-        <text x="290" y="95" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="var(--text)">C (infra)</text>
+        <text x="290" y="95" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="var(--text)">C (infra)</text>
         <rect x="380" y="30" width="80" height="40" rx="6" fill="var(--purple-soft)" stroke="var(--purple)"/>
-        <text x="420" y="55" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="var(--text)">D (A/V)</text>
+        <text x="420" y="55" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="var(--text)">D (A/V)</text>
         <rect x="380" y="110" width="80" height="40" rx="6" fill="var(--teal-soft)" stroke="var(--teal)"/>
-        <text x="420" y="135" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="var(--text)">E (IoT)</text>
+        <text x="420" y="135" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="var(--text)">E (IoT)</text>
         <path d="M70 90 L120 90" stroke="var(--border-strong)" stroke-width="1.5" fill="none"/>
         <path d="M200 90 L250 90" stroke="var(--border-strong)" stroke-width="1.5" fill="none"/>
         <path d="M330 90 Q345 90 380 50" stroke="var(--border-strong)" stroke-width="1.5" fill="none"/>
@@ -753,16 +778,16 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
     <h2 id="antipatterns">Anti-patterns</h2>
     <ul class="anti">
       <li><strong>Narrow centered column on data.</strong> Studio Displays exist. Default wide; narrow only for prose.</li>
-      <li><strong>Styled markdown.</strong> If converting back to MD loses nothing but the SVG, the artifact failed. ≥3 MD-impossible features.</li>
+      <li><strong>Styled prose.</strong> If flattening to static text loses nothing but the SVG, the artifact failed. ≥3 HTML-native features.</li>
       <li><strong>Invented gestures on decorative elements.</strong> Don't put click handlers on pills, badges, stat tiles. They read as static info. If editing needed, add a real checkbox/button.</li>
       <li><strong>Hidden keyboard modifiers</strong> (shift-click, alt-click) for primary actions. Undiscoverable. Use visible controls instead.</li>
       <li><strong>Filter without a clear path.</strong> Every activate gesture must also deactivate, AND show an explicit "× clear" affordance while filtered.</li>
       <li><strong>Generous whitespace as taste.</strong> Information density is a feature.</li>
       <li><strong>Emoji explosion.</strong> 1-3 per doc, not 1 per heading.</li>
       <li><strong>Tailwind utility soup.</strong> Hand-written CSS reads better, renders the same.</li>
-      <li><strong>"✨ Key Insights ✨" headers.</strong> AI slop.</li>
+      <li><strong>"Key Insights" decoration.</strong> Avoid generic AI-report ornamentation unless it adds real structure.</li>
       <li><strong>Drop shadows on everything.</strong> Reserve for floating elements (copy button, modals).</li>
-      <li><strong>Skipping the MD-impossibility check.</strong> Name 3 features that die in MD before saving. Can't? Redesign.</li>
+      <li><strong>Skipping the HTML-native check.</strong> Name 3 features that die outside HTML before saving. Can't? Redesign.</li>
     </ul>
 
     <h2 id="usage">Using this file</h2>
@@ -772,9 +797,9 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
         <li><strong>Pick the page shape</strong> from content signals — <code>dashboard</code> for data, <code>document</code> for prose. If unclear, ask.</li>
         <li><strong>Copy the <code>:root</code> + dark-mode block</strong> as starting CSS</li>
         <li><strong>Pattern-match components</strong> from this gallery — don't re-derive</li>
-        <li><strong>Plan the MD-impossible features</strong> — write down 3+ before opening the editor</li>
+        <li><strong>Plan the HTML-native features</strong> — write down 3+ before opening the editor</li>
         <li><strong>Add copy-as-prompt</strong> if there's mutable state worth round-tripping</li>
-        <li><strong>Validate</strong> against the bar — what would die in MD? If &lt;3, redesign.</li>
+        <li><strong>Validate</strong> against the bar — what would die outside HTML? If &lt;3, redesign.</li>
       </ol>
     </div>
 
@@ -803,11 +828,30 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
   sections.forEach(s => obs.observe(s));
 
   // Chips demo
-  $$('#demo-chips .chip').forEach(c => c.addEventListener('click', () => c.classList.toggle('on')));
+  const chipButtons = $$('#demo-chips .chip');
+  const clearFilters = $('#clear-demo-filters');
+  const filterStatus = $('#filter-status');
+  function updateChipDemo() {
+    const off = chipButtons.filter(c => !c.classList.contains('on'));
+    chipButtons.forEach(c => c.setAttribute('aria-pressed', c.classList.contains('on') ? 'true' : 'false'));
+    clearFilters.hidden = off.length === 0;
+    filterStatus.textContent = off.length === 0
+      ? 'All categories visible.'
+      : `${off.length} hidden: ${off.map(c => c.textContent.trim()).join(', ')}.`;
+  }
+  chipButtons.forEach(c => c.addEventListener('click', () => {
+    c.classList.toggle('on');
+    updateChipDemo();
+  }));
+  clearFilters.addEventListener('click', () => {
+    chipButtons.forEach(c => c.classList.add('on'));
+    updateChipDemo();
+  });
+  updateChipDemo();
 
   // Copy-as-prompt LIVE demo
   const hue = $('#cap-hue'), sat = $('#cap-sat'), lig = $('#cap-lig'), rad = $('#cap-radius');
-  const swatch = $('#cap-swatch'), output = $('#cap-output');
+  const swatch = $('#cap-swatch'), output = $('#cap-output'), copyStatus = $('#copy-status');
   const defaults = { hue: 11, sat: 78, lig: 61, rad: 12 };
 
   function updateDemo() {
@@ -819,16 +863,25 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
     swatch.style.setProperty('--demo-accent', `hsl(${h} ${s}% ${l}%)`);
     swatch.style.borderRadius = r + 'px';
     swatch.style.background = `hsl(${h} ${s}% ${l}%)`;
-    output.textContent = `In ~/.claude/skills/render-as-html/SKILL.md, update the accent color to hsl(${h} ${s}% ${l}%) and the default card border-radius to ${r}px.`;
+    output.value = `In ~/Reports/private/render-as-html-design-system.html, update the accent color to hsl(${h} ${s}% ${l}%) and the default card border-radius to ${r}px.`;
+    copyStatus.textContent = '';
   }
   [hue, sat, lig, rad].forEach(el => el.addEventListener('input', updateDemo));
 
-  $('#cap-copy').addEventListener('click', e => {
-    navigator.clipboard.writeText(output.textContent).then(() => {
+  $('#cap-copy').addEventListener('click', async e => {
+    try {
+      await navigator.clipboard.writeText(output.value);
       e.target.textContent = '✓ copied — paste into Claude Code';
       e.target.classList.add('copied');
+      copyStatus.textContent = '';
       setTimeout(() => { e.target.textContent = 'copy as prompt'; e.target.classList.remove('copied'); }, 2000);
-    });
+    } catch {
+      output.focus();
+      output.select();
+      e.target.textContent = 'copy blocked — prompt selected';
+      copyStatus.textContent = 'Clipboard access was blocked, so the prompt text is selected for manual copy.';
+      setTimeout(() => { e.target.textContent = 'copy as prompt'; }, 3000);
+    }
   });
   $('#cap-reset').addEventListener('click', () => {
     hue.value = defaults.hue; sat.value = defaults.sat;
