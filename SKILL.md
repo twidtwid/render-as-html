@@ -151,14 +151,14 @@ Different content wants different bones. Pick the shape first from content signa
 | **`network-map`** | People/relationships, brain backlinks, dependencies — connections matter |
 | **`triage-board`** | Bucketing items into 3-5 columns (Now/Next/Later/Cut), inbox triage, GTD reorg |
 | **`developer`** | PR writeups, code review, "explain this code" — annotated diff with severity findings |
-| **`editorial`** | Argument-driven long-form where the reader absorbs a sustained position — briefings, deep essays, research synthesis, analytical memos |
+| **`editorial`** | Argument-driven long-form where the reader absorbs a sustained position — deep essays, research synthesis, analytical memos, argument-driven briefings |
 
 **Auto-pick rules:**
 - Source has >5 tables of similar shape → `dashboard`
-- Source is mostly headings + paragraphs → `document`
+- Source is mostly headings + paragraphs navigated as reference (spec/plan/notes) → `document`
 - Source has dates as primary structure → `timeline`
 - Source is procedural (ordered steps with commands) → `runbook`
-- Source is a sustained argument/analysis meant to be read front-to-back with named entities worth a reference rail → `editorial`; source is headings + paragraphs navigated as reference (spec/plan/notes) → `document`; ambiguous → ask
+- Source is a sustained argument read front-to-back with named entities worth a reference rail → `editorial`
 - Ambiguous? Ask.
 
 Explicit user override always wins.
@@ -184,15 +184,15 @@ Explicit user override always wins.
 - **Avoid:** dashboard-style multi-column grid, 60+ char line length, corporate "executive summary card" headers
 
 #### `editorial`
-- **Register:** Reading (serif display + serif body, cream paper, terracotta accent).
-- **Layout:** Studio max-width ~1280px. Three zones:
+- **Register:** Reading (serif display + serif body, cream paper, terracotta accent; see Density).
+- **Layout:** studio max-width ~1280px. Three zones:
   - Left rail ~22rem, sticky: kicker + title hero + a "context/about" card.
   - Center: prose, measure capped at `46rem` (~70ch) even though chrome is wide; stays anchored left-of-center on wide screens.
   - Right inspector ~22rem: entity list grouped by category with canonical links, then a "read next" link list.
   - Collapse: inspector drops below center under ~1180px; single column under ~820px.
-- **First viewport:** kicker + title + italic lede/thesis + start of body. No stat tiles.
+- **First viewport:** kicker + title + italic thesis/bottom-line + start of body. No stat tiles.
 - **Required primitives:**
-  - Italic serif thesis/lede pull-quote, left-aligned (never centered). No left-handle bar.
+  - Italic serif thesis/bottom-line pull-quote, left-aligned (never centered). No left-handle bar.
   - Stacked numbered takeaways — single column with mono numerals, never a tile grid.
   - Claim/section cards: arguing headline + 1–3 sentence mechanism body + small `Evidence:` line.
   - Right-rail entity inspector grouped by category (people, companies, orgs, concepts, books, …), each row a colored category dot + name (canonical link if present, `↗` for external) + one-line note.
@@ -263,7 +263,13 @@ Interaction patterns that show up across multiple shapes — use where they fit:
 - **Config editor:** form-based editing of structured config with grouped sections, dependency warnings, "copy diff" button
 - **Prompt tuner:** side-by-side editor with the prompt on the left (variable slots highlighted) and 2-3 sample inputs on the right rendering the filled template live + token counter + copy button
 - **Annotation overlay:** marks on top of a document/diff/transcript with copy-out-the-annotations button
-- **Checklist:** a list where each item carries a state control (checkbox, star, or small rating) plus an optional freeform note `<textarea>`, with a sticky bottom bar showing a live count and a batch action ("copy as prompt" / "save"). Use for: review collection, decision shortlists, audit/packing lists, "which of these should we do", approval passes, curation with annotations. Distinct from `runbook` per-step checkboxes — those track execution of an *ordered procedure*; checklist items are an unordered set being selected/annotated. Distinct from `triage-board` — no columns, no drag; one list, per-item state + note + batch export. Primitives: item rows (title + mono metadata line + state control + note textarea); sticky footer bar (live count + batch copy-as-prompt with visible textarea fallback); per-item state persists in the DOM and is read by the batch exporter. Round-trip: the batch action emits a prompt naming the current `.html` artifact and the per-item state/notes as explicit instructions — same copy-as-prompt contract described above. Register: inherits the host shape's register. Reads well in the Reading register but is layout-agnostic; usable inside `editorial`, `timeline`, or standalone.
+- **Checklist:** an unordered list where each item carries a state control plus an optional freeform note, with a sticky batch-export bar.
+  - *Use for:* review collection, decision shortlists, audit/packing lists, approval passes, curation with annotations.
+  - *vs `runbook`:* runbook checkboxes track execution of an ordered procedure; checklist items are an unordered set being selected/annotated.
+  - *vs `triage-board`:* no columns, no drag — one list, per-item state + note + batch export.
+  - *Primitives:* item rows (title + mono metadata line + state control (checkbox, star, or small rating) + note `<textarea>`); sticky footer bar (live count + batch copy-as-prompt with visible textarea fallback); per-item state persists in the DOM and is read by the batch exporter.
+  - *Round-trip:* batch action emits a prompt naming the current `.html` artifact and the per-item state/notes as explicit instructions — same copy-as-prompt contract described above.
+  - *Register:* inherits the host shape's register. Reads well in the Reading register but is layout-agnostic; usable inside `editorial`, `timeline`, or standalone.
 
 ## Design system
 
