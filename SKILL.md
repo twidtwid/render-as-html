@@ -166,18 +166,20 @@ Explicit user override always wins.
 ### Shape contracts
 
 #### `dashboard`
+- **Register:** Instrument (sans display + sans body; see Density).
 - **Layout:** max-width 1280px, 1.4fr/1fr two-column dashboard grid, sticky controls row at top
 - **First viewport:** hero with stats tiles + search + chip filters + TL;DR
 - **Required primitives:** search input, toggleable category chips, dense table with mono first column, stats tiles, donut chart inline SVG, status pills, one inline-SVG topology/diagram
-- **Density:** 14px body, 4-8px table padding, packed
+- **Density:** Instrument register — 14–15px sans body, 1.5 line-height, table cell padding 8px 10px, packed; 4-8px table padding acceptable for compact variant
 - **HTML-native ≥3:** live filter, clickable cross-highlights, inline charts, toggles, sortable headers, copy buttons
 - **Avoid:** narrow column, generous whitespace, single-column scroll, generic h2/p/table layout
 
 #### `document`
+- **Register:** Reading (serif display + serif body, cream paper, terracotta accent; see Density).
 - **Layout:** max-width 880px, single column, sticky TOC sidebar on desktop
 - **First viewport:** title, byline, TL;DR (required), TOC visible
 - **Required primitives:** TL;DR block, sticky TOC sidebar with scroll-spy, footnote pattern, inline dense tables, callouts (note/warn), per-section copy button (hover-revealed on each h2)
-- **Density:** 16px body, 1.55 line-height
+- **Density:** Reading register — 17–18px serif body, line-height 1.6, prose measure capped at 46rem
 - **HTML-native ≥3:** TOC scroll-spy, per-section copy buttons, collapsible appendix, click-to-expand footnotes
 - **Avoid:** dashboard-style multi-column grid, 60+ char line length, corporate "executive summary card" headers
 
@@ -201,48 +203,55 @@ Explicit user override always wins.
 - **Avoid:** artifact-counting stat tiles; left-handle accent bars; category-label section titles; identical-tile card grids; prose measure wider than ~75ch; dashboard-style multi-column-of-tiles.
 
 #### `timeline`
+- **Register:** Reading (serif display + serif body; see Density). Mono small-caps for date/kicker lines.
 - **Layout:** vertical spine on the left (~140px column for date markers + dots), event cards on the right (~720px). Max-width ~1000px.
 - **First viewport:** title + date-range scrubber + search input + most recent N events
 - **Required primitives:** vertical spine line, date-marker dots on the spine, event cards (timestamp/title/body/tags), sticky year/month group headers, jump-to-date picker, per-event copy button
-- **Density:** 15px body, dense event cards (8-10px padding), 12px gap between events
+- **Density:** Reading register — 17–18px serif body, 1.6 line-height; dense event cards (8-10px padding), 12px gap between events
 - **HTML-native ≥3:** live text search across events with highlight, date-range filter pills, cluster-collapse (month/year → count), tag-chip filter, per-event "copy as quote"
 - **Avoid:** decorative-CV-style animations, wall of dates with no spine, event cards too wide (reads as document paragraphs)
 
 #### `runbook`
+- **Register:** Instrument (sans display + sans body; see Density).
 - **Layout:** sticky header with "Step X of N" + progress bar; max-width 960px single column; step cards stacked vertically
 - **First viewport:** title + scope/danger callout + progress bar + step 1 visible
 - **Required primitives:** step card with `[number] [checkbox] [title]` + expandable body, code block with per-block copy button (load-bearing), "expected output" collapsible callouts, branch markers ("if X, jump to step Y"), sticky progress bar, "I'm stuck" copy-as-prompt
-- **Density:** 15px body, prominent code blocks
+- **Density:** Instrument register — 14–15px sans body, 1.5 line-height; prominent code blocks (mono)
 - **HTML-native ≥3:** per-code-block copy button, live progress tracking, "stuck" prompt generator, conditional step visibility
 - **Avoid:** plain numbered list with code blocks, making it look like `document`-shape (this is an *instrument*, not just reading material)
 
 #### `comparison`
+- **Register:** Instrument (sans display + sans body; see Density).
 - **Layout:** items as **columns** (the axis flip vs dashboard), criteria as **rows**. Sticky header row with item names. Max-width 1280px.
 - **First viewport:** title + TL;DR + matrix with weight column on left, aggregate-winner row on bottom
 - **Required primitives:** column-header item cards, criterion rows with per-item values, winner highlighting per row (background tint + ★), weight inputs per criterion, aggregate-score footer that live-recomputes, color-coded value scale (red→amber→green) for numerics
-- **Density:** 14px body, dense cells (6-10px padding)
+- **Density:** Instrument register — 14–15px sans body, 1.5 line-height, dense cells (6-10px padding)
 - **HTML-native ≥3:** live weight tuning recomputes winners, column sort by aggregate, "must-have" criterion toggle, "copy as recommendation" prompt
 - **Avoid:** dashboard-style layout (entities as rows). The axis flip *is* the shape.
 
 #### `network-map`
+- **Register:** Instrument (sans display + sans body; see Density).
 - **Layout:** big graph canvas center (60-70% width), entity-detail right rail (~280px), filter chips top
 - **First viewport:** the graph fitted to viewport, filter chips above, "click for details" hint
 - **Required primitives:** SVG canvas with positioned nodes (hand-positioned or small vanilla force-directed sim), edges, node sizing by importance, cluster color-coding, right-rail entity card updating on click, top filter chips, search to focus, click-node-to-focus (dim others, highlight direct edges)
+- **Density:** Instrument register — 14–15px sans body, 1.5 line-height, packed node labels and edge metadata
 - **HTML-native ≥3:** click-to-focus, hover-edge-highlight, search-to-focus, cluster toggle, shortest-path finder
 - **Avoid:** rendering as a table of names with "connections: X, Y, Z" — that's a dashboard. The graph IS the primary view.
 
 #### `triage-board`
+- **Register:** Instrument (sans display + sans body; see Density).
 - **Layout:** title + brief instruction + 3-5 column boards horizontally (e.g. Now / Next / Later / Cut). Cards inside columns. Sticky export bar at bottom.
 - **Required primitives:** column headers with live count, draggable cards (HTML5 DnD, vanilla — no React-DnD), per-card one-line rationale text input, pre-sorted suggested distribution at load, sticky copy/export + "copy as prompt" bar, undo
-- **Density:** 14px body. Cards 80-120px tall. Columns 240-320px wide.
+- **Density:** Instrument register — 14–15px sans body, 1.5 line-height; cards 80-120px tall, columns 240-320px wide
 - **HTML-native ≥3:** drag-between-columns, live column counts, copy-as-prompt exporting final assignments, undo, filter/search across all cards
 - **Avoid:** vertical lists with status badges (that's a dashboard). The horizontal layout WITH drag IS the shape.
 
 #### `developer`
+- **Register:** Instrument (sans display + sans body; see Density).
 - **Layout:** title + PR/commit metadata strip + risk callouts at top + annotated diff body + summary footer. Max-width 1280px. Optional left rail with "files changed" nav.
 - **First viewport:** PR summary, severity-coded findings count (critical / warning / nit), top risk callout
 - **Required primitives:** syntax-highlighted code with local CSS classes, per-file diffs with `+`/`−` line gutters in green/red soft tints, inline margin annotations on specific lines, severity-coded finding cards, files-changed navigator, copy-link-to-finding buttons
-- **Density:** 14px body, 13px code
+- **Density:** Instrument register — 14–15px sans body, 1.5 line-height; mono at 13px for code
 - **HTML-native ≥3:** syntax-highlighted code without relying on an external renderer, severity-color findings, jump-to-file, click-to-copy individual findings, side-by-side before/after
 - **Avoid:** generic document with code blocks (that's `document`). The annotated diff + severity findings IS the shape.
 
