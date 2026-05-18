@@ -28,7 +28,7 @@ My contribution here is the opinionated design system and page-shape contracts a
 
 ## Page shapes
 
-Pick the shape from content signals before designing. Eight shapes, each with a contract (layout, required primitives, density, what to avoid):
+Pick the shape from content signals before designing. Nine shapes, each with a contract (layout, required primitives, density, what to avoid):
 
 | Shape | For | Distinct because |
 |---|---|---|
@@ -40,6 +40,7 @@ Pick the shape from content signals before designing. Eight shapes, each with a 
 | <code>network&#8209;map</code> | People graphs, brain backlinks, dependencies | Big SVG canvas, click-to-focus, edge highlights |
 | <code>triage&#8209;board</code> | GTD reorg, inbox triage | Drag cards between Now/Next/Later/Cut columns |
 | `developer` | PR writeups, code review | Annotated diffs, severity findings, file nav |
+| `editorial` | Deep essays, research synthesis, analytical memos | Sustained argument front-to-back, italic thesis, entity inspector rail |
 
 ## The bar
 
