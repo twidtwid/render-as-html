@@ -73,6 +73,12 @@ A real HTML artifact has 3+ HTML-native features:
 - Sortable table headers
 - **Copy-as-prompt buttons that round-trip state back to the HTML file** ← the load-bearing one
 
+**Content discipline:**
+
+- **Content vs. metadata.** Surface the thing, not the fact that the thing exists. Counts of the *subject* orient the reader and are good ("23 restaurants on file, 2021–2026"; "4 open ports"). Counts of the *artifact's own production* are slop ("Found 6 claims", "12 sections", transcript word count as a hero stat). Live UI state ("9 starred · unsaved changes") is feedback, not a hero stat — fine. Stat tiles in `dashboard`/`comparison` are content only when the metric *is* the subject; never when they count the artifact.
+- **Headlines that argue, not category labels.** Section and item titles take a position ("Why the market may stay concentrated") not a noun phrase ("Market structure"). If a 4–10 word position-establishing headline can't be written, the argument isn't understood yet.
+- **Bodies add information beyond their headline.** A body that paraphrases its headline in more words is visibly lazy. The body delivers the mechanism/evidence/consequence the headline promised.
+
 The HTML file is the *report* and the *instrument*. Build the thing directly.
 
 ## The 8 information dimensions HTML can carry
