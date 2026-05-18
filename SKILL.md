@@ -260,7 +260,7 @@ Slightly warm and non-corporate, but keep public artifacts professional by defau
 ### Density
 
 - **Reading register:** 17–18px serif body, line-height 1.6, prose measure capped at `46rem` (~70ch) even when chrome is wider. Section gap ~2.5rem. Real horizontal rules between sections, not boxed borders.
-- **Instrument register:** 14–15px sans body, line-height 1.5, table cell padding `8px 10px`, packed. Stat tiles allowed *only* when the metric is the subject (see Content discipline below).
+- **Instrument register:** 14–15px sans body, line-height 1.5, table cell padding `8px 10px`, packed. Stat tiles allowed *only* when the metric is the subject (see §4 — Content discipline, in "The bar").
 - Headlines line-height 1.2 in both.
 
 ### Typography
