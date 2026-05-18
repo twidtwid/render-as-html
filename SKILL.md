@@ -330,7 +330,7 @@ Light:
 --paper-card  #fbf7f0   raised cards
 --ink         #1a1815   warm near-black — body text
 --ink-soft    #4a443c   secondary text
---muted       #8a8378   metadata, captions
+--muted       #736d62   metadata, captions (AA: 4.76:1 on --paper)
 --rule        #d9d1c2   dividers, borders
 --rule-soft   #ece5d6   hairline dividers inside cards
 --accent      #8a3a1a   terracotta — THE single accent (links, active state, emphasis)
@@ -345,7 +345,7 @@ Dark (via prefers-color-scheme):
 --paper-card  #211e19
 --ink         #f0eee8
 --ink-soft    #c9c3b6
---muted       #8a8378
+--muted       #9a948a   (AA: 5.89:1 on dark --paper)
 --rule        #38332b
 --rule-soft   #2c2820
 --accent      #e0794f   terracotta, lifted for dark bg
@@ -356,8 +356,9 @@ Dark (via prefers-color-scheme):
 ```
 
 - One primary accent. One affirmative-action color. No third accent, no corporate blue.
-- Semantic colors are for text/icon use and must meet WCAG AA on `--paper`.
-- High contrast; no gray-on-gray.
+- **All text must meet WCAG AA on its background** (≥4.5:1 normal, ≥3:1 large/UI). This includes `--muted` — the lightest text token — not just the semantic colors. The values above are AA-verified against `--paper` in their respective modes; if you retune a text token, re-check the ratio rather than eyeballing it.
+- **`--accent-2` (ochre) is a fill, not a text color on `--paper`.** Ochre text/glyphs on cream are ~2.7:1 (fail). Affirmative elements put `--accent-2` in the *background* and use `--ink` (not white) as the foreground — white-on-ochre is ~2.9:1 (fail), ink-on-ochre is ~6:1 (pass). A toggled glyph (e.g. a filled ★) may use ochre only when its state is also carried by shape/`aria-pressed`, never by color alone.
+- High contrast; no gray-on-gray. Color is never the only signal — pair it with text, icon, or shape so the artifact survives colorblind viewing.
 
 ### Interactivity
 

@@ -9,7 +9,7 @@
   --font-serif: "Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Source Serif Pro", serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --bg: #faf6ef; --surface: #fbf7f0; --surface-2: #f3ede1;
-  --text: #1a1815; --muted: #4a443c; --faint: #8a8378;
+  --text: #1a1815; --muted: #4a443c; --faint: #736d62;
   --border: #d9d1c2; --border-strong: #c4b7a3;
   --accent: #8a3a1a; --accent-soft: rgba(138, 58, 26, 0.10);
   --accent-2: #c2901a; --accent-2-soft: rgba(194, 144, 26, 0.12);
@@ -23,7 +23,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #1a1815; --surface: #211e19; --surface-2: #221f1a;
-    --text: #f0eee8; --muted: #c9c3b6; --faint: #8a8378;
+    --text: #f0eee8; --muted: #c9c3b6; --faint: #9a948a;
     --border: #38332b; --border-strong: #4a4338;
     --accent: #e0794f; --accent-soft: rgba(224, 121, 79, 0.14);
     --accent-2: #d8a73a; --accent-2-soft: rgba(216, 167, 58, 0.16);
@@ -277,7 +277,7 @@ tr:last-child td { border-bottom: none; }
 .cl-item.on { background: var(--accent-2-soft); border-radius: 6px; margin: 0 -10px; padding-left: 10px; padding-right: 10px; }
 .cl-bar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 16px; margin-top: 14px; }
 .cl-bar .cl-count { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text); }
-.cl-bar .cl-count b { color: var(--accent-2); }
+.cl-bar .cl-count b { color: var(--accent); } /* ochre-on-cream fails AA as text; terracotta passes (7.2:1) */
 .cl-bar .cl-spacer { flex: 1; }
 
 /* ─── Footer ─────────────────────────────────────────────────── */
