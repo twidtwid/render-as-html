@@ -181,6 +181,25 @@ Explicit user override always wins.
 - **HTML-native ≥3:** TOC scroll-spy, per-section copy buttons, collapsible appendix, click-to-expand footnotes
 - **Avoid:** dashboard-style multi-column grid, 60+ char line length, corporate "executive summary card" headers
 
+#### `editorial`
+- **Register:** Reading (serif display + serif body, cream paper, terracotta accent).
+- **Layout:** Studio max-width ~1280px. Three zones:
+  - Left rail ~22rem, sticky: kicker + title hero + a "context/about" card.
+  - Center: prose, measure capped at `46rem` (~70ch) even though chrome is wide; stays anchored left-of-center on wide screens.
+  - Right inspector ~22rem: entity list grouped by category with canonical links, then a "read next" link list.
+  - Collapse: inspector drops below center under ~1180px; single column under ~820px.
+- **First viewport:** kicker + title + italic lede/thesis + start of body. No stat tiles.
+- **Required primitives:**
+  - Italic serif thesis/lede pull-quote, left-aligned (never centered). No left-handle bar.
+  - Stacked numbered takeaways — single column with mono numerals, never a tile grid.
+  - Claim/section cards: arguing headline + 1–3 sentence mechanism body + small `Evidence:` line.
+  - Right-rail entity inspector grouped by category (people, companies, orgs, concepts, books, …), each row a colored category dot + name (canonical link if present, `↗` for external) + one-line note.
+  - "Read next" list of source links.
+  - Per-section copy-as-prompt button (hover-revealed on each section heading), targeting the current `.html` artifact path.
+- **HTML-native ≥3:** in-text `<mark>` search + scroll-to-match; click-entity-to-open / cross-highlight; per-section copy-as-prompt; section scroll-spy if a section rail is present.
+- **External links** open `target="_blank" rel="noopener noreferrer"`; internal anchors stay same-window.
+- **Avoid:** artifact-counting stat tiles; left-handle accent bars; category-label section titles; identical-tile card grids; prose measure wider than ~75ch; dashboard-style multi-column-of-tiles.
+
 #### `timeline`
 - **Layout:** vertical spine on the left (~140px column for date markers + dots), event cards on the right (~720px). Max-width ~1000px.
 - **First viewport:** title + date-range scrubber + search input + most recent N events
