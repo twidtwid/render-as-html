@@ -381,7 +381,7 @@ Dark (via prefers-color-scheme):
    - Where does a diagram, chart, or spatial layout add information?
    - Which of the 8 dimensions am I using? (Aim for ≥4)
 4. **Write the HTML** — single self-contained file, all CSS inline, all JS (vanilla, ~100-200 lines) inline, no external fonts or CDN assets by default
-5. **Validate against the bar:** name the HTML-native features. If <3, redesign before saving.
+5. **Validate against the bar:** name the HTML-native features. If <3, redesign before saving. Also scan the rendered HTML for content-discipline anti-patterns — artifact-counting hero stats, left-handle accent bars, category-label section titles, whole-block search highlighting; fix any before saving. This is a self-review instruction, not an automated harness.
 6. **Write to `~/Reports/<YYYY-MM-DD>-<slug>.html`**
 7. **`open` the file** so it pops in browser when the environment allows it
 8. **Report back:** path, size, list of HTML-native features
