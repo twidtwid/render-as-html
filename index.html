@@ -752,7 +752,7 @@ footer a { color: var(--faint); }
 <pre>// Read state from your controls, format as instruction
 async function copyPrompt() {
   const h = +$('#hue').value, s = +$('#sat').value, l = +$('#lig').value;
-  const prompt = `In ${ARTIFACT_PATH}, update --accent to hsl(${h} ${s}% ${l}%)`;
+  const prompt = `In ${ARTIFACT}, update --accent to hsl(${h} ${s}% ${l}%)`;
   $('#prompt-output').value = prompt;
   try {
     await navigator.clipboard.writeText(prompt);
@@ -867,7 +867,7 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
         <div class="ed-prose" id="ed-prose">
           <div class="ed-sec-h">
             <h4>The room did the work the menu took credit for</h4>
-            <button class="ed-copy" data-sec="ed-s1" type="button">copy as prompt</button>
+            <button class="ed-copy" type="button">copy as prompt</button>
           </div>
           <p class="ed-thesis">Across five years of dinners, the meals we still talk about were not the ones with the best food — they were the ones where the table was tucked out of the room's traffic, and the kitchen never rushed us out of it.</p>
           <ol class="ed-takeaways">
@@ -882,7 +882,7 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
           </div>
           <div class="ed-sec-h">
             <h4>What we changed about booking</h4>
-            <button class="ed-copy" data-sec="ed-s2" type="button">copy as prompt</button>
+            <button class="ed-copy" type="button">copy as prompt</button>
           </div>
           <p>We stopped optimizing for the tasting menu and started asking for the quietest table the host could give us. The food got no better. The dinners did.</p>
         </div>
