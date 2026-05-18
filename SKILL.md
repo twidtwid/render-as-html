@@ -151,12 +151,14 @@ Different content wants different bones. Pick the shape first from content signa
 | **`network-map`** | People/relationships, brain backlinks, dependencies — connections matter |
 | **`triage-board`** | Bucketing items into 3-5 columns (Now/Next/Later/Cut), inbox triage, GTD reorg |
 | **`developer`** | PR writeups, code review, "explain this code" — annotated diff with severity findings |
+| **`editorial`** | Argument-driven long-form where the reader absorbs a sustained position — briefings, deep essays, research synthesis, analytical memos |
 
 **Auto-pick rules:**
 - Source has >5 tables of similar shape → `dashboard`
 - Source is mostly headings + paragraphs → `document`
 - Source has dates as primary structure → `timeline`
 - Source is procedural (ordered steps with commands) → `runbook`
+- Source is a sustained argument/analysis meant to be read front-to-back with named entities worth a reference rail → `editorial`; source is headings + paragraphs navigated as reference (spec/plan/notes) → `document`; ambiguous → ask
 - Ambiguous? Ask.
 
 Explicit user override always wins.
