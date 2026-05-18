@@ -260,7 +260,7 @@ Slightly warm and non-corporate, but keep public artifacts professional by defau
 ### Density
 
 - **Reading register:** 17–18px serif body, line-height 1.6, prose measure capped at `46rem` (~70ch) even when chrome is wider. Section gap ~2.5rem. Real horizontal rules between sections, not boxed borders.
-- **Instrument register:** 14–15px sans body, line-height 1.5, table cell padding `8px 10px`, packed. Stat tiles allowed *only* when the metric is the subject (see §4 — Content discipline, in "The bar").
+- **Instrument register:** 14–15px sans body, line-height 1.5, table cell padding `8px 10px`, packed. Stat tiles allowed *only* when the metric is the subject (see Content discipline, in "The bar").
 - Headlines line-height 1.2 in both.
 
 ### Typography
@@ -283,7 +283,6 @@ Application is determined by the shape's register, never chosen by the user or s
 - Mono is metadata/numerics/code in both registers. `font-variant-numeric: tabular-nums` on all tables and numeric columns.
 - Reading register may use mono small-caps for kicker/eyebrow lines (e.g. `SAN FRANCISCO · 14 MAY 2021`).
 - Instrument register uses serif sparingly or not at all (e.g. a single pull-quote), never for dense tabular content.
-- Still exactly three faces. The anti-pattern "multiple fonts beyond the three" stays; "no serif body" goes.
 
 ### Color
 
@@ -314,7 +313,9 @@ Dark (via prefers-color-scheme):
 --rule-soft   #2c2820
 --accent      #e0794f   terracotta, lifted for dark bg
 --accent-2    #d8a73a
---ok          #5cae6f  --warn #c79a4a  --note #6f9fd0
+--ok          #5cae6f
+--warn        #c79a4a
+--note        #6f9fd0
 ```
 
 - One primary accent. One affirmative-action color. No third accent, no corporate blue.
