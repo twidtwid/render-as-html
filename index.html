@@ -57,20 +57,21 @@ body { margin: 0; background: var(--bg); color: var(--text); font-size: 17px; li
 
 /* ─── Body ────────────────────────────────────────────────────── */
 .body { min-width: 0; }
-h1 { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; margin: 0 0 6px; }
-.subtitle { color: var(--muted); font-size: 0.95rem; margin: 0 0 6px; max-width: 70ch; }
-.byline { color: var(--muted); font-size: 0.78rem; font-family: var(--font-mono); margin: 0 0 24px; }
-h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.018em; line-height: 1.2; margin: 48px 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-h2 + .h2-sub { font-size: 0.85rem; color: var(--muted); margin: 0 0 18px; max-width: 64ch; }
-h3 { font-size: 1rem; font-weight: 700; margin: 24px 0 8px; letter-spacing: -0.012em; }
-p { margin: 10px 0; }
+h1 { font-family: var(--font-serif); font-size: 2.35rem; font-weight: 700; letter-spacing: -0.018em; line-height: 1.15; margin: 0 0 8px; }
+.subtitle { font-family: var(--font-serif); color: var(--muted); font-size: 1.02rem; line-height: 1.55; margin: 0 0 8px; max-width: 46rem; }
+.byline { color: var(--faint); font-size: 0.74rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 28px; }
+h2 { font-family: var(--font-serif); font-size: 1.55rem; font-weight: 700; letter-spacing: -0.012em; line-height: 1.2; margin: 56px 0 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h2 + .h2-sub { font-family: var(--font-serif); font-size: 0.98rem; color: var(--muted); line-height: 1.55; margin: 0 0 20px; max-width: 46rem; }
+h3 { font-family: var(--font-serif); font-size: 1.12rem; font-weight: 700; margin: 28px 0 8px; letter-spacing: -0.008em; }
+p { margin: 12px 0; max-width: 46rem; }
 a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
 a:hover { border-bottom-color: var(--accent); }
 code { font-family: var(--font-mono); background: var(--surface-2); padding: 1px 5px; border-radius: 3px; font-size: 0.86em; }
 
 /* ─── Sample panel ────────────────────────────────────────────── */
-.sample { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin: 12px 0; }
-.sample .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); font-weight: 700; margin-bottom: 10px; }
+.sample { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin: 14px 0; }
+.sample p, .sample li { font-family: var(--font-serif); }
+.sample .label { font-family: var(--font-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); font-weight: 700; margin-bottom: 10px; }
 
 /* ─── Component snippets ─────────────────────────────────────── */
 details.src { margin-top: 12px; }
@@ -123,9 +124,9 @@ pre { background: var(--surface-2); padding: 12px 14px; border-radius: 6px; over
 .pill.danger { background: var(--accent-soft); color: var(--accent); }
 
 /* ─── Callouts ───────────────────────────────────────────────── */
-.callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 8px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; font-size: 0.88rem; }
-.callout.note { border-color: var(--note); background: var(--note-soft); }
-.callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+.callout { border-top: 2px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; margin: 10px 0; border-radius: 0 0 6px 6px; font-size: 0.95rem; }
+.callout.note { border-top-color: var(--note); background: var(--note-soft); }
+.callout.warn { border-top-color: var(--warn); background: var(--warn-soft); }
 .callout p { margin: 4px 0; }
 .callout p:first-child { margin-top: 0; } .callout p:last-child { margin-bottom: 0; }
 
@@ -259,7 +260,7 @@ footer a { color: var(--faint); }
     <h2 id="philosophy">Philosophy</h2>
     <p class="h2-sub">Apple-quality typography and color, Linear/Stripe density.</p>
     <div class="sample">
-      <p style="margin-top:0"><strong>Wide. Dense. Opinionated.</strong> Studio Displays exist; narrow centered columns waste them. 14-16px body, 1.45-1.55 line-height, tight padding. Information density is a feature.</p>
+      <p style="margin-top:0"><strong>One system, two registers.</strong> The design system is a single truth — cream paper, warm ink, terracotta accent, three font faces — applied two ways. Reading-register shapes (this page, <code>document</code>, <code>editorial</code>, <code>timeline</code>) run 17–18px serif at a capped measure for sustained reading. Instrument-register shapes (<code>dashboard</code>, <code>comparison</code>, …) run 14–15px sans, packed, because the data is the subject. The register is decided by the shape, never chosen ad hoc.</p>
       <p>The medium is the source of truth. Thariq: <em>"there is almost no set of information that Claude can read that you cannot fairly efficiently represent with HTML."</em> Lean into tables, SVG, CSS-as-data, and interaction. If flattening the artifact loses nothing but a diagram, the artifact is probably still too close to static prose.</p>
       <p><strong>The real reason for all this:</strong> staying in the loop. As Claude does more work, the temptation is to skim-and-approve plans you'd otherwise read carefully. A well-built HTML artifact pulls you back in. You actually <em>read</em> it, poke at the controls, push state back via copy-as-prompt. The doc becomes a conversation surface, not a deliverable to rubber-stamp.</p>
     </div>
@@ -289,7 +290,7 @@ footer a { color: var(--faint); }
             <rect x="128" y="56" width="68" height="30" rx="3" fill="var(--surface-2)" stroke="var(--border)"/>
           </svg>
         </div>
-        <div class="when"><strong>Pick when:</strong> network scans, device explorers, ops audits, anything with &gt;5 tables of similar shape. <strong>Max-width:</strong> 1280px. <strong>Body:</strong> 14px.</div>
+        <div class="when"><strong>Pick when:</strong> network scans, device explorers, ops audits, anything with &gt;5 tables of similar shape. <strong>Max-width:</strong> 1280px. <strong>Register:</strong> Instrument — 14–15px sans.</div>
       </div>
 
       <div class="shape-card">
@@ -313,7 +314,7 @@ footer a { color: var(--faint); }
             <line x1="52" y1="74" x2="170" y2="74" stroke="var(--muted)"/>
           </svg>
         </div>
-        <div class="when"><strong>Pick when:</strong> plans, specs, essays, meeting notes, anything prose-heavy you'd read paragraph-to-paragraph. <strong>Max-width:</strong> 880px. <strong>Body:</strong> 16px. <strong>Required:</strong> sticky TOC, per-section copy, footnote pattern.</div>
+        <div class="when"><strong>Pick when:</strong> plans, specs, essays, meeting notes, anything prose-heavy you'd read paragraph-to-paragraph. <strong>Max-width:</strong> 880px. <strong>Register:</strong> Reading — 17–18px serif. <strong>Required:</strong> sticky TOC, per-section copy, footnote pattern.</div>
       </div>
 
       <div class="shape-card">
@@ -517,30 +518,31 @@ footer a { color: var(--faint); }
     <p class="h2-sub">All colors via CSS variables; both modes via <code>prefers-color-scheme</code>. Text-use colors meet WCAG AA on light backgrounds.</p>
     <div class="sample">
       <div class="swatches">
-        <div class="sw-card"><div class="sw-fill" style="background:var(--bg)"></div><div class="sw-meta"><div class="name">--bg</div><div class="hex">#fafaf7 · #141413</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--surface)"></div><div class="sw-meta"><div class="name">--surface</div><div class="hex">#ffffff · #1c1c1a</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--surface-2)"></div><div class="sw-meta"><div class="name">--surface-2</div><div class="hex">#f3f1ea · #25251f</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--text)"></div><div class="sw-meta"><div class="name">--text</div><div class="hex">#1a1a1a · #f0eee8</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--accent)"></div><div class="sw-meta"><div class="name">--accent</div><div class="hex">coral · #c74438</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--bg)"></div><div class="sw-meta"><div class="name">--bg</div><div class="hex">#faf6ef · #1a1815</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--surface)"></div><div class="sw-meta"><div class="name">--surface</div><div class="hex">#fbf7f0 · #211e19</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--surface-2)"></div><div class="sw-meta"><div class="name">--surface-2</div><div class="hex">#f3ede1 · #221f1a</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--text)"></div><div class="sw-meta"><div class="name">--text</div><div class="hex">#1a1815 · #f0eee8</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--accent)"></div><div class="sw-meta"><div class="name">--accent</div><div class="hex">terracotta · #8a3a1a</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--accent-2)"></div><div class="sw-meta"><div class="name">--accent-2</div><div class="hex">ochre · #c2901a</div></div></div>
         <div class="sw-card"><div class="sw-fill" style="background:var(--ok)"></div><div class="sw-meta"><div class="name">--ok</div><div class="hex">#2f7d44</div></div></div>
         <div class="sw-card"><div class="sw-fill" style="background:var(--warn)"></div><div class="sw-meta"><div class="name">--warn</div><div class="hex">#9b641d</div></div></div>
         <div class="sw-card"><div class="sw-fill" style="background:var(--note)"></div><div class="sw-meta"><div class="name">--note</div><div class="hex">#2f6fb3</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--purple)"></div><div class="sw-meta"><div class="name">--purple</div><div class="hex">#7650b3</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--teal)"></div><div class="sw-meta"><div class="name">--teal</div><div class="hex">#047f6d</div></div></div>
-        <div class="sw-card"><div class="sw-fill" style="background:var(--pink)"></div><div class="sw-meta"><div class="name">--pink</div><div class="hex">#a83f78</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--purple)"></div><div class="sw-meta"><div class="name">--purple</div><div class="hex">#6b3aa0</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--teal)"></div><div class="sw-meta"><div class="name">--teal</div><div class="hex">#1f6f8b</div></div></div>
+        <div class="sw-card"><div class="sw-fill" style="background:var(--pink)"></div><div class="sw-meta"><div class="name">--pink</div><div class="hex">#b04a8a</div></div></div>
       </div>
     </div>
 
     <h2 id="typography">Typography</h2>
-    <p class="h2-sub">One display, one body, one mono. Display and body use the system font stack, so generated artifacts stay self-contained.</p>
+    <p class="h2-sub">Three faces, defined once as CSS variables: a serif, a sans, a mono — all self-contained system stacks, no web fonts. The shape's register decides which is display and which is body. Reading-register shapes (this page is one) set serif display over serif body; instrument-register shapes set sans over sans. Mono is always metadata, numerals, and code.</p>
     <div class="sample">
-      <div style="display:grid;grid-template-columns:90px 1fr;gap:14px 18px;align-items:baseline">
+      <div style="display:grid;grid-template-columns:90px 1fr;gap:16px 18px;align-items:baseline">
         <div style="color:var(--muted);font-family:var(--font-mono);font-size:0.72rem">h1</div>
-        <div style="font-size:2rem;font-weight:800;letter-spacing:-0.025em;line-height:1.05">New Home Network</div>
+        <div style="font-family:var(--font-serif);font-size:2.1rem;font-weight:700;letter-spacing:-0.018em;line-height:1.15">A five-year dining record</div>
         <div style="color:var(--muted);font-family:var(--font-mono);font-size:0.72rem">h2</div>
-        <div style="font-size:1.3rem;font-weight:700;letter-spacing:-0.018em">Surveillance &amp; security</div>
+        <div style="font-family:var(--font-serif);font-size:1.4rem;font-weight:700;letter-spacing:-0.012em">Why the best room is the back one</div>
         <div style="color:var(--muted);font-family:var(--font-mono);font-size:0.72rem">body</div>
-        <div>Default body copy. 15-16px depending on shape, 1.45-1.55 line-height. <code>cv11</code> &amp; <code>ss01</code> features on for the right "g" and "1".</div>
+        <div style="font-family:var(--font-serif)">Reading-register body: 17–18px serif, 1.6 line-height, measure capped near 70 characters so the eye never loses the line. Instrument shapes drop to 14–15px sans for density.</div>
         <div style="color:var(--muted);font-family:var(--font-mono);font-size:0.72rem">mono</div>
         <div style="font-family:var(--font-mono);font-size:0.82rem">192.168.1.225 · d4:6a:91:18:8b:b2</div>
       </div>
