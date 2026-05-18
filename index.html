@@ -219,6 +219,70 @@ tr:last-child td { border-bottom: none; }
 .anti li:last-child { border-bottom: none; }
 .anti li strong { color: var(--accent); }
 
+/* ─── Editorial shape demo (mini 3-zone studio) ──────────────── */
+.ed-studio { display: grid; grid-template-columns: 13rem minmax(0, 30rem) 13rem; gap: 22px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+@media (max-width: 900px) { .ed-studio { grid-template-columns: 1fr; gap: 16px; } }
+.ed-rail { font-size: 0.82rem; align-self: start; }
+.ed-rail .kicker { font-family: var(--font-mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent); margin-bottom: 6px; }
+.ed-rail .ed-title { font-family: var(--font-serif); font-size: 1.3rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.012em; margin: 0 0 12px; }
+.ed-about { border-top: 1px solid var(--border); padding-top: 10px; font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+.ed-about dt { font-family: var(--font-mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); margin-top: 8px; }
+.ed-about dd { margin: 1px 0 0; color: var(--text); }
+.ed-prose { font-family: var(--font-serif); max-width: 46rem; }
+.ed-thesis { font-family: var(--font-serif); font-style: italic; font-size: 1.18rem; line-height: 1.5; color: var(--text); text-align: left; margin: 0 0 18px; padding: 0; border: 0; }
+.ed-takeaways { list-style: none; counter-reset: tk; padding: 0; margin: 0 0 18px; display: flex; flex-direction: column; gap: 10px; }
+.ed-takeaways li { counter-increment: tk; display: grid; grid-template-columns: 1.7rem 1fr; gap: 10px; align-items: baseline; font-size: 0.98rem; line-height: 1.5; }
+.ed-takeaways li::before { content: counter(tk, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); font-weight: 700; }
+.ed-claim { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+.ed-claim h5 { font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700; margin: 0 0 6px; line-height: 1.25; }
+.ed-claim p { font-size: 0.96rem; line-height: 1.55; margin: 0 0 8px; }
+.ed-claim .evidence { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+.ed-claim .evidence b { color: var(--faint); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.ed-sec-h { display: flex; align-items: baseline; gap: 10px; }
+.ed-sec-h h4 { font-family: var(--font-serif); font-size: 1.18rem; font-weight: 700; margin: 0 0 8px; }
+.ed-copy { appearance: none; font: inherit; font-family: var(--font-mono); font-size: 0.66rem; color: var(--faint); background: none; border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px; cursor: pointer; opacity: 0; transition: opacity 0.12s; }
+.ed-sec-h:hover .ed-copy, .ed-copy:focus-visible { opacity: 1; }
+.ed-copy:hover { color: var(--accent); border-color: var(--accent); }
+.ed-inspector { font-size: 0.8rem; align-self: start; }
+.ed-inspector .grp { font-family: var(--font-mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); margin: 14px 0 5px; }
+.ed-inspector .grp:first-child { margin-top: 0; }
+.ed-ent { display: grid; grid-template-columns: 9px 1fr; gap: 8px; align-items: baseline; padding: 3px 0; line-height: 1.4; }
+.ed-ent .edot { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; }
+.ed-ent .ename { font-weight: 600; }
+.ed-ent .ename a { border-bottom: 1px solid transparent; }
+.ed-ent .ename a:hover { border-bottom-color: var(--accent); }
+.ed-ent .enote { color: var(--muted); font-size: 0.74rem; }
+.ed-readnext { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 10px; }
+.ed-readnext .grp { font-family: var(--font-mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); margin-bottom: 5px; }
+.ed-readnext a { display: block; font-size: 0.8rem; padding: 3px 0; }
+.ed-prose mark { background: var(--accent-2-soft); color: inherit; padding: 0 2px; border-radius: 2px; }
+.ed-find { display: flex; gap: 8px; align-items: center; margin: 0 0 14px; }
+.ed-find input { background: var(--bg); border: 1px solid var(--border-strong); padding: 5px 11px; border-radius: 999px; font: inherit; font-size: 0.82rem; color: var(--text); flex: 1; max-width: 260px; }
+.ed-find input:focus { outline: none; border-color: var(--accent); }
+.ed-find .fcount { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+
+/* ─── Checklist sub-pattern (stateful + batch export) ────────── */
+.cl-list { list-style: none; padding: 0; margin: 0 0 12px; }
+.cl-item { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.cl-item:last-child { border-bottom: none; }
+.cl-star { appearance: none; -webkit-appearance: none; font: inherit; cursor: pointer; background: none; border: none; font-size: 1.15rem; line-height: 1; color: var(--border-strong); padding: 2px; align-self: start; transition: color 0.12s, transform 0.1s; }
+.cl-star:hover { color: var(--accent-2); transform: scale(1.12); }
+.cl-star[aria-pressed="true"] { color: var(--accent-2); }
+.cl-star:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.cl-body .cl-title { font-family: var(--font-serif); font-size: 1rem; font-weight: 700; margin: 0; line-height: 1.3; }
+.cl-body .cl-meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); margin: 2px 0 8px; }
+.cl-note { display: block; width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font: inherit; font-family: var(--font-serif); font-size: 0.88rem; color: var(--text); resize: vertical; min-height: 38px; }
+.cl-note::placeholder { color: var(--faint); }
+.cl-note:focus { outline: none; border-color: var(--accent); }
+.cl-item.on { background: var(--accent-2-soft); border-radius: 6px; margin: 0 -10px; padding-left: 10px; padding-right: 10px; }
+.cl-bar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px; padding: 12px 16px; margin-top: 14px; }
+.cl-bar .cl-count { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text); }
+.cl-bar .cl-count b { color: var(--accent-2); }
+.cl-bar .cl-spacer { flex: 1; }
+.cl-export { display: block; width: 100%; margin-top: 12px; background: var(--surface-2); border: 1px solid transparent; border-radius: 6px; padding: 10px 12px; font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.5; color: var(--text); white-space: pre-wrap; word-break: break-word; min-height: 70px; resize: vertical; }
+.cl-export:focus { outline: none; border-color: var(--accent); }
+.cl-status { font-size: 0.76rem; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
+
 /* ─── Footer ─────────────────────────────────────────────────── */
 footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--faint); font-size: 0.76rem; font-family: var(--font-mono); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 footer a { color: var(--faint); }
@@ -242,6 +306,8 @@ footer a { color: var(--faint); }
       <li><a href="#copy-prompt">Copy-as-prompt (live)</a></li>
       <li><a href="#section-copy">Section copy</a></li>
       <li><a href="#charts">Charts &amp; diagrams</a></li>
+      <li><a href="#editorial">The editorial shape</a></li>
+      <li><a href="#checklist">Checklist sub-pattern</a></li>
       <li><a href="#antipatterns">Anti-patterns</a></li>
       <li><a href="#usage">Using this file</a></li>
     </ol>
@@ -781,6 +847,110 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
     </div>
     <p style="font-size:0.84rem;color:var(--muted);margin-top:8px">Solid = wired/sync, dashed = wireless/async. Fill = category soft, border = category full. Make nodes clickable to cross-highlight rows in the data table.</p>
 
+    <h2 id="editorial">The editorial shape, shown in itself</h2>
+    <p class="h2-sub">The 9th shape is an argument-driven reading surface: a sticky context rail, measure-capped prose down the middle, and a curated entity inspector on the right. This sample is built in the one-truth system — same cream, same serif, same terracotta — so it reads like anything the skill emits.</p>
+    <div class="sample">
+      <div class="ed-find">
+        <input type="search" id="ed-find" placeholder="find in this essay…" aria-label="Find in the editorial sample">
+        <span class="fcount" id="ed-fcount" aria-live="polite"></span>
+      </div>
+      <div class="ed-studio">
+        <aside class="ed-rail">
+          <div class="kicker">San Francisco · 14 May 2021</div>
+          <p class="ed-title">Why the back room always won</p>
+          <dl class="ed-about">
+            <dt>Argument</dt><dd>Seating, not the menu, predicted which dinners we remembered.</dd>
+            <dt>Span</dt><dd>23 dinners on file, 2021–2026</dd>
+            <dt>Register</dt><dd>Reading — serif, cream, terracotta</dd>
+          </dl>
+        </aside>
+        <div class="ed-prose" id="ed-prose">
+          <div class="ed-sec-h">
+            <h4>The room did the work the menu took credit for</h4>
+            <button class="ed-copy" data-sec="ed-s1" type="button">copy as prompt</button>
+          </div>
+          <p class="ed-thesis">Across five years of dinners, the meals we still talk about were not the ones with the best food — they were the ones where the table was tucked out of the room's traffic, and the kitchen never rushed us out of it.</p>
+          <ol class="ed-takeaways">
+            <li>The corner-and-back tables outscored center-floor tables even at the same restaurant on the same menu.</li>
+            <li>A long pour between courses correlated with a higher recalled rating a year later than any single dish did.</li>
+            <li>Noise, not price, was the strongest negative: every dinner we regretted was loud.</li>
+          </ol>
+          <div class="ed-claim">
+            <h5>Acoustics outrank the kitchen for memory</h5>
+            <p>A dish fades in a week; a conversation you could actually have is what gets re-told. The rooms that let the table disappear are the ones whose food we still rate generously, because the evening, not the plate, is what we encoded.</p>
+            <div class="evidence"><b>Evidence:</b> 23 logged dinners; the 6 highest year-later ratings were all in sub-70 dB rooms.</div>
+          </div>
+          <div class="ed-sec-h">
+            <h4>What we changed about booking</h4>
+            <button class="ed-copy" data-sec="ed-s2" type="button">copy as prompt</button>
+          </div>
+          <p>We stopped optimizing for the tasting menu and started asking for the quietest table the host could give us. The food got no better. The dinners did.</p>
+        </div>
+        <aside class="ed-inspector">
+          <div class="grp">People</div>
+          <div class="ed-ent"><span class="edot" style="background:var(--accent)"></span><span><span class="ename">The host who hid us</span><br><span class="enote">Always offered the back four-top</span></span></div>
+          <div class="grp">Places</div>
+          <div class="ed-ent"><span class="edot" style="background:var(--teal)"></span><span><span class="ename"><a href="https://example.com/" target="_blank" rel="noopener noreferrer">Corner table, 2nd&nbsp;floor ↗</a></span><br><span class="enote">Highest year-later rating on file</span></span></div>
+          <div class="ed-ent"><span class="edot" style="background:var(--teal)"></span><span><span class="ename">The loud new place</span><br><span class="enote">Best food, lowest recall</span></span></div>
+          <div class="grp">Concepts</div>
+          <div class="ed-ent"><span class="edot" style="background:var(--purple)"></span><span><span class="ename">Recalled rating</span><br><span class="enote">Score given one year on, not that night</span></span></div>
+          <div class="ed-readnext">
+            <div class="grp">Read next</div>
+            <a href="#shapes">The full shape catalog</a>
+            <a href="#checklist">The checklist sub-pattern</a>
+          </div>
+        </aside>
+      </div>
+      <p style="font-size:0.8rem;color:var(--muted);margin-top:10px">Note the contract: italic thesis is <em>left-aligned with no left-handle bar</em>; takeaways are a stacked numbered column, never a tile grid; entities carry category dots and open external links in a new tab; the find box marks real occurrences and scrolls to the first. Per-section "copy as prompt" rounds state back to this file.</p>
+    </div>
+
+    <h2 id="checklist">Checklist sub-pattern <span style="font-size:0.85rem;font-weight:400;color:var(--muted)">— stateful list + batch export</span></h2>
+    <p class="h2-sub">An unordered set you select and annotate, with a sticky bar that counts what's marked and emits a copy-as-prompt naming this file. Distinct from a runbook (ordered execution) and a triage-board (columns + drag) — one list, per-item state and note, one batch action.</p>
+    <div class="sample">
+      <ul class="cl-list" id="cl-list">
+        <li class="cl-item" data-item="Back-corner table policy">
+          <button class="cl-star" type="button" aria-pressed="false" aria-label="Mark: Back-corner table policy">★</button>
+          <div class="cl-body">
+            <p class="cl-title">Always request the quietest table</p>
+            <p class="cl-meta">policy · applies to every booking</p>
+            <textarea class="cl-note" rows="1" placeholder="note (optional)…"></textarea>
+          </div>
+        </li>
+        <li class="cl-item" data-item="Drop the tasting-menu default">
+          <button class="cl-star" type="button" aria-pressed="false" aria-label="Mark: Drop the tasting-menu default">★</button>
+          <div class="cl-body">
+            <p class="cl-title">Stop defaulting to the tasting menu</p>
+            <p class="cl-meta">habit · re-decide per restaurant</p>
+            <textarea class="cl-note" rows="1" placeholder="note (optional)…"></textarea>
+          </div>
+        </li>
+        <li class="cl-item" data-item="Log recalled rating at +1yr">
+          <button class="cl-star" type="button" aria-pressed="false" aria-label="Mark: Log recalled rating at +1yr">★</button>
+          <div class="cl-body">
+            <p class="cl-title">Log a recalled rating one year on</p>
+            <p class="cl-meta">process · calendar reminder</p>
+            <textarea class="cl-note" rows="1" placeholder="note (optional)…"></textarea>
+          </div>
+        </li>
+        <li class="cl-item" data-item="Carry a sound-level read">
+          <button class="cl-star" type="button" aria-pressed="false" aria-label="Mark: Carry a sound-level read">★</button>
+          <div class="cl-body">
+            <p class="cl-title">Note the room's loudness on arrival</p>
+            <p class="cl-meta">data · one line in the dinner log</p>
+            <textarea class="cl-note" rows="1" placeholder="note (optional)…"></textarea>
+          </div>
+        </li>
+      </ul>
+      <div class="cl-bar">
+        <span class="cl-count" id="cl-count"><b>0</b> of 4 marked</span>
+        <span class="cl-spacer"></span>
+        <button class="copy-btn" id="cl-copy" type="button">copy as prompt</button>
+        <button class="copy-btn secondary" id="cl-clear" type="button">clear</button>
+      </div>
+      <textarea class="cl-export" id="cl-export" readonly rows="3" aria-label="Generated prompt">Mark items above, then click "copy as prompt" — the instruction naming this file appears here.</textarea>
+      <div class="cl-status" id="cl-status" aria-live="polite"></div>
+    </div>
+
     <h2 id="antipatterns">Anti-patterns</h2>
     <ul class="anti">
       <li><strong>Narrow centered column on data.</strong> Studio Displays exist. Default wide; narrow only for prose.</li>
@@ -895,6 +1065,98 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
     updateDemo();
   });
   updateDemo();
+
+  // ─── Editorial: in-text <mark> find + scroll-to-match ───────────
+  const ARTIFACT = '~/Reports/private/render-as-html-design-system.html';
+  const edProse = $('#ed-prose'), edFind = $('#ed-find'), edFcount = $('#ed-fcount');
+  if (edProse && edFind) {
+    $$('#ed-prose p, #ed-prose h4, #ed-prose h5, #ed-prose li').forEach(el => {
+      if (!el.dataset.original) el.dataset.original = el.innerHTML;
+    });
+    const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    edFind.addEventListener('input', () => {
+      const q = edFind.value.trim();
+      const nodes = $$('#ed-prose [data-original]');
+      nodes.forEach(el => { el.innerHTML = el.dataset.original; });
+      if (!q) { edFcount.textContent = ''; return; }
+      const rx = new RegExp(esc(q), 'gi');
+      let hits = 0, first = null;
+      nodes.forEach(el => {
+        if (rx.test(el.dataset.original)) {
+          el.innerHTML = el.dataset.original.replace(rx, m => { hits++; return '<mark>' + m + '</mark>'; });
+          if (!first) first = el.querySelector('mark');
+        }
+      });
+      edFcount.textContent = hits ? hits + (hits === 1 ? ' match' : ' matches') : 'no matches';
+      if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+  }
+
+  // ─── Editorial: per-section copy-as-prompt ──────────────────────
+  $$('.ed-copy').forEach(btn => btn.addEventListener('click', async () => {
+    const head = btn.closest('.ed-sec-h').querySelector('h4').textContent.trim();
+    const prompt = `In ${ARTIFACT}, revise the editorial section titled "${head}": `;
+    try {
+      await navigator.clipboard.writeText(prompt);
+      const t = btn.textContent; btn.textContent = '✓ copied';
+      setTimeout(() => { btn.textContent = t; }, 1600);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = prompt; ta.style.cssText = 'position:fixed;top:8px;left:8px;width:60vw;height:48px;z-index:9999';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      setTimeout(() => ta.remove(), 4000);
+    }
+  }));
+
+  // ─── Checklist: toggle + live count + batch copy-as-prompt ──────
+  const clList = $('#cl-list'), clCount = $('#cl-count'), clExport = $('#cl-export'), clStatus = $('#cl-status');
+  if (clList) {
+    const items = $$('.cl-item', clList);
+    function refreshCount() {
+      const on = items.filter(i => i.classList.contains('on'));
+      clCount.innerHTML = `<b>${on.length}</b> of ${items.length} marked`;
+      return on;
+    }
+    items.forEach(li => {
+      const star = $('.cl-star', li);
+      star.addEventListener('click', () => {
+        const on = li.classList.toggle('on');
+        star.setAttribute('aria-pressed', on ? 'true' : 'false');
+        refreshCount();
+      });
+    });
+    function buildPrompt() {
+      const on = refreshCount();
+      if (!on.length) return `In ${ARTIFACT}, no checklist items are marked.`;
+      const lines = on.map(li => {
+        const note = $('.cl-note', li).value.trim();
+        return `- ${li.dataset.item}${note ? ` — note: ${note}` : ''}`;
+      });
+      return `In ${ARTIFACT}, act on these marked checklist items:\n${lines.join('\n')}`;
+    }
+    $('#cl-copy').addEventListener('click', async () => {
+      const p = buildPrompt();
+      clExport.value = p;
+      try {
+        await navigator.clipboard.writeText(p);
+        clStatus.textContent = 'Copied — paste into Claude Code.';
+      } catch {
+        clExport.focus(); clExport.select();
+        clStatus.textContent = 'Clipboard blocked — prompt selected above for manual copy.';
+      }
+    });
+    $('#cl-clear').addEventListener('click', () => {
+      items.forEach(li => {
+        li.classList.remove('on');
+        $('.cl-star', li).setAttribute('aria-pressed', 'false');
+        $('.cl-note', li).value = '';
+      });
+      refreshCount();
+      clExport.value = 'Mark items above, then click "copy as prompt" — the instruction naming this file appears here.';
+      clStatus.textContent = '';
+    });
+    refreshCount();
+  }
 })();
 </script>
 
