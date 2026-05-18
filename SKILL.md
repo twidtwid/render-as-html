@@ -273,7 +273,7 @@ Interaction patterns that show up across multiple shapes — use where they fit:
 
 ## Design system
 
-System typography and Apple-level color discipline, Linear / Stripe density. Beautiful and information-rich. Wide screens exist; narrow centered columns waste them. Think `apple.com/mac` or Stripe docs or Linear's app, not iA Writer.
+One palette, two registers, determined entirely by shape. The **reading register** (documents, editorials, timelines) uses serif display and body, warm cream paper, and terracotta accent — long-form comfortable, iA-Writer-adjacent in rhythm but wider and more structured. The **instrument register** (dashboards, comparisons, developer tools, runbooks) uses dense sans, tighter metrics, and the same palette — Linear/Stripe in feel. Both are information-rich; neither wastes wide screens on a narrow centered column.
 
 Slightly warm and non-corporate, but keep public artifacts professional by default.
 
