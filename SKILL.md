@@ -323,9 +323,11 @@ Dark (via prefers-color-scheme):
 
 **Every copy button needs a fallback.** `navigator.clipboard.writeText()` can fail in local files, hardened browsers, iframes, and permission-restricted contexts. If copy fails, place the exact text in a visible `<textarea>`, focus it, and select it.
 
+**In-text `<mark>` search.** When search filters content, mark the actual occurrences with `<mark>` and scroll to the first match. Never highlight an entire block because the term appears somewhere inside it; the visible part of a long block often does not contain the term. Cache original text (e.g. `data-original`) so clearing search restores cleanly.
+
 ### Anti-patterns
 
-- Multiple fonts beyond the three above
+- Still exactly three faces (serif, sans, mono); no fourth
 - Drop shadows on everything; gradients for their own sake
 - Emoji explosion (1-3 across the whole doc, not one per heading)
 - Generic AI-report decoration: redundant boxes, ornamental "Key Insights" headers
@@ -337,6 +339,8 @@ Dark (via prefers-color-scheme):
 - Pulling in a JS framework. Single file, vanilla JS.
 - External fonts, analytics, or CDN assets in private artifacts unless the user explicitly approves them.
 - Copy/export buttons that imply another canonical format. Prefer "copy section", "copy recommendation", "copy board state", or "copy as prompt"; avoid "copy as markdown" unless the user explicitly wants a one-off export.
+- No left-handle accent bars. A 3–4px accent-colored vertical line on the left edge of a card or quote is the visual fingerprint of AI-generated layouts. Convey emphasis through type, whitespace, horizontal rules, color, and position. A horizontal rule (top border) between sections is fine; a pull-quote may use larger italic type without a bar.
+- Identical-tile grids read as SaaS dashboards; cards stack as columns by default. Only lay out as a grid of equal tiles when the data is genuinely parallel and comparison across tiles is the point.
 
 ## Rendering process
 
