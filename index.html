@@ -6,34 +6,38 @@
 <title>render-as-html · design system</title>
 <style>
 :root {
-  --bg: #fafaf7; --surface: #ffffff; --surface-2: #f3f1ea;
-  --text: #1a1a1a; --muted: #6b6b6b; --faint: #737373;
-  --border: #e8e5dd; --border-strong: #d8d4c8;
-  --accent: #c74438; --accent-soft: rgba(199, 68, 56, 0.10);
-  --ok: #2f7d44; --ok-soft: rgba(47, 125, 68, 0.13);
-  --warn: #9b641d; --warn-soft: rgba(155, 100, 29, 0.13);
+  --font-serif: "Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Source Serif Pro", serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --bg: #faf6ef; --surface: #fbf7f0; --surface-2: #f3ede1;
+  --text: #1a1815; --muted: #4a443c; --faint: #8a8378;
+  --border: #d9d1c2; --border-strong: #c4b7a3;
+  --accent: #8a3a1a; --accent-soft: rgba(138, 58, 26, 0.10);
+  --accent-2: #c2901a; --accent-2-soft: rgba(194, 144, 26, 0.12);
+  --ok: #2f7d44; --ok-soft: rgba(47, 125, 68, 0.10);
+  --warn: #9b641d; --warn-soft: rgba(155, 100, 29, 0.10);
   --note: #2f6fb3; --note-soft: rgba(47, 111, 179, 0.10);
-  --purple: #7650b3; --purple-soft: rgba(118, 80, 179, 0.13);
-  --pink: #a83f78; --pink-soft: rgba(168, 63, 120, 0.13);
-  --teal: #047f6d; --teal-soft: rgba(4, 127, 109, 0.13);
+  --purple: #6b3aa0; --purple-soft: rgba(107, 58, 160, 0.10);
+  --pink: #b04a8a; --pink-soft: rgba(176, 74, 138, 0.10);
+  --teal: #1f6f8b; --teal-soft: rgba(31, 111, 139, 0.10);
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #141413; --surface: #1c1c1a; --surface-2: #25251f;
-    --text: #f0eee8; --muted: #a8a6a0; --faint: #6a6a6a;
-    --border: #2a2a26; --border-strong: #3a3a33;
-    --accent: #ff7066; --accent-soft: rgba(255, 112, 102, 0.14);
-    --ok: #6bc785; --ok-soft: rgba(107, 199, 133, 0.14);
-    --warn: #e8a347; --warn-soft: rgba(232, 163, 71, 0.14);
-    --note: #6fa9e8; --note-soft: rgba(111, 169, 232, 0.12);
-    --purple: #b58be0; --purple-soft: rgba(181, 139, 224, 0.16);
-    --pink: #e89bbe; --pink-soft: rgba(232, 155, 190, 0.16);
-    --teal: #4dd1b3; --teal-soft: rgba(77, 209, 179, 0.16);
+    --bg: #1a1815; --surface: #211e19; --surface-2: #221f1a;
+    --text: #f0eee8; --muted: #c9c3b6; --faint: #8a8378;
+    --border: #38332b; --border-strong: #4a4338;
+    --accent: #e0794f; --accent-soft: rgba(224, 121, 79, 0.14);
+    --accent-2: #d8a73a; --accent-2-soft: rgba(216, 167, 58, 0.16);
+    --ok: #5cae6f; --ok-soft: rgba(92, 174, 111, 0.14);
+    --warn: #c79a4a; --warn-soft: rgba(199, 154, 74, 0.14);
+    --note: #6f9fd0; --note-soft: rgba(111, 159, 208, 0.14);
+    --purple: #b58be0; --purple-soft: rgba(181, 139, 224, 0.14);
+    --pink: #e89bbe; --pink-soft: rgba(232, 155, 190, 0.14);
+    --teal: #6fc3d6; --teal-soft: rgba(111, 195, 214, 0.14);
   }
 }
 * { box-sizing: border-box; }
-html { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; }
-body { margin: 0; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.55; }
+html { font-family: var(--font-serif); -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: var(--bg); color: var(--text); font-size: 17px; line-height: 1.6; }
 
 /* ─── Doc layout ──────────────────────────────────────────────── */
 .doc { display: grid; grid-template-columns: 220px minmax(0, 900px); gap: 48px; max-width: 1200px; margin: 0 auto; padding: 48px 28px 100px; }
@@ -45,24 +49,24 @@ body { margin: 0; background: var(--bg); color: var(--text); font-size: 15px; li
 .toc ol { list-style: none; padding: 0; margin: 0; counter-reset: toc; }
 .toc li { counter-increment: toc; }
 .toc a { display: flex; gap: 10px; padding: 4px 0 4px 10px; text-decoration: none; color: var(--muted); border-left: 2px solid var(--border); line-height: 1.3; transition: all 0.12s; }
-.toc a::before { content: counter(toc, decimal-leading-zero); color: var(--faint); font-family: 'JetBrains Mono', monospace; font-size: 0.78em; flex-shrink: 0; }
+.toc a::before { content: counter(toc, decimal-leading-zero); color: var(--faint); font-family: var(--font-mono); font-size: 0.78em; flex-shrink: 0; }
 .toc a:hover { color: var(--text); border-color: var(--border-strong); }
 .toc a.active { color: var(--accent); border-color: var(--accent); font-weight: 600; }
-.toc-meta { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 0.72rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; line-height: 1.5; }
+.toc-meta { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 0.72rem; color: var(--muted); font-family: var(--font-mono); line-height: 1.5; }
 .toc-meta a { color: var(--muted); text-decoration: none; border-bottom: 1px dashed var(--faint); }
 
 /* ─── Body ────────────────────────────────────────────────────── */
 .body { min-width: 0; }
 h1 { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; margin: 0 0 6px; }
 .subtitle { color: var(--muted); font-size: 0.95rem; margin: 0 0 6px; max-width: 70ch; }
-.byline { color: var(--muted); font-size: 0.78rem; font-family: 'JetBrains Mono', monospace; margin: 0 0 24px; }
+.byline { color: var(--muted); font-size: 0.78rem; font-family: var(--font-mono); margin: 0 0 24px; }
 h2 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.018em; line-height: 1.2; margin: 48px 0 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 h2 + .h2-sub { font-size: 0.85rem; color: var(--muted); margin: 0 0 18px; max-width: 64ch; }
 h3 { font-size: 1rem; font-weight: 700; margin: 24px 0 8px; letter-spacing: -0.012em; }
 p { margin: 10px 0; }
 a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
 a:hover { border-bottom-color: var(--accent); }
-code { font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace; background: var(--surface-2); padding: 1px 5px; border-radius: 3px; font-size: 0.86em; }
+code { font-family: var(--font-mono); background: var(--surface-2); padding: 1px 5px; border-radius: 3px; font-size: 0.86em; }
 
 /* ─── Sample panel ────────────────────────────────────────────── */
 .sample { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin: 12px 0; }
@@ -70,11 +74,11 @@ code { font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace; backgr
 
 /* ─── Component snippets ─────────────────────────────────────── */
 details.src { margin-top: 12px; }
-details.src summary { cursor: pointer; font-size: 0.72rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; user-select: none; padding: 4px 0; list-style: none; }
+details.src summary { cursor: pointer; font-size: 0.72rem; color: var(--muted); font-family: var(--font-mono); user-select: none; padding: 4px 0; list-style: none; }
 details.src summary::before { content: '› '; }
 details[open].src summary::before { content: '⌄ '; }
 details.src summary:hover { color: var(--text); }
-pre { background: var(--surface-2); padding: 12px 14px; border-radius: 6px; overflow-x: auto; font-size: 0.76rem; line-height: 1.5; font-family: 'JetBrains Mono', monospace; color: var(--text); margin: 4px 0 0; }
+pre { background: var(--surface-2); padding: 12px 14px; border-radius: 6px; overflow-x: auto; font-size: 0.76rem; line-height: 1.5; font-family: var(--font-mono); color: var(--text); margin: 4px 0 0; }
 
 /* ─── Page shapes section ─────────────────────────────────────── */
 .shape-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -101,7 +105,7 @@ pre { background: var(--surface-2); padding: 12px 14px; border-radius: 6px; over
 .sw-fill { height: 40px; }
 .sw-meta { padding: 6px 10px; font-size: 0.72rem; }
 .sw-meta .name { font-weight: 600; }
-.sw-meta .hex { font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: 0.66rem; }
+.sw-meta .hex { font-family: var(--font-mono); color: var(--muted); font-size: 0.66rem; }
 
 /* ─── Stat tiles ─────────────────────────────────────────────── */
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
@@ -183,7 +187,7 @@ tr:last-child td { border-bottom: none; }
 .donut-legend { font-size: 0.78rem; }
 .donut-legend .row { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
 .donut-legend .sw { width: 10px; height: 10px; border-radius: 2px; }
-.donut-legend .n { font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: 0.74rem; margin-left: 8px; }
+.donut-legend .n { font-family: var(--font-mono); color: var(--muted); font-size: 0.74rem; margin-left: 8px; }
 
 /* ─── Copy-as-prompt LIVE demo ───────────────────────────────── */
 .cap-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: stretch; }
@@ -192,10 +196,10 @@ tr:last-child td { border-bottom: none; }
 .cap-row { display: grid; grid-template-columns: 80px 1fr 50px; gap: 8px; align-items: center; }
 .cap-row label { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
 .cap-row input[type="range"] { width: 100%; accent-color: var(--accent); }
-.cap-row .val { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text); text-align: right; }
+.cap-row .val { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text); text-align: right; }
 .cap-preview { display: flex; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; min-height: 160px; padding: 20px; }
-.cap-swatch { width: 100%; height: 100%; min-height: 120px; border-radius: 12px; background: var(--demo-accent, var(--accent)); display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: white; font-weight: 600; }
-.cap-output { display: block; width: 100%; margin-top: 12px; background: var(--surface-2); padding: 10px 12px; border: 1px solid transparent; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; line-height: 1.5; color: var(--text); white-space: pre-wrap; word-break: break-word; min-height: 80px; resize: vertical; }
+.cap-swatch { width: 100%; height: 100%; min-height: 120px; border-radius: 12px; background: var(--demo-accent, var(--accent)); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 0.78rem; color: white; font-weight: 600; }
+.cap-output { display: block; width: 100%; margin-top: 12px; background: var(--surface-2); padding: 10px 12px; border: 1px solid transparent; border-radius: 6px; font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.5; color: var(--text); white-space: pre-wrap; word-break: break-word; min-height: 80px; resize: vertical; }
 .cap-output:focus { outline: none; border-color: var(--accent); }
 .cap-actions { display: flex; gap: 6px; margin-top: 10px; }
 .copy-btn { font: inherit; font-size: 0.82rem; font-weight: 600; padding: 6px 14px; border-radius: 999px; background: var(--accent); color: white; border: none; cursor: pointer; }
@@ -215,7 +219,7 @@ tr:last-child td { border-bottom: none; }
 .anti li strong { color: var(--accent); }
 
 /* ─── Footer ─────────────────────────────────────────────────── */
-footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--faint); font-size: 0.76rem; font-family: 'JetBrains Mono', monospace; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--faint); font-size: 0.76rem; font-family: var(--font-mono); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 footer a { color: var(--faint); }
 </style>
 </head>
@@ -531,14 +535,14 @@ footer a { color: var(--faint); }
     <p class="h2-sub">One display, one body, one mono. Display and body use the system font stack, so generated artifacts stay self-contained.</p>
     <div class="sample">
       <div style="display:grid;grid-template-columns:90px 1fr;gap:14px 18px;align-items:baseline">
-        <div style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem">h1</div>
+        <div style="color:var(--muted);font-family:var(--font-mono);font-size:0.72rem">h1</div>
         <div style="font-size:2rem;font-weight:800;letter-spacing:-0.025em;line-height:1.05">New Home Network</div>
-        <div style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem">h2</div>
+        <div style="color:var(--muted);font-family:var(--font-mono);font-size:0.72rem">h2</div>
         <div style="font-size:1.3rem;font-weight:700;letter-spacing:-0.018em">Surveillance &amp; security</div>
-        <div style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem">body</div>
+        <div style="color:var(--muted);font-family:var(--font-mono);font-size:0.72rem">body</div>
         <div>Default body copy. 15-16px depending on shape, 1.45-1.55 line-height. <code>cv11</code> &amp; <code>ss01</code> features on for the right "g" and "1".</div>
-        <div style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.72rem">mono</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.82rem">192.168.1.225 · d4:6a:91:18:8b:b2</div>
+        <div style="color:var(--muted);font-family:var(--font-mono);font-size:0.72rem">mono</div>
+        <div style="font-family:var(--font-mono);font-size:0.82rem">192.168.1.225 · d4:6a:91:18:8b:b2</div>
       </div>
     </div>
 
@@ -587,8 +591,8 @@ footer a { color: var(--faint); }
     <div class="sample">
       <table>
         <tr><th>IP</th><th>Device</th><th>MAC</th><th>Notes</th></tr>
-        <tr><td><code>.254</code></td><td>BGW620-700</td><td style="font-family:'JetBrains Mono',monospace;color:var(--faint);font-size:0.78rem">—</td><td style="color:var(--muted)">gateway · multigig WAN</td></tr>
-        <tr><td><code>.225</code></td><td>core · M2 Ultra</td><td style="font-family:'JetBrains Mono',monospace;color:var(--faint);font-size:0.78rem">a4:fc:14:xx:xx:xx</td><td style="color:var(--muted)">2.5 GbE wired</td></tr>
+        <tr><td><code>.254</code></td><td>BGW620-700</td><td style="font-family:var(--font-mono);color:var(--faint);font-size:0.78rem">—</td><td style="color:var(--muted)">gateway · multigig WAN</td></tr>
+        <tr><td><code>.225</code></td><td>core · M2 Ultra</td><td style="font-family:var(--font-mono);color:var(--faint);font-size:0.78rem">a4:fc:14:xx:xx:xx</td><td style="color:var(--muted)">2.5 GbE wired</td></tr>
       </table>
     </div>
 
