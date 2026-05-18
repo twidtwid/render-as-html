@@ -264,7 +264,7 @@ Interaction patterns that show up across multiple shapes — use where they fit:
 - **Prompt tuner:** side-by-side editor with the prompt on the left (variable slots highlighted) and 2-3 sample inputs on the right rendering the filled template live + token counter + copy button
 - **Annotation overlay:** marks on top of a document/diff/transcript with copy-out-the-annotations button
 - **Checklist:** an unordered list where each item carries a state control plus an optional freeform note, with a sticky batch-export bar.
-  - *Use for:* review collection, decision shortlists, audit/packing lists, approval passes, curation with annotations.
+  - *Use for:* review collection, decision shortlists, audit/packing lists, "which of these should we do", approval passes, curation with annotations.
   - *vs `runbook`:* runbook checkboxes track execution of an ordered procedure; checklist items are an unordered set being selected/annotated.
   - *vs `triage-board`:* no columns, no drag — one list, per-item state + note + batch export.
   - *Primitives:* item rows (title + mono metadata line + state control (checkbox, star, or small rating) + note `<textarea>`); sticky footer bar (live count + batch copy-as-prompt with visible textarea fallback); per-item state persists in the DOM and is read by the batch exporter.
