@@ -253,19 +253,31 @@ Slightly warm and non-corporate, but keep public artifacts professional by defau
 
 ### Density
 
-- Line-height **1.5** body (dashboard) / **1.55** (document), **1.2** headlines
-- Table cell padding **8px 10px** (was 12px 16px — too generous)
-- Section gap 2.5rem between h2 sections
-- Don't be afraid of 0.8rem text for metadata — big text is for hierarchy, not everything
+- **Reading register:** 17–18px serif body, line-height 1.6, prose measure capped at `46rem` (~70ch) even when chrome is wider. Section gap ~2.5rem. Real horizontal rules between sections, not boxed borders.
+- **Instrument register:** 14–15px sans body, line-height 1.5, table cell padding `8px 10px`, packed. Stat tiles allowed *only* when the metric is the subject (see Content discipline below).
+- Headlines line-height 1.2 in both.
 
 ### Typography
 
-- One display, one body, one mono. **No more.**
-- Body: `-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif`
-- Display: same system stack, heavier weight (700/800), tight letter-spacing (`-0.022em`)
-- Mono: `'JetBrains Mono', 'SF Mono', ui-monospace, monospace`
-- Body 15-16px desktop, 14-15px mobile
-- `font-variant-numeric: tabular-nums` on tables
+Three faces, defined once:
+
+```
+--font-serif:   "Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Source Serif Pro", serif;
+--font-sans:    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+--font-mono:    ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+```
+
+Application is determined by the shape's register, never chosen by the user or skill ad hoc:
+
+| Register | Shapes | Display | Body | Size / line-height | Mono usage |
+|---|---|---|---|---|---|
+| **Reading** | `document`, `editorial`, `timeline` | serif, 700, tight tracking | serif | 17–18px / 1.6 | metadata, timestamps, numerals |
+| **Instrument** | `dashboard`, `comparison`, `developer`, `runbook`, `triage-board`, `network-map` | sans, 700 | sans | 14–15px / 1.5 | numerics, code, IDs |
+
+- Mono is metadata/numerics/code in both registers. `font-variant-numeric: tabular-nums` on all tables and numeric columns.
+- Reading register may use mono small-caps for kicker/eyebrow lines (e.g. `SAN FRANCISCO · 14 MAY 2021`).
+- Instrument register uses serif sparingly or not at all (e.g. a single pull-quote), never for dense tabular content.
+- Still exactly three faces. The anti-pattern "multiple fonts beyond the three" stays; "no serif body" goes.
 
 ### Color
 
