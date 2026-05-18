@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Unreasonable Effectiveness of HTML — A Briefing</title>
+<style>
+  /* ── Tokens ──────────────────────────────────────────────────────── */
+  :root {
+    --paper:       #faf6ef;
+    --paper-tint:  #f3ede1;
+    --paper-card:  #fbf7f0;
+    --ink:         #1a1815;
+    --ink-soft:    #4a443c;
+    --muted:       #736d62;
+    --rule:        #d9d1c2;
+    --rule-soft:   #ece5d6;
+    --accent:      #8a3a1a;
+    --accent-2:    #c2901a;
+    --ok:          #2f7d44;
+    --warn:        #9b641d;
+    --note:        #2f6fb3;
+
+    --font-serif:  "Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Source Serif Pro", serif;
+    --font-sans:   ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --font-mono:   ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:       #1a1815;
+      --paper-tint:  #221f1a;
+      --paper-card:  #211e19;
+      --ink:         #f0eee8;
+      --ink-soft:    #c9c3b6;
+      --muted:       #9a948a;
+      --rule:        #38332b;
+      --rule-soft:   #2c2820;
+      --accent:      #e0794f;
+      --accent-2:    #d8a73a;
+      --ok:          #5cae6f;
+      --warn:        #c79a4a;
+      --note:        #6f9fd0;
+    }
+  }
+
+  /* ── Reset ───────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-serif);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Page skeleton ───────────────────────────────────────────────── */
+  .page-wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    position: relative;
+  }
+
+  /* Sidebar TOC lives outside main column on wide screens */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas: "main";
+    gap: 0;
+    padding: 0 1.25rem;   /* mobile horizontal gutters */
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  @media (min-width: 1200px) {
+    .layout {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      grid-template-columns: 220px 1fr;
+      grid-template-areas: "toc main";
+      gap: 0 3rem;
+      align-items: start;
+    }
+  }
+
+  /* ── Sticky TOC ──────────────────────────────────────────────────── */
+  .toc-sidebar {
+    grid-area: toc;
+    display: none;
+  }
+
+  @media (min-width: 1200px) {
+    .toc-sidebar {
+      display: block;
+      position: sticky;
+      top: 2.5rem;
+      padding-top: 5rem;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+  }
+
+  .toc-sidebar nav {
+    border-top: 2px solid var(--accent);
+    padding-top: 0.75rem;
+  }
+
+  .toc-sidebar .toc-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+
+  .toc-sidebar a {
+    display: block;
+    color: var(--ink-soft);
+    text-decoration: none;
+    padding: 0.25rem 0;
+    border-left: 2px solid transparent;
+    padding-left: 0.6rem;
+    transition: color 0.15s, border-color 0.15s;
+    margin-left: -0.6rem;
+  }
+
+  .toc-sidebar a:hover {
+    color: var(--accent);
+  }
+
+  .toc-sidebar a.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ── Main content ────────────────────────────────────────────────── */
+  .main-content {
+    grid-area: main;
+    max-width: 880px;
+    min-width: 0;   /* prevent grid blowout */
+    width: 100%;
+    padding: 0;
+  }
+
+  /* ── Header ──────────────────────────────────────────────────────── */
+  .doc-header {
+    padding: 4rem 0 2.5rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 2.5rem;
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .doc-title {
+    font-family: var(--font-serif);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    margin-bottom: 1.25rem;
+  }
+
+  .byline {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* ── TL;DR ───────────────────────────────────────────────────────── */
+  .tldr {
+    background: var(--paper-card);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2.5rem;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .tldr-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+  }
+
+  .tldr ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .tldr li {
+    padding: 0.25rem 0;
+    padding-left: 1.1rem;
+    position: relative;
+    color: var(--ink-soft);
+  }
+
+  .tldr li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-family: var(--font-sans);
+  }
+
+  /* ── Section headings ────────────────────────────────────────────── */
+  .section {
+    margin-bottom: 3rem;
+    scroll-margin-top: 1.5rem;
+  }
+
+  .section-heading-wrap {
+    position: relative;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink);
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--rule);
+  }
+
+  h3 {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 1.5rem 0 0.5rem;
+  }
+
+  p { margin-bottom: 1rem; }
+
+  p:last-child { margin-bottom: 0; }
+
+  /* ── Copy-as-prompt button (hover-revealed) ──────────────────────── */
+  .copy-section-btn {
+    position: absolute;
+    right: 0;
+    bottom: 0.35rem;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    padding: 3px 8px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+
+  .section-heading-wrap:hover .copy-section-btn {
+    opacity: 1;
+  }
+
+  .copy-section-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .copy-section-btn.copied {
+    color: var(--ok);
+    border-color: var(--ok);
+    opacity: 1;
+  }
+
+  /* Visible fallback textarea */
+  .prompt-fallback {
+    display: none;
+    width: 100%;
+    margin-top: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 0.5rem;
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    resize: vertical;
+    min-height: 60px;
+  }
+
+  .prompt-fallback.visible { display: block; }
+
+  /* ── Callouts ────────────────────────────────────────────────────── */
+  .callout {
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .callout-note {
+    background: color-mix(in srgb, var(--note) 8%, var(--paper));
+    border-top: 3px solid var(--note);
+  }
+
+  .callout-warn {
+    background: color-mix(in srgb, var(--warn) 8%, var(--paper));
+    border-top: 3px solid var(--warn);
+  }
+
+  .callout-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+
+  .callout-note .callout-label { color: var(--note); }
+  .callout-warn .callout-label { color: var(--warn); }
+
+  /* ── Tables ──────────────────────────────────────────────────────── */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    border: 1px solid var(--rule);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14px;
+    font-family: var(--font-sans);
+  }
+
+  thead {
+    background: var(--paper-tint);
+  }
+
+  th {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--rule);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+  }
+
+  td:first-child {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--paper-tint); }
+
+  .cell-good { color: var(--ok); font-weight: 600; }
+  .cell-warn { color: var(--warn); font-weight: 600; }
+  .cell-accent { color: var(--accent); font-weight: 600; }
+
+  /* ── Code ────────────────────────────────────────────────────────── */
+  pre {
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    margin: 1.25rem 0;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--paper-tint);
+    padding: 0.1em 0.3em;
+    border-radius: 2px;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+
+  .code-kw   { color: var(--accent); }
+  .code-str  { color: var(--ok); }
+  .code-num  { color: var(--accent-2); }
+  .code-cmt  { color: var(--muted); font-style: italic; }
+  .code-key  { color: var(--note); }
+
+  /* ── SVG chart ───────────────────────────────────────────────────── */
+  .chart-wrap {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+
+  .chart-title {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── Footnotes ───────────────────────────────────────────────────── */
+  .fn-ref {
+    font-size: 0.75em;
+    vertical-align: super;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .footnotes {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .footnotes-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .fn-item {
+    font-size: 14px;
+    line-height: 1.55;
+    margin-bottom: 0.5rem;
+  }
+
+  .fn-item summary {
+    cursor: pointer;
+    color: var(--ink-soft);
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    list-style: none;
+    padding: 0.3rem 0;
+  }
+
+  .fn-item summary::-webkit-details-marker { display: none; }
+
+  .fn-item summary .fn-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 1.5rem;
+    font-weight: 700;
+  }
+
+  .fn-item summary .fn-peek {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  .fn-item[open] summary .fn-peek { display: none; }
+
+  .fn-body {
+    padding: 0.5rem 0 0.5rem 2rem;
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+
+  .fn-item summary:hover { color: var(--accent); }
+
+  /* ── Section divider ─────────────────────────────────────────────── */
+  .section-rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 2.5rem 0;
+  }
+
+  /* ── Footer ──────────────────────────────────────────────────────── */
+  .doc-footer {
+    margin-top: 3rem;
+    padding: 1.5rem 0 3rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  /* ── Mobile TOC (inline) ─────────────────────────────────────────── */
+  .toc-inline {
+    background: var(--paper-card);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--rule);
+    padding: 1rem 1.25rem;
+    margin-bottom: 2.5rem;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .toc-inline-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .toc-inline ol {
+    padding-left: 1.25rem;
+    color: var(--ink-soft);
+  }
+
+  .toc-inline a {
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .toc-inline a:hover { color: var(--accent); }
+
+  @media (min-width: 1200px) {
+    .toc-inline { display: none; }
+  }
+
+  /* ── Cost calculator ─────────────────────────────────────────────── */
+  .calc {
+    margin: 1.75rem 0;
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent);
+    background: var(--paper-card);
+  }
+
+  .calc-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .calc-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .calc-hint {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 1.75rem;
+    padding: 1.25rem;
+  }
+
+  @media (max-width: 600px) {
+    .calc-grid { grid-template-columns: 1fr; }
+  }
+
+  .calc-field { font-family: var(--font-sans); }
+
+  .calc-field label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 0.4rem;
+  }
+
+  .calc-field .field-val {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .calc-field input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    height: 22px;
+    cursor: pointer;
+  }
+
+  .calc-field input[type="number"] {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 6px 8px;
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    border-radius: 2px;
+  }
+
+  .calc-field input[type="number"]:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+
+  /* Checkbox rows for the flatten-test scorer */
+  .calc-check {
+    font-family: var(--font-sans);
+    grid-column: 1 / -1;
+  }
+
+  .calc-check-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem 1.75rem;
+  }
+
+  @media (max-width: 600px) {
+    .calc-check-grid { grid-template-columns: 1fr; }
+  }
+
+  .calc-check label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 0.25rem 0;
+    line-height: 1.4;
+    margin-bottom: 0;
+  }
+
+  .calc-check input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    margin-top: 1px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .calc-check label .ck-weight {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    font-weight: 700;
+    margin-left: auto;
+    padding-left: 0.5rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .calc-fieldset { border: none; padding: 0; margin: 0; grid-column: 1 / -1; }
+
+  .calc-fieldset legend {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    padding: 0;
+    margin-bottom: 0.6rem;
+  }
+
+  .calc-select {
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    padding: 6px 8px;
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    border-radius: 2px;
+  }
+
+  .calc-select:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+
+  /* Score gauge */
+  .score-gauge {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .score-num {
+    font-family: var(--font-mono);
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .score-den {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .score-bar-track {
+    height: 8px;
+    background: var(--paper-card);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  .score-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.25s ease, background 0.25s ease;
+  }
+
+  .shape-pill {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--ink);
+    background: var(--accent-2);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  .calc-out {
+    border-top: 1px solid var(--rule);
+    background: var(--paper-tint);
+    padding: 1.1rem 1.25rem;
+  }
+
+  .calc-out-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 600px) {
+    .calc-out-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .calc-metric .metric-label {
+    font-family: var(--font-sans);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .calc-metric .metric-val {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .calc-verdict {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink);
+    padding: 0.8rem 1rem;
+    background: var(--paper-card);
+    border: 1px solid var(--rule);
+  }
+
+  .calc-verdict strong { color: var(--accent); }
+  .calc-verdict.win-instrument { border-top: 3px solid var(--ok); }
+  .calc-verdict.win-static { border-top: 3px solid var(--warn); }
+  .calc-verdict .verdict-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-right: 0.5rem;
+  }
+  .win-instrument .verdict-tag { color: var(--ok); }
+  .win-static .verdict-tag { color: var(--warn); }
+
+  /* ── Interactive table controls ──────────────────────────────────── */
+  .table-tools {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0 0.5rem;
+    font-family: var(--font-sans);
+  }
+
+  .table-filter {
+    flex: 1;
+    min-width: min(180px, 100%);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    padding: 7px 10px;
+    background: var(--paper-card);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    border-radius: 2px;
+  }
+
+  .table-filter:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+
+  .table-clear {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 2px;
+    visibility: hidden;
+  }
+
+  .table-clear.show { visibility: visible; }
+  .table-clear:hover { color: var(--accent); border-color: var(--accent); }
+
+  .table-count {
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 22px;
+  }
+
+  th.sortable:hover { color: var(--accent); }
+
+  th.sortable .sort-ind {
+    position: absolute;
+    right: 8px;
+    color: var(--muted);
+    font-size: 9px;
+  }
+
+  th.sortable[aria-sort="ascending"],
+  th.sortable[aria-sort="descending"] { color: var(--accent); }
+
+  th.sortable[aria-sort="ascending"] .sort-ind::after { content: "▲"; color: var(--accent); }
+  th.sortable[aria-sort="descending"] .sort-ind::after { content: "▼"; color: var(--accent); }
+  th.sortable[aria-sort="none"] .sort-ind::after { content: "↕"; }
+
+  tr.filtered-out { display: none; }
+
+  td.scale-cell {
+    position: relative;
+    font-weight: 600;
+  }
+
+  td.scale-cell .scale-bg {
+    position: absolute;
+    inset: 0;
+    opacity: 0.16;
+    pointer-events: none;
+  }
+
+  td.scale-cell .scale-txt { position: relative; }
+
+  /* ── Footnote highlight ──────────────────────────────────────────── */
+  .fn-item.fn-flash {
+    background: color-mix(in srgb, var(--accent-2) 22%, var(--paper));
+    transition: background 0.2s;
+  }
+
+  .fn-ref:hover, .fn-ref:focus { text-decoration: underline; outline: none; }
+
+  /* ── Responsive ──────────────────────────────────────────────────── */
+  @media (max-width: 700px) {
+    .doc-header { padding: 2rem 0 1.5rem; }
+    .doc-title { font-size: 1.6rem; }
+    body { font-size: 16px; }
+    .copy-section-btn { display: none; }
+  }
+
+  /* ── iOS / Mobile hardening ──────────────────────────────────────── */
+
+  /* 2. Prevent iOS focus-zoom */
+  @media (max-width: 768px) {
+    input, textarea, select, [contenteditable] {
+      font-size: 16px !important;
+    }
+  }
+
+  /* 3. Touch can't hover: copy-as-prompt buttons revealed on focus */
+  .copy-section-btn:focus-visible {
+    opacity: 1;
+  }
+
+  /* 4. Ensure pre blocks scroll inside their container */
+  pre {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 5. Tap targets on phones */
+  @media (max-width: 768px) {
+    .toc-inline a {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 4px 0;
+    }
+    .fn-ref {
+      display: inline-block;
+      min-width: 28px;
+      min-height: 28px;
+      padding: 0 4px;
+      text-align: center;
+      vertical-align: super;
+    }
+    .fn-item summary {
+      min-height: 44px;
+      align-items: center;
+    }
+    .copy-section-btn {
+      min-height: 40px;
+      padding: 6px 10px;
+    }
+    th.sortable {
+      min-height: 44px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    .table-filter,
+    .table-clear,
+    .calc-field input[type="number"],
+    .calc-select {
+      min-height: 44px;
+    }
+    .calc-check label {
+      min-height: 44px;
+      align-items: center;
+    }
+  }
+
+  /* 6. Flatten-test scorer: single-column stack ≤480px */
+  @media (max-width: 480px) {
+    .calc-grid {
+      grid-template-columns: 1fr;
+    }
+    .calc-check-grid {
+      grid-template-columns: 1fr;
+    }
+    .calc-out-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ── Sticky sidebar TOC (desktop) ──────────────────────────────── -->
+  <aside class="toc-sidebar">
+    <nav id="toc-nav">
+      <div class="toc-label">In this briefing</div>
+      <a href="#the-claim">The artifact is the file, not an export</a>
+      <a href="#flatten-test">The flatten test is the whole bar</a>
+      <a href="#round-trip">Copy-as-prompt closes the edit loop</a>
+      <a href="#shapes">Nine shapes, two registers</a>
+      <a href="#dimensions">Eight dimensions and progressive disclosure</a>
+      <a href="#strange-loop">The strange loop, and what to take from it</a>
+    </nav>
+  </aside>
+
+  <!-- ── Main content ──────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <header class="doc-header">
+      <div class="kicker">render-as-html · Briefing · May 2026</div>
+      <h1 class="doc-title">The Unreasonable Effectiveness of HTML:<br>Why the Artifact Should Be the File You Keep</h1>
+      <div class="byline">
+        <span>A briefing on @trq212's thesis and the render-as-html design system</span>
+        <span>~2,100 words · 11 min read</span>
+      </div>
+    </header>
+
+    <!-- TL;DR -->
+    <div class="tldr">
+      <div class="tldr-label">TL;DR</div>
+      <ul>
+        <li>HTML is not an export layer over a "real" document. It can <em>be</em> the document — the thing you read, edit, sort, filter, and hand to a colleague.</li>
+        <li>The test for whether something deserves to be an HTML artifact is brutal and singular: flatten it to plain text and ask what dies. If only styling dies, it was prose.</li>
+        <li>Copy-as-prompt is the load-bearing feature. It turns a viewer into an editing surface: mutate state in the browser, copy a precise instruction, paste it back, regenerate the file.</li>
+        <li>Nine content-matched shapes and two registers (reading vs. instrument) keep the artifact from collapsing into the same SaaS dashboard every time.</li>
+        <li>The design system is built in its own system — a single self-contained HTML file that is its own gallery. The strange loop is the proof.</li>
+      </ul>
+    </div>
+
+    <!-- Inline TOC (mobile) -->
+    <div class="toc-inline">
+      <div class="toc-inline-label">In this briefing</div>
+      <ol>
+        <li><a href="#the-claim">The artifact is the file, not an export</a></li>
+        <li><a href="#flatten-test">The flatten test is the whole bar</a></li>
+        <li><a href="#round-trip">Copy-as-prompt closes the edit loop</a></li>
+        <li><a href="#shapes">Nine shapes, two registers</a></li>
+        <li><a href="#dimensions">Eight dimensions and progressive disclosure</a></li>
+        <li><a href="#strange-loop">The strange loop, and what to take from it</a></li>
+      </ol>
+    </div>
+
+    <!-- ── Section 1 ──────────────────────────────────────────────── -->
+    <section class="section" id="the-claim">
+      <div class="section-heading-wrap">
+        <h2>The Artifact Is the File, Not an Export of Some "Real" Document</h2>
+        <button class="copy-section-btn" onclick="copySection('the-claim', this)" title="Copy section as Claude Code prompt">copy as prompt</button>
+      </div>
+      <textarea class="prompt-fallback" id="fallback-the-claim" readonly></textarea>
+
+      <p>The default mental model for generated documents is the wrong one. We assume there is a canonical thing — a Markdown file, a database row, a notes doc — and that anything visual is a <em>rendering</em> of it: a preview, an export, a PDF-shaped courtesy for humans who can't read the source. Under that model the pretty version is disposable. You regenerate it; you don't edit it.</p>
+
+      <p>@trq212's argument in "The Unreasonable Effectiveness of HTML" inverts that. HTML is expressive enough to carry layout, type, color, state, interaction, and round-trip edits directly. So the artifact does not need a canonical document behind it. The HTML <em>is</em> the canonical document — the thing you read carefully, mutate, share with a non-CLI colleague, and revisit in six months. It is a file of record, not a screenshot of one.<a class="fn-ref" data-fn="1" title="See footnote 1">¹</a></p>
+
+      <p>render-as-html is an implementation of that thesis, not a rebrand of it. The borrowed claim is precisely the one above: the browser artifact becomes the working surface and the source of truth. What this skill adds on top is an opinionated design system and a set of page-shape contracts so the artifact stays useful past the first read instead of decaying into wall-of-text or generic-dashboard.</p>
+
+      <div class="callout callout-note">
+        <div class="callout-label">Note</div>
+        "Source of truth" is the operative phrase. If a Markdown file is still canonical and the HTML is just its prettier twin, the HTML will rot — nobody maintains a derived view. The discipline is to commit: the <code>.html</code> file is the artifact you edit, and any copy/export action targets <em>it</em>, never a parallel notes file.
+      </div>
+
+      <p>This has a sharp consequence for how the file is built. A converter that runs Markdown through a styler and stops has produced a preview, not an artifact. The interesting work is everywhere a browser is genuinely better than a text buffer: live filters, sortable headers, SVG generated from data, cross-highlighting, sliders, and the round-trip edit button. That is the rest of this briefing.</p>
+    </section>
+
+    <hr class="section-rule">
+
+    <!-- ── Section 2 ──────────────────────────────────────────────── -->
+    <section class="section" id="flatten-test">
+      <div class="section-heading-wrap">
+        <h2>The Flatten Test Is the Whole Bar — Everything Else Is Decoration</h2>
+        <button class="copy-section-btn" onclick="copySection('flatten-test', this)" title="Copy section as Claude Code prompt">copy as prompt</button>
+      </div>
+      <textarea class="prompt-fallback" id="fallback-flatten-test" readonly></textarea>
+
+      <p>There is exactly one question that decides whether something earns the cost of being an HTML artifact: <strong>flatten it to static text — what disappears?</strong> If the answer is "the diagram, and the page is now ugly," you built styled prose. The styling is not the point; a paragraph that survives copy-paste into a plain editor was never an artifact in the first place.</p>
+
+      <p>The bar is concrete: a real artifact has at least three HTML-native features that <em>die</em> on flatten. Live filter that hides rows as you type. Click-to-cross-highlight. Inline SVG generated from data. Sortable headers. Toggles. And the load-bearing one — copy-as-prompt that round-trips state back to the file. Lose those and you lose function, not polish.<a class="fn-ref" data-fn="2" title="See footnote 2">²</a></p>
+
+      <div class="callout callout-warn">
+        <div class="callout-label">Content discipline</div>
+        Surface the subject, not the artifact's own production. "23 restaurants on file, 2021–2026" orients the reader. "Found 6 claims · 12 sections · 2,200 words" counts the rendering process and is slop. Headlines argue a position; they are not category labels. A body that restates its headline in more words is visibly lazy.
+      </div>
+
+      <p>The same discipline forces the shape decision <em>before</em> design. Prose-heavy briefing read paragraph-to-paragraph? <code>document</code>. Tabular ops data that wants filtering? <code>dashboard</code>. A sequential procedure being executed, not read? <code>runbook</code>. Picking the bones first is what stops every artifact from converging on the same identical-tile SaaS layout. The nine shapes below are sortable by how interactive they inherently are; filter to the register you're working in.</p>
+
+      <div class="table-tools">
+        <input type="text" id="tbl-filter" class="table-filter"
+               placeholder="Filter shapes (e.g. reading, instrument, drag, graph)…"
+               aria-label="Filter the page-shapes table by text">
+        <button type="button" id="tbl-clear" class="table-clear" aria-label="Clear table filter">× clear</button>
+        <span class="table-count" id="tbl-count" aria-live="polite">9 of 9 shapes</span>
+      </div>
+
+      <div class="table-wrap">
+        <table id="latency-table">
+          <thead>
+            <tr>
+              <th scope="col" class="sortable" aria-sort="none" data-type="text" data-col="0">Shape <span class="sort-ind" aria-hidden="true"></span></th>
+              <th scope="col" class="sortable" aria-sort="none" data-type="text" data-col="1">Register <span class="sort-ind" aria-hidden="true"></span></th>
+              <th scope="col" class="sortable" aria-sort="none" data-type="text" data-col="2">Use when the artifact is… <span class="sort-ind" aria-hidden="true"></span></th>
+              <th scope="col" class="sortable" aria-sort="none" data-type="num" data-col="3" data-scale="highgood">Interaction Load <span class="sort-ind" aria-hidden="true"></span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>document</td>
+              <td>Reading</td>
+              <td>Plans, specs, briefings, essays read paragraph-to-paragraph</td>
+              <td data-v="3">3 / TOC + per-section copy + footnotes</td>
+            </tr>
+            <tr>
+              <td>editorial</td>
+              <td>Reading</td>
+              <td>Sustained argument front-to-back with an entity rail</td>
+              <td data-v="4">4 / search + entity cross-highlight + copy</td>
+            </tr>
+            <tr>
+              <td>timeline</td>
+              <td>Reading</td>
+              <td>Diaries, logs, retros, project histories</td>
+              <td data-v="4">4 / search + date-range + cluster collapse</td>
+            </tr>
+            <tr>
+              <td>dashboard</td>
+              <td>Instrument</td>
+              <td>Network scans, ops data, device explorers</td>
+              <td data-v="6">6 / filter + chips + charts + sort + toggles</td>
+            </tr>
+            <tr>
+              <td>comparison</td>
+              <td>Instrument</td>
+              <td>"X vs Y vs Z" decision matrices</td>
+              <td data-v="6">6 / weight sliders recompute winners live</td>
+            </tr>
+            <tr>
+              <td>runbook</td>
+              <td>Instrument</td>
+              <td>DR, deploy guides — a procedure being executed</td>
+              <td data-v="5">5 / progress + checkboxes + code copy + stuck-prompt</td>
+            </tr>
+            <tr>
+              <td>developer</td>
+              <td>Instrument</td>
+              <td>PR writeups, code review — annotated diff + findings</td>
+              <td data-v="5">5 / syntax + severity + file nav + copy-finding</td>
+            </tr>
+            <tr>
+              <td>triage-board</td>
+              <td>Instrument</td>
+              <td>GTD reorg, inbox triage into Now/Next/Later/Cut</td>
+              <td data-v="7">7 / drag between columns + counts + export</td>
+            </tr>
+            <tr>
+              <td>network-map</td>
+              <td>Instrument</td>
+              <td>People graphs, backlinks, dependencies</td>
+              <td data-v="8">8 / SVG canvas + click-focus + edge highlight</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:-0.75rem;font-family:var(--font-mono);">Interaction Load is an editorial 1–8 estimate of how many HTML-native moves the shape's contract requires — higher means the shape <em>cannot</em> survive flattening. Color-scaled high → low within the column.</p>
+
+      <!-- SVG: register split -->
+      <div class="chart-wrap">
+        <div class="chart-title">Nine shapes split across two registers</div>
+        <svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;font-family:var(--font-sans);font-size:11px;" role="img" aria-label="Bar chart: the nine page shapes split across two registers. Reading register holds three shapes — document, editorial, timeline. Instrument register holds six — dashboard, comparison, runbook, developer, triage-board, network-map. Bar height encodes the shape's interaction load, lowest for document, highest for network-map.">
+          <defs>
+            <style>
+              .bar-read  { fill: #8a3a1a; }
+              .bar-instr { fill: #c2901a; }
+              .axis-line { stroke: #d9d1c2; stroke-width: 1; }
+              .bar-label { fill: #4a443c; }
+              .bar-val   { fill: #1a1815; font-weight: 600; }
+            </style>
+          </defs>
+          <line x1="40" y1="10" x2="40" y2="145" class="axis-line"/>
+          <line x1="40" y1="145" x2="550" y2="145" class="axis-line"/>
+          <text x="36" y="150" text-anchor="end" class="bar-label" font-size="10">0</text>
+          <text x="36" y="50" text-anchor="end" class="bar-label" font-size="10">8</text>
+          <!-- Reading shapes -->
+          <rect x="52" y="100" width="42" height="45" class="bar-read"/>
+          <text x="73" y="160" text-anchor="middle" class="bar-label">doc</text>
+          <text x="73" y="94" text-anchor="middle" class="bar-val" font-size="10">3</text>
+          <rect x="104" y="85" width="42" height="60" class="bar-read"/>
+          <text x="125" y="160" text-anchor="middle" class="bar-label">editorial</text>
+          <text x="125" y="79" text-anchor="middle" class="bar-val" font-size="10">4</text>
+          <rect x="156" y="85" width="42" height="60" class="bar-read"/>
+          <text x="177" y="160" text-anchor="middle" class="bar-label">timeline</text>
+          <text x="177" y="79" text-anchor="middle" class="bar-val" font-size="10">4</text>
+          <!-- Instrument shapes -->
+          <rect x="216" y="55" width="42" height="90" class="bar-instr"/>
+          <text x="237" y="160" text-anchor="middle" class="bar-label">dash</text>
+          <text x="237" y="49" text-anchor="middle" class="bar-val" font-size="10">6</text>
+          <rect x="268" y="55" width="42" height="90" class="bar-instr"/>
+          <text x="289" y="160" text-anchor="middle" class="bar-label">compare</text>
+          <text x="289" y="49" text-anchor="middle" class="bar-val" font-size="10">6</text>
+          <rect x="320" y="70" width="42" height="75" class="bar-instr"/>
+          <text x="341" y="160" text-anchor="middle" class="bar-label">runbook</text>
+          <text x="341" y="64" text-anchor="middle" class="bar-val" font-size="10">5</text>
+          <rect x="372" y="70" width="42" height="75" class="bar-instr"/>
+          <text x="393" y="160" text-anchor="middle" class="bar-label">dev</text>
+          <text x="393" y="64" text-anchor="middle" class="bar-val" font-size="10">5</text>
+          <rect x="424" y="40" width="42" height="105" class="bar-instr"/>
+          <text x="445" y="160" text-anchor="middle" class="bar-label">triage</text>
+          <text x="445" y="34" text-anchor="middle" class="bar-val" font-size="10">7</text>
+          <rect x="476" y="25" width="42" height="120" class="bar-instr"/>
+          <text x="497" y="160" text-anchor="middle" class="bar-label">net-map</text>
+          <text x="497" y="19" text-anchor="middle" class="bar-val" font-size="10">8</text>
+          <!-- Legend -->
+          <rect x="52" y="14" width="10" height="10" class="bar-read"/>
+          <text x="66" y="23" class="bar-label">Reading register</text>
+          <rect x="180" y="14" width="10" height="10" class="bar-instr"/>
+          <text x="194" y="23" class="bar-label">Instrument register</text>
+        </svg>
+      </div>
+    </section>
+
+    <hr class="section-rule">
+
+    <!-- ── Section 3 ──────────────────────────────────────────────── -->
+    <section class="section" id="round-trip">
+      <div class="section-heading-wrap">
+        <h2>Copy-as-Prompt Is What Turns a Viewer Into an Editing Surface</h2>
+        <button class="copy-section-btn" onclick="copySection('round-trip', this)" title="Copy section as Claude Code prompt">copy as prompt</button>
+      </div>
+      <textarea class="prompt-fallback" id="fallback-round-trip" readonly></textarea>
+
+      <p>Filters and charts make an artifact pleasant. Copy-as-prompt makes it a <em>workflow</em>. This is the single feature @trq212 flags as load-bearing, and the reason render-as-html treats it as non-negotiable rather than nice-to-have.</p>
+
+      <p>The loop: you tune state in the browser — toggle items resolved, drag cards between buckets, move a weight slider — then press a button that emits a precise, paste-able instruction naming the <code>.html</code> file. You paste it into Claude Code, the file is rewritten, and you keep going. The artifact stopped being a thing you look at and became a thing you edit through.<a class="fn-ref" data-fn="3" title="See footnote 3">³</a></p>
+
+      <p>What separates a real round-trip from a "copy to clipboard" gimmick is the contract on the emitted text. It must name the artifact file so the agent knows what to edit. It must be specific deltas — "set <code>--accent</code> to <code>hsl(18 70% 32%)</code>", not "the user changed some things." It must be minimal: the changes, not the whole document restated. And it must read naturally as a user message when pasted.</p>
+
+      <pre><code><span class="code-cmt">// the load-bearing 20 lines</span>
+<span class="code-kw">function</span> <span class="code-key">copyPrompt</span>() {
+  <span class="code-kw">const</span> changes = collectChanges();   <span class="code-cmt">// read mutated DOM state</span>
+  <span class="code-kw">const</span> prompt =
+    <span class="code-str">`In </span>${ARTIFACT_PATH}<span class="code-str">, apply these changes:\n`</span> +
+    formatAsInstructions(changes);    <span class="code-cmt">// deltas only, not the whole file</span>
+  <span class="code-kw">const</span> out = document.querySelector(<span class="code-str">'#prompt-output'</span>);
+  out.value = prompt;
+  navigator.clipboard.writeText(prompt).catch(() =&gt; {
+    out.focus(); out.select();        <span class="code-cmt">// visible fallback if clipboard blocked</span>
+  });
+}</code></pre>
+
+      <div class="callout callout-warn">
+        <div class="callout-label">Warning</div>
+        <code>navigator.clipboard.writeText()</code> fails in local files, hardened browsers, and permission-restricted contexts. Every copy path in this very document degrades to a visible, focused, pre-selected <code>&lt;textarea&gt;</code> — try a section's "copy as prompt" with clipboard access denied and watch it appear. A copy button with no visible fallback is broken on exactly the surface artifacts live on: a file opened from disk.
+      </div>
+
+      <p>The cost is roughly twenty lines of vanilla JS per round-trip. The return is an artifact that participates in its own revision instead of being regenerated from scratch every time a number changes. That asymmetry — trivial cost, structural payoff — is why the skill refuses to ship "copy as markdown" buttons that imply some other format is canonical. The prompt targets the HTML file, because the HTML file is the thing.</p>
+    </section>
+
+    <hr class="section-rule">
+
+    <!-- ── Section 4 ──────────────────────────────────────────────── -->
+    <section class="section" id="shapes">
+      <div class="section-heading-wrap">
+        <h2>Is Your Document an Instrument? Score It Before You Style It</h2>
+        <button class="copy-section-btn" onclick="copySection('shapes', this)" title="Copy section as Claude Code prompt">copy as prompt</button>
+      </div>
+      <textarea class="prompt-fallback" id="fallback-shapes" readonly></textarea>
+
+      <p>The flatten test is a yes/no, but the decision underneath it is graded. Most content is not all-prose or all-instrument; it leans. The honest way to make the call is to enumerate what the artifact actually needs to <em>do</em> and let the weight of those answers pick the shape — not to default to a dashboard because dashboards look busy and impressive.</p>
+
+      <p>The scorer below does exactly that. Check what the artifact genuinely needs, set how often it changes and who reads it, and it computes a 0–100 instrument score, a verdict, and the render-as-html shape that best fits the answers. Every weight is visible; nothing is hidden. This widget <em>is</em> the section's argument — flatten the page and the math, the verdict, and the recommendation all die, which is the whole point being made.</p>
+
+      <div class="calc" id="cost-calc" role="group" aria-label="Flatten-test instrument scorer">
+        <div class="calc-head">
+          <span class="calc-title">Flatten-test scorer — should this be an HTML artifact?</span>
+          <span class="calc-hint">Check what it needs · weights shown · live 0–100</span>
+        </div>
+        <div class="calc-grid">
+          <fieldset class="calc-fieldset calc-check">
+            <legend>Does the artifact genuinely need…</legend>
+            <div class="calc-check-grid">
+              <label><input type="checkbox" id="f-filter" checked aria-label="Needs a live filter or search input">a live filter / search<span class="ck-weight">+16</span></label>
+              <label><input type="checkbox" id="f-recompute" aria-label="Needs a recompute or calculator">recompute / calculator<span class="ck-weight">+16</span></label>
+              <label><input type="checkbox" id="f-sort" checked aria-label="Needs sortable columns">sortable columns<span class="ck-weight">+12</span></label>
+              <label><input type="checkbox" id="f-roundtrip" aria-label="Needs a copy-as-prompt round trip">copy-as-prompt round-trip<span class="ck-weight">+20</span></label>
+              <label><input type="checkbox" id="f-spatial" aria-label="Needs a spatial or SVG view with positional meaning">spatial / SVG-from-data<span class="ck-weight">+14</span></label>
+              <label><input type="checkbox" id="f-toggles" aria-label="Needs toggles or show-hide controls">toggles / show-hide<span class="ck-weight">+8</span></label>
+              <label><input type="checkbox" id="f-crosshl" aria-label="Needs click-to-cross-highlight related content">click-to-cross-highlight<span class="ck-weight">+10</span></label>
+              <label><input type="checkbox" id="f-drag" aria-label="Needs drag and drop reordering">drag &amp; drop reorder<span class="ck-weight">+14</span></label>
+            </div>
+          </fieldset>
+          <div class="calc-field">
+            <label for="f-revs">Revisions per year
+              <span class="field-val" id="f-revs-v">12</span></label>
+            <input type="range" id="f-revs" min="0" max="52" step="1" value="12"
+                   aria-label="Expected revisions per year">
+          </div>
+          <div class="calc-field">
+            <label for="f-audience">Primary audience</label>
+            <select id="f-audience" class="calc-select" aria-label="Primary audience for the artifact">
+              <option value="self">Just me (re-reading)</option>
+              <option value="team" selected>My team (handed off)</option>
+              <option value="public">Public (shared widely)</option>
+            </select>
+          </div>
+        </div>
+        <div class="calc-out">
+          <div class="score-gauge">
+            <span class="score-num" id="o-score">—</span>
+            <span class="score-den">/ 100 instrument score</span>
+          </div>
+          <div class="score-bar-track" aria-hidden="true">
+            <div class="score-bar-fill" id="o-score-bar"></div>
+          </div>
+          <div class="calc-out-grid">
+            <div class="calc-metric">
+              <div class="metric-label">HTML-native features</div>
+              <div class="metric-val" id="o-feats">—</div>
+            </div>
+            <div class="calc-metric">
+              <div class="metric-label">Survives flatten?</div>
+              <div class="metric-val" id="o-survives">—</div>
+            </div>
+            <div class="calc-metric">
+              <div class="metric-label">Recommended shape</div>
+              <div class="metric-val"><span class="shape-pill" id="o-shape">—</span></div>
+            </div>
+            <div class="calc-metric">
+              <div class="metric-label">Register</div>
+              <div class="metric-val" id="o-register">—</div>
+            </div>
+          </div>
+          <div class="calc-verdict" id="o-verdict" aria-live="polite">
+            <span class="verdict-tag">Verdict</span><span id="o-verdict-txt">—</span>
+          </div>
+        </div>
+      </div>
+
+      <p style="font-size:12px;color:var(--muted);font-family:var(--font-mono);margin-top:-0.5rem;">Score = sum of checked feature weights (copy-as-prompt is the heaviest at +20, mirroring the skill's "load-bearing" call), capped at 100. Frequent revisions and a wider audience nudge the verdict toward an artifact even at a mid score, because a static doc that gets re-edited weekly is the worst of both worlds.</p>
+
+      <p>The recommendation is internally consistent with the skill's contracts: pick spatial or graph features and it points at <code>network-map</code>; pick drag and bucketing and it points at <code>triage-board</code>; pick almost nothing and it tells you, honestly, that a static document is fine. The tool is willing to talk you <em>out</em> of an artifact. A scorer that always says "yes, build the fancy thing" would be marketing, not a bar.</p>
+    </section>
+
+    <hr class="section-rule">
+
+    <!-- ── Section 5 ──────────────────────────────────────────────── -->
+    <section class="section" id="dimensions">
+      <div class="section-heading-wrap">
+        <h2>Eight Dimensions HTML Carries, and Why Disclosure Beats Density</h2>
+        <button class="copy-section-btn" onclick="copySection('dimensions', this)" title="Copy section as Claude Code prompt">copy as prompt</button>
+      </div>
+      <textarea class="prompt-fallback" id="fallback-dimensions" readonly></textarea>
+
+      <p>The flatten test tells you <em>whether</em> to build an artifact. The eight information dimensions tell you whether you're actually using the medium once you have. @trq212's framing names eight things HTML can carry that plain text cannot, and the skill's self-check is blunt: name the four-plus you used; if you can only name two, you under-leveraged the medium.</p>
+
+      <p><strong>Tables</strong> — real rows and columns, sortable. <strong>Design</strong> — color, type, and spacing as information, not decoration. <strong>Illustrations</strong> — inline SVG diagrams generated from the data. <strong>Code</strong> — highlighted with local CSS classes, no CDN. <strong>Interaction</strong> — sliders, toggles, JS-driven UI. <strong>Workflows</strong> — boxes, arrows, sequence, state. <strong>Spatial</strong> — coordinates with actual positional meaning. <strong>Images</strong> — embedded figures via data URI or local relative paths.<a class="fn-ref" data-fn="4" title="See footnote 4">⁴</a></p>
+
+      <p>This very page leans on at least five: the sortable shapes table, color and type doing semantic work, two SVG charts built from values, syntax-highlighted code with hand-written classes, and the live scorer. Count them honestly before saving — the dimension audit is a guardrail against shipping prettified prose that technically renders but carries nothing the medium uniquely affords.</p>
+
+      <div class="callout callout-note">
+        <div class="callout-label">Note</div>
+        Color is never the only signal. Every status carried by a hue is also carried by text, icon, or shape, so the artifact survives colorblind viewing — and the ochre affirmative token lives in <em>backgrounds</em> with ink text, never as glyph color on cream, where it would fail contrast. The palette is one truth, AA-verified, not a vibe.
+      </div>
+
+      <p>Density is the other half of the discipline, and the counterintuitive rule is that <strong>progressive disclosure beats showing everything</strong>. The footnotes on this page are open by default — the full body is right there, no click required — but each keeps its collapse affordance so a reader skimming the argument can fold the apparatus away. Inline <sup>¹²³</sup> references are keyboard-operable links that scroll to and flash their footnote. None of that survives flattening, and that is the point: the disclosure structure is information architecture, not chrome.</p>
+
+      <p>The reading register earns its restraint here. Seventeen-pixel serif body, a measure capped near 70 characters even when the chrome is wide, real horizontal rules between sections instead of boxed borders, and no left-handle accent bars — the visual fingerprint of generated layouts the skill explicitly bans. Emphasis comes from type, whitespace, rule, and position. An instrument-register artifact would make the opposite trades; the shape decides, not taste applied ad hoc.</p>
+    </section>
+
+    <hr class="section-rule">
+
+    <!-- ── Section 6 ──────────────────────────────────────────────── -->
+    <section class="section" id="strange-loop">
+      <div class="section-heading-wrap">
+        <h2>The Strange Loop: The Design System Is Built in Its Own System</h2>
+        <button class="copy-section-btn" onclick="copySection('strange-loop', this)" title="Copy section as Claude Code prompt">copy as prompt</button>
+      </div>
+      <textarea class="prompt-fallback" id="fallback-strange-loop" readonly></textarea>
+
+      <p>There is a tell that separates a design system that believes its own thesis from one that merely documents it. render-as-html's canonical reference — the file that defines every token, shape contract, and primitive — is itself a single self-contained HTML artifact. The gallery is rendered in the system it specifies. The proof of the claim is the form the claim arrives in.<a class="fn-ref" data-fn="5" title="See footnote 5">⁵</a></p>
+
+      <p>This is not a cute flourish. It is the strongest available argument for the whole approach. If HTML-as-source-of-truth worked only for other people's reports and the system's own documentation needed a "real" canonical format behind it, the thesis would be self-refuting. Instead the design system eats its own cooking: one file, inspectable, editable, served however you like, no build step, no framework, no CDN.</p>
+
+      <p>The same constraints bind this very briefing, and you can verify them by flattening it. Single file. Inline CSS and vanilla JS. Zero external assets, fonts, or network requests. What dies on flatten is not cosmetic: the live shapes filter and sort, the flatten-test scorer's entire computation and recommendation, the footnote scroll-and-flash, the copy-as-prompt round-trip on every section. Strip the browser and you strip the function. That is the difference between an artifact and a screenshot of one.</p>
+
+      <div class="callout callout-note">
+        <div class="callout-label">What to take from this</div>
+        Pick the shape from content signals before you design. Clear the flatten bar with three-plus features that genuinely die without a browser. Make copy-as-prompt the load-bearing one. Use four-plus of the eight dimensions. Keep it one self-contained file. Then the artifact is the file you keep — not an export of a document that lives somewhere else.
+      </div>
+
+      <p>Everything here is downstream of one borrowed idea, credited plainly: HTML is unreasonably effective, so let the artifact <em>be</em> the thing. The design system and shape contracts are this repo's contribution on top. The thesis is @trq212's, and the content-matched-shapes framing is from <code>clockless-org/html-anything</code> — both cited in the footnotes because attribution is part of the discipline too.</p>
+    </section>
+
+    <!-- ── Footnotes ──────────────────────────────────────────────── -->
+    <div class="footnotes">
+      <div class="footnotes-label">Footnotes</div>
+
+      <details class="fn-item" id="fn-1" open>
+        <summary>
+          <span class="fn-num">1</span>
+          <span class="fn-peek">On the source thesis and what is borrowed vs. added...</span>
+        </summary>
+        <div class="fn-body">The thesis is @trq212's, "The Unreasonable Effectiveness of HTML" (x.com/trq212/status/2052809885763747935). render-as-html borrows exactly one claim — HTML can be the file you keep, not an export, preview, or PDF-like rendering of another canonical document — and adds an opinionated design system and page-shape contracts on top. This briefing is a sample artifact rendered by that system; it is not an attempt to rebrand the underlying idea. Treat the prose as an explanation of the skill's own SKILL.md and README, not as independent research.</div>
+      </details>
+
+      <details class="fn-item" id="fn-2" open>
+        <summary>
+          <span class="fn-num">2</span>
+          <span class="fn-peek">On the exact flatten-test bar and the three-feature floor...</span>
+        </summary>
+        <div class="fn-body">The bar, verbatim from the skill: "Flatten it to static text. What disappears? If only the SVG diagram disappears, it's styled prose, not an HTML artifact. Try again." The floor is three-plus HTML-native features that genuinely die on flatten — from a menu including live filter/search, click-to-cross-highlight, inline SVG from data, spatial layouts, color swatches, toggles, side-by-side diffs, hover tooltips, click-to-copy, sortable headers, and copy-as-prompt. The last is called out in the skill as "the load-bearing one." This page clears it with the shapes table, the scorer, the footnote machinery, and per-section copy-as-prompt.</div>
+      </details>
+
+      <details class="fn-item" id="fn-3" open>
+        <summary>
+          <span class="fn-num">3</span>
+          <span class="fn-peek">On the copy-as-prompt contract and its visible fallback...</span>
+        </summary>
+        <div class="fn-body">The emitted prompt must: name the HTML artifact file so the agent knows what to edit; be specific and actionable (deltas, not "the user changed things"); be minimal (only the changes, not the full HTML restated); read naturally as a pasted user message; and have a visible fallback when clipboard access is blocked. Every per-section button on this page targets the repo-relative path <code>examples/document.html</code> and, on clipboard failure, drops the exact text into a focused, pre-selected <code>&lt;textarea&gt;</code> directly below the heading. Cost is roughly twenty lines of vanilla JS per round-trip.</div>
+      </details>
+
+      <details class="fn-item" id="fn-4" open>
+        <summary>
+          <span class="fn-num">4</span>
+          <span class="fn-peek">On the eight information dimensions and the ≥4 self-check...</span>
+        </summary>
+        <div class="fn-body">The eight dimensions HTML can carry, per the skill: Tables, Design, Illustrations, Code, Interaction, Workflows, Spatial, Images. The self-check before saving is to name the four-plus actually used; naming only two means the medium is under-leveraged. This artifact uses at least five — Tables (sortable shapes table), Design (palette and type as semantic signal), Illustrations (two SVG charts built from values), Code (locally-classed syntax highlighting, no CDN), and Interaction (the live scorer, filters, sort, footnote refs). Dimensions are a leverage check, not a checklist to pad.</div>
+      </details>
+
+      <details class="fn-item" id="fn-5" open>
+        <summary>
+          <span class="fn-num">5</span>
+          <span class="fn-peek">On the strange loop and the content-matched-shapes lineage...</span>
+        </summary>
+        <div class="fn-body">render-as-html's canonical reference (its <code>index.html</code> component gallery) is itself a single self-contained HTML artifact rendered in the system it specifies — the design system eats its own cooking, which is the strongest available argument for the approach. The content-matched-shapes idea is credited to <code>clockless-org/html-anything</code>; the visual treatment and the nine shape contracts are this repo's contribution. Both attributions are carried in the skill's Credits section, and reproduced here because attribution discipline is part of the bar, not an afterthought.</div>
+      </details>
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────────────────── -->
+    <footer class="doc-footer">
+      <span>examples/document.html · render-as-html sample artifact</span>
+      <span id="gen-timestamp"></span>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+  /* ── Artifact path (used in copy-as-prompt) ──────────────────────── */
+  const ARTIFACT_PATH = 'examples/document.html';
+
+  /* ── Footer timestamp ────────────────────────────────────────────── */
+  document.getElementById('gen-timestamp').textContent =
+    'Generated ' + new Date('2026-05-18').toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+  /* ── Scroll-spy TOC ──────────────────────────────────────────────── */
+  (function() {
+    const tocLinks = document.querySelectorAll('#toc-nav a');
+    const sections = Array.from(document.querySelectorAll('.section[id]'));
+
+    if (!tocLinks.length || !sections.length) return;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            tocLinks.forEach(a => {
+              a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+            });
+          }
+        });
+      },
+      { rootMargin: '-10% 0px -75% 0px', threshold: 0 }
+    );
+
+    sections.forEach(s => obs.observe(s));
+  })();
+
+  /* ── Per-section copy-as-prompt ──────────────────────────────────── */
+  function copySection(sectionId, btn) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+
+    const h2 = section.querySelector('h2');
+    const heading = h2 ? h2.textContent.trim() : sectionId;
+
+    // Collect prose text, excluding button/textarea/footnote elements
+    const clone = section.cloneNode(true);
+    clone.querySelectorAll('.copy-section-btn, .prompt-fallback, pre').forEach(el => el.remove());
+    const prose = clone.innerText.trim().replace(/\s+\n/g, '\n').trim();
+
+    const prompt =
+      `In ${ARTIFACT_PATH}, revise the section "${heading}":\n\n` +
+      `Current content (for context):\n${prose.slice(0, 800)}${prose.length > 800 ? '…' : ''}\n\n` +
+      `Requested change: [describe your edit here]`;
+
+    const fallbackId = 'fallback-' + sectionId;
+    const fallbackEl = document.getElementById(fallbackId);
+
+    navigator.clipboard.writeText(prompt).then(() => {
+      btn.textContent = 'copied ✓';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'copy as prompt';
+        btn.classList.remove('copied');
+      }, 2000);
+      if (fallbackEl) fallbackEl.classList.remove('visible');
+    }).catch(() => {
+      // Visible fallback when clipboard blocked
+      if (fallbackEl) {
+        fallbackEl.value = prompt;
+        fallbackEl.classList.add('visible');
+        fallbackEl.focus();
+        fallbackEl.select();
+      }
+      btn.textContent = 'see below ↓';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'copy as prompt';
+        btn.classList.remove('copied');
+      }, 4000);
+    });
+  }
+
+  /* ── Live flatten-test instrument scorer ─────────────────────────── */
+  (function() {
+    // Each feature: weight (caps at 100), and which shape it pulls toward.
+    const FEATURES = [
+      { id: 'f-filter',    w: 16, shape: 'dashboard'    },
+      { id: 'f-recompute', w: 16, shape: 'comparison'   },
+      { id: 'f-sort',      w: 12, shape: 'dashboard'    },
+      { id: 'f-roundtrip', w: 20, shape: 'document'     },
+      { id: 'f-spatial',   w: 14, shape: 'network-map'  },
+      { id: 'f-toggles',   w:  8, shape: 'dashboard'    },
+      { id: 'f-crosshl',   w: 10, shape: 'editorial'    },
+      { id: 'f-drag',      w: 14, shape: 'triage-board' }
+    ];
+    const revs = document.getElementById('f-revs');
+    const aud  = document.getElementById('f-audience');
+    const checks = FEATURES.map(f => document.getElementById(f.id));
+    if (checks.some(c => !c) || !revs || !aud) return;
+
+    const READING = new Set(['document', 'editorial', 'timeline']);
+
+    function recompute() {
+      let raw = 0, n = 0;
+      const shapeVotes = {};
+      FEATURES.forEach((f, i) => {
+        if (checks[i].checked) {
+          raw += f.w;
+          n += 1;
+          shapeVotes[f.shape] = (shapeVotes[f.shape] || 0) + f.w;
+        }
+      });
+      const score = Math.min(100, raw);
+
+      const r = +revs.value;
+      document.getElementById('f-revs-v').textContent = r;
+      const audience = aud.value;
+      // Frequent revision + wider audience push the verdict threshold down:
+      // a static doc that gets re-edited weekly and shared is the worst case.
+      const audBoost = audience === 'public' ? 10 : (audience === 'team' ? 6 : 0);
+      const revBoost = Math.min(14, Math.round(r / 4));
+      const effective = score + audBoost + revBoost; // verdict-only, display stays 0–100
+
+      document.getElementById('o-score').textContent = score;
+      const bar = document.getElementById('o-score-bar');
+      bar.style.width = score + '%';
+      bar.style.background = score >= 50 ? 'var(--ok)'
+        : (score >= 30 ? 'var(--warn)' : 'var(--accent)');
+
+      document.getElementById('o-feats').textContent =
+        n + (n === 1 ? ' feature' : ' features');
+      const survives = n >= 3;
+      document.getElementById('o-survives').textContent =
+        survives ? 'No — dies on flatten' : 'Yes — stays prose';
+
+      // Recommended shape: heaviest-voted; reading vs instrument by register.
+      let topShape = null, topW = -1;
+      Object.keys(shapeVotes).forEach(s => {
+        if (shapeVotes[s] > topW) { topW = shapeVotes[s]; topShape = s; }
+      });
+      let shape, register;
+      if (!topShape) {
+        shape = 'document';
+        register = 'Reading';
+      } else if (topShape === 'document' && n <= 3) {
+        // copy-as-prompt + light interaction reads as a prose artifact
+        shape = 'document';
+        register = 'Reading';
+      } else {
+        shape = topShape;
+        register = READING.has(topShape) ? 'Reading' : 'Instrument';
+      }
+      document.getElementById('o-shape').textContent = shape;
+      document.getElementById('o-register').textContent = register;
+
+      const verdict = document.getElementById('o-verdict');
+      const vtxt    = document.getElementById('o-verdict-txt');
+      verdict.classList.remove('win-instrument', 'win-static');
+      if (effective >= 40 && survives) {
+        verdict.classList.add('win-instrument');
+        vtxt.innerHTML =
+          `Score <strong>${score}/100</strong> with <strong>${n}</strong> ` +
+          `HTML-native features — <strong>this should be an HTML artifact</strong>. ` +
+          `Flatten it and the function dies, not just the styling. ` +
+          `Render it as <strong>${shape}</strong> (${register.toLowerCase()} register).`;
+      } else if (effective >= 40 && !survives) {
+        verdict.classList.add('win-static');
+        vtxt.innerHTML =
+          `Score <strong>${score}/100</strong> but only <strong>${n}</strong> ` +
+          `feature${n === 1 ? '' : 's'} — below the three-feature floor. ` +
+          `Revisions and audience want an artifact, so add interaction ` +
+          `(a filter, a sort, a round-trip) before committing to ` +
+          `<strong>${shape}</strong>, or accept it as a static doc.`;
+      } else {
+        verdict.classList.add('win-static');
+        vtxt.innerHTML =
+          `Score <strong>${score}/100</strong>, <strong>${n}</strong> ` +
+          `feature${n === 1 ? '' : 's'} — <strong>a static doc is fine</strong>. ` +
+          `Nothing here dies on flatten; styled prose carries this content ` +
+          `without the cost of an instrument.`;
+      }
+    }
+
+    checks.forEach(c => c.addEventListener('change', recompute));
+    revs.addEventListener('input', recompute);
+    revs.addEventListener('change', recompute);
+    aud.addEventListener('change', recompute);
+    recompute();
+  })();
+
+  /* ── Sortable + filterable latency/cost table ────────────────────── */
+  (function() {
+    const table = document.getElementById('latency-table');
+    if (!table) return;
+    const tbody  = table.querySelector('tbody');
+    const heads  = Array.from(table.querySelectorAll('th.sortable'));
+    const allRows = () => Array.from(tbody.querySelectorAll('tr'));
+    const filterIn = document.getElementById('tbl-filter');
+    const clearBtn = document.getElementById('tbl-clear');
+    const countEl  = document.getElementById('tbl-count');
+    let sortState = { col: null, dir: 1 };
+
+    function numVal(td) {
+      const dv = td.getAttribute('data-v');
+      return dv !== null ? parseFloat(dv) : NaN;
+    }
+
+    // Color-scale numeric columns (low = good/green → high = bad/terracotta)
+    function applyScale() {
+      heads.forEach(h => {
+        const scaleMode = h.dataset.scale;
+        if (scaleMode !== 'lowgood' && scaleMode !== 'highgood') return;
+        const ci = +h.dataset.col;
+        const vals = allRows()
+          .filter(r => !r.classList.contains('filtered-out'))
+          .map(r => numVal(r.children[ci]))
+          .filter(v => !isNaN(v));
+        if (!vals.length) return;
+        const min = Math.min(...vals), max = Math.max(...vals);
+        allRows().forEach(r => {
+          const td = r.children[ci];
+          const v = numVal(td);
+          td.classList.add('scale-cell');
+          let bg = td.querySelector('.scale-bg');
+          let txt = td.querySelector('.scale-txt');
+          if (!txt) {
+            const raw = td.textContent;
+            td.textContent = '';
+            bg = document.createElement('span');
+            bg.className = 'scale-bg';
+            txt = document.createElement('span');
+            txt.className = 'scale-txt';
+            txt.textContent = raw;
+            td.appendChild(bg);
+            td.appendChild(txt);
+          }
+          if (isNaN(v) || max === min) { bg.style.background = 'transparent'; return; }
+          let t = (v - min) / (max - min); // 0 good → 1 bad
+          if (scaleMode === 'highgood') t = 1 - t; // high values are the good end
+          // green (ok) → ochre → terracotta, via the one-truth palette tokens
+          const color = t < 0.5 ? 'var(--ok)' : (t < 0.85 ? 'var(--warn)' : 'var(--accent)');
+          bg.style.background = color;
+        });
+      });
+    }
+
+    function sortBy(head) {
+      const ci = +head.dataset.col;
+      const type = head.dataset.type;
+      if (sortState.col === ci) sortState.dir *= -1;
+      else { sortState.col = ci; sortState.dir = 1; }
+
+      heads.forEach(h => h.setAttribute('aria-sort', 'none'));
+      head.setAttribute('aria-sort', sortState.dir === 1 ? 'ascending' : 'descending');
+
+      const rows = allRows();
+      rows.sort((a, b) => {
+        let av, bv;
+        if (type === 'num') {
+          av = numVal(a.children[ci]); bv = numVal(b.children[ci]);
+        } else {
+          av = a.children[ci].textContent.trim().toLowerCase();
+          bv = b.children[ci].textContent.trim().toLowerCase();
+        }
+        if (av < bv) return -1 * sortState.dir;
+        if (av > bv) return  1 * sortState.dir;
+        return 0;
+      });
+      rows.forEach(r => tbody.appendChild(r));
+      applyScale();
+    }
+
+    heads.forEach(h => {
+      h.addEventListener('click', () => sortBy(h));
+      h.tabIndex = 0;
+      h.setAttribute('role', 'button');
+      h.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(h); }
+      });
+    });
+
+    function applyFilter() {
+      const q = filterIn.value.trim().toLowerCase();
+      let shown = 0;
+      const rows = allRows();
+      rows.forEach(r => {
+        const hit = !q || r.textContent.toLowerCase().includes(q);
+        r.classList.toggle('filtered-out', !hit);
+        if (hit) shown++;
+      });
+      countEl.textContent = shown + ' of ' + rows.length + ' shapes';
+      clearBtn.classList.toggle('show', !!q);
+      applyScale();
+    }
+
+    filterIn.addEventListener('input', applyFilter);
+    clearBtn.addEventListener('click', () => {
+      filterIn.value = '';
+      applyFilter();
+      filterIn.focus();
+    });
+
+    applyScale();
+  })();
+
+  /* ── Footnote ref → scroll + flash ───────────────────────────────── */
+  (function() {
+    document.querySelectorAll('.fn-ref[data-fn]').forEach(ref => {
+      ref.setAttribute('role', 'link');
+      ref.setAttribute('tabindex', '0');
+      const go = () => {
+        const n = ref.getAttribute('data-fn');
+        const target = document.getElementById('fn-' + n);
+        if (!target) return;
+        target.open = true;
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.classList.remove('fn-flash');
+        // reflow so the class re-triggers even on repeat clicks
+        void target.offsetWidth;
+        target.classList.add('fn-flash');
+        setTimeout(() => target.classList.remove('fn-flash'), 1600);
+      };
+      ref.addEventListener('click', e => { e.preventDefault(); go(); });
+      ref.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

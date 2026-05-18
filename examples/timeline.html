@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>render-as-html: from idea to one truth — a build log</title>
+<style>
+  /* ── Design System: Reading Register ── */
+  :root {
+    --font-serif:  "Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Source Serif Pro", serif;
+    --font-sans:   ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --font-mono:   ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+    --paper:       #faf6ef;
+    --paper-tint:  #f3ede1;
+    --paper-card:  #fbf7f0;
+    --ink:         #1a1815;
+    --ink-soft:    #4a443c;
+    --muted:       #736d62;
+    --rule:        #d9d1c2;
+    --rule-soft:   #ece5d6;
+    --accent:      #8a3a1a;
+    --accent-2:    #c2901a;
+    --ok:          #2f7d44;
+    --warn:        #9b641d;
+    --note:        #2f6fb3;
+
+    --spine-w:     140px;
+    --card-w:      680px;
+    --max-w:       1000px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:       #1a1815;
+      --paper-tint:  #221f1a;
+      --paper-card:  #211e19;
+      --ink:         #f0eee8;
+      --ink-soft:    #c9c3b6;
+      --muted:       #9a948a;
+      --rule:        #38332b;
+      --rule-soft:   #2c2820;
+      --accent:      #e0794f;
+      --accent-2:    #d8a73a;
+      --ok:          #5cae6f;
+      --warn:        #c79a4a;
+      --note:        #6f9fd0;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-serif);
+    font-size: 17px;
+    line-height: 1.6;
+    min-height: 100vh;
+    min-height: 100dvh; /* iOS dynamic viewport */
+  }
+
+  /* ── Sticky Controls Bar ── */
+  .controls-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    padding: 10px 0;
+  }
+
+  .controls-inner {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1 1 200px;
+    min-width: 160px;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+    width: 15px;
+    height: 15px;
+  }
+
+  #search-input {
+    width: 100%;
+    padding: 7px 10px 7px 32px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--paper-card);
+    color: var(--ink);
+    outline: none;
+    transition: border-color .15s;
+  }
+  #search-input:focus { border-color: var(--accent); }
+  #search-input::placeholder { color: var(--muted); }
+
+  .search-clear {
+    display: none;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+  }
+  .search-clear:hover { color: var(--accent); }
+  #search-input:not(:placeholder-shown) + .search-clear { display: block; }
+
+  .tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-variant: small-caps;
+    letter-spacing: .04em;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--rule);
+    background: var(--paper-card);
+    color: var(--ink-soft);
+    cursor: pointer;
+    user-select: none;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.active {
+    background: var(--accent);
+    color: var(--paper);
+    border-color: var(--accent);
+  }
+  .chip-clear {
+    display: none;
+    margin-left: 2px;
+    font-style: normal;
+    font-weight: bold;
+  }
+  .chip.active .chip-clear { display: inline; }
+
+  .sort-btn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-variant: small-caps;
+    letter-spacing: .04em;
+    padding: 4px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--paper-card);
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color .12s, color .12s;
+  }
+  .sort-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  #search-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ── Page Shell ── */
+  .page {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+
+  /* ── Page Header ── */
+  .page-header {
+    padding: 36px 0 28px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 0;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-variant: small-caps;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .page-title {
+    font-family: var(--font-serif);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink);
+    letter-spacing: -.01em;
+    margin-bottom: 12px;
+    max-width: 640px;
+  }
+
+  .page-subtitle {
+    font-size: 16px;
+    color: var(--ink-soft);
+    max-width: 580px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  /* ── Inline SVG progress arc in header ── */
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .progress-arc {
+    flex-shrink: 0;
+  }
+
+  .meta-stats {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+  .meta-stats strong {
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+
+  /* ── Timeline Layout ── */
+  .timeline-body {
+    padding-top: 0;
+  }
+
+  /* ── Week Group ── */
+  .week-group {
+    position: relative;
+  }
+
+  .week-header {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    cursor: pointer;
+    user-select: none;
+    padding: 20px 0 8px;
+    position: relative;
+  }
+
+  .week-header-date {
+    width: var(--spine-w);
+    flex-shrink: 0;
+    padding-right: 24px;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-variant: small-caps;
+    letter-spacing: .06em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .week-header-rule {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 1.5px solid var(--rule);
+    padding-top: 0;
+    margin-top: 0;
+    padding-left: 14px;
+  }
+  /* The rule sits on top but we need to align content below it */
+  .week-header {
+    align-items: flex-end;
+  }
+  .week-header-rule {
+    border-top: 1.5px solid var(--rule);
+    padding-top: 6px;
+  }
+
+  .week-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-variant: small-caps;
+    letter-spacing: .06em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .week-count-badge {
+    display: none;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 1px 8px;
+    white-space: nowrap;
+  }
+  .week-group.collapsed .week-count-badge { display: inline-block; }
+
+  .collapse-icon {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding-right: 4px;
+    transition: transform .2s;
+  }
+  .week-group.collapsed .collapse-icon { transform: rotate(-90deg); }
+
+  .week-events {
+    overflow: hidden;
+    transition: max-height .25s ease;
+  }
+  .week-group.collapsed .week-events {
+    max-height: 0 !important;
+  }
+
+  /* ── The Spine ── */
+  .event-row {
+    display: flex;
+    gap: 0;
+    position: relative;
+  }
+
+  /* vertical line through events */
+  .week-events .event-row:not(:last-child)::before,
+  .spine-continuation {
+    content: '';
+    position: absolute;
+    left: calc(var(--spine-w) - 6px);
+    top: 24px;
+    bottom: -12px;
+    width: 1px;
+    background: var(--rule);
+    z-index: 0;
+  }
+
+  .event-date-col {
+    width: var(--spine-w);
+    flex-shrink: 0;
+    padding-right: 24px;
+    text-align: right;
+    padding-top: 18px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .event-dot {
+    position: absolute;
+    right: -5px;
+    top: 22px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--paper-card);
+    border: 2px solid var(--rule);
+    z-index: 2;
+    transition: border-color .15s, background .15s;
+  }
+
+  .event-row:hover .event-dot {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+
+  .event-timestamp {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-variant: small-caps;
+    letter-spacing: .05em;
+    color: var(--muted);
+    line-height: 1.3;
+    display: block;
+    padding-top: 5px;
+  }
+
+  .event-date-num {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    display: block;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Event Card ── */
+  .event-card-col {
+    flex: 1;
+    padding: 12px 0 12px 16px;
+  }
+
+  .event-card {
+    background: var(--paper-card);
+    border: 1px solid var(--rule-soft);
+    border-radius: 8px;
+    padding: 14px 16px 12px;
+    position: relative;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  .event-row:hover .event-card {
+    border-color: var(--rule);
+    box-shadow: 0 2px 8px rgba(26, 24, 21, .06);
+  }
+
+  .event-title {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.25;
+    margin-bottom: 7px;
+  }
+
+  .event-body {
+    font-size: 15px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin-bottom: 10px;
+  }
+
+  .event-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .event-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-variant: small-caps;
+    letter-spacing: .05em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--paper-tint);
+    color: var(--muted);
+    border: 1px solid var(--rule-soft);
+  }
+
+  .tag[data-tag="scaffold"]  { color: var(--note);   border-color: color-mix(in srgb, var(--note) 30%, transparent); background: color-mix(in srgb, var(--note) 8%, var(--paper-tint)); }
+  .tag[data-tag="docs"]      { color: var(--muted);  }
+  .tag[data-tag="philosophy"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); background: color-mix(in srgb, var(--accent) 8%, var(--paper-tint)); }
+  .tag[data-tag="insight"]   { color: var(--accent-2); border-color: color-mix(in srgb, var(--accent-2) 30%, transparent); background: color-mix(in srgb, var(--accent-2) 8%, var(--paper-tint)); }
+  .tag[data-tag="decision"]  { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); background: color-mix(in srgb, var(--accent) 8%, var(--paper-tint)); }
+  .tag[data-tag="design"]    { color: var(--note);   border-color: color-mix(in srgb, var(--note) 30%, transparent); background: color-mix(in srgb, var(--note) 8%, var(--paper-tint)); }
+  .tag[data-tag="spec"]      { color: var(--warn);   border-color: color-mix(in srgb, var(--warn) 30%, transparent); background: color-mix(in srgb, var(--warn) 8%, var(--paper-tint)); }
+  .tag[data-tag="planning"]  { color: var(--warn);   border-color: color-mix(in srgb, var(--warn) 30%, transparent); background: color-mix(in srgb, var(--warn) 8%, var(--paper-tint)); }
+  .tag[data-tag="build"]     { color: var(--ok);     border-color: color-mix(in srgb, var(--ok) 30%, transparent); background: color-mix(in srgb, var(--ok) 8%, var(--paper-tint)); }
+  .tag[data-tag="bug"]       { color: #b52b2b;        border-color: color-mix(in srgb, #b52b2b 30%, transparent); background: color-mix(in srgb, #b52b2b 8%, var(--paper-tint)); }
+  .tag[data-tag="review"]    { color: var(--note);   border-color: color-mix(in srgb, var(--note) 30%, transparent); background: color-mix(in srgb, var(--note) 8%, var(--paper-tint)); }
+  .tag[data-tag="ship"]      { color: var(--ok);     border-color: color-mix(in srgb, var(--ok) 30%, transparent); background: color-mix(in srgb, var(--ok) 8%, var(--paper-tint)); }
+  .tag[data-tag="cleanup"]   { color: var(--muted);  }
+
+  /* ── Per-event copy button ── */
+  .copy-quote-btn {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-variant: small-caps;
+    letter-spacing: .05em;
+    padding: 3px 10px;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .12s, border-color .12s;
+    flex-shrink: 0;
+  }
+  .copy-quote-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .copy-quote-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+  /* ── Copy fallback textarea ── */
+  .copy-fallback-wrap {
+    display: none;
+    margin-top: 8px;
+  }
+  .copy-fallback-wrap.visible { display: block; }
+  .copy-fallback-textarea {
+    width: 100%;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px;
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    color: var(--ink-soft);
+    resize: vertical;
+    min-height: 60px;
+  }
+
+  /* ── <mark> highlight style ── */
+  mark {
+    background: color-mix(in srgb, var(--accent-2) 28%, transparent);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  /* ── No results state ── */
+  .no-results {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-family: var(--font-sans);
+    font-size: 15px;
+  }
+  .no-results.visible { display: block; }
+
+  /* ── Footer ── */
+  .page-footer {
+    border-top: 1px solid var(--rule);
+    padding: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: var(--max-w);
+    margin: 40px auto 0;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .footer-path {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    word-break: break-all;
+  }
+
+  .footer-ts {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 700px) {
+    :root {
+      --spine-w: 70px;
+    }
+    body { font-size: 16px; }
+    .page { padding: 0 12px 48px; }
+    .page-title { font-size: 22px; }
+    .event-timestamp { display: none; }
+    .event-date-num { font-size: 14px; }
+    .controls-inner { padding: 0 12px; }
+    .header-meta { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .event-card { padding: 10px 12px 10px; }
+    .event-body { font-size: 14px; }
+    .event-title { font-size: 16px; }
+  }
+
+  @media (max-width: 400px) {
+    :root { --spine-w: 52px; }
+    .event-date-num { font-size: 12px; }
+    .week-header-date { font-size: 8px; }
+  }
+
+  /* hidden utility */
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+  /* ── iOS mobile hardening ── */
+
+  /* Prevent iOS focus-zoom: inputs must be ≥16px on phones */
+  @media (max-width: 768px) {
+    input, textarea, select, [contenteditable] { font-size: 16px !important; }
+    #search-input { font-size: 16px !important; }
+    .copy-fallback-textarea { font-size: 16px !important; }
+  }
+
+  /* Touch can't hover — always show copy-quote buttons on touch devices */
+  @media (hover: none) {
+    .copy-quote-btn { opacity: 1 !important; }
+    .copy-quote-btn:focus-visible { opacity: 1 !important; }
+  }
+
+  /* Tap targets ≥40px on phones for interactive controls */
+  @media (max-width: 768px) {
+    .chip {
+      min-height: 40px;
+      padding-top: 0;
+      padding-bottom: 0;
+      display: inline-flex;
+      align-items: center;
+    }
+    .sort-btn {
+      min-height: 40px;
+    }
+    .copy-quote-btn {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .search-clear {
+      min-width: 40px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .week-header {
+      min-height: 40px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     CONTROLS BAR (sticky)
+══════════════════════════════════════════ -->
+<div class="controls-bar" role="search" aria-label="Filter events">
+  <div class="controls-inner">
+    <div class="search-wrap">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M9 3a6 6 0 100 12A6 6 0 009 3zM1 9a8 8 0 1114.32 4.906l4.387 4.387a1 1 0 01-1.414 1.414l-4.387-4.387A8 8 0 011 9z" clip-rule="evenodd"/>
+      </svg>
+      <input type="text" id="search-input" placeholder="search events…" autocomplete="off" aria-label="Search events">
+      <button class="search-clear" id="search-clear-btn" aria-label="Clear search" tabindex="0">×</button>
+    </div>
+
+    <div class="tag-chips" id="tag-chips" role="group" aria-label="Filter by tag">
+      <!-- chips injected by JS -->
+    </div>
+
+    <button class="sort-btn" id="sort-btn" aria-label="Toggle sort order">oldest first ↑</button>
+    <span id="search-count" aria-live="polite" aria-atomic="true"></span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PAGE HEADER
+══════════════════════════════════════════ -->
+<div class="page">
+  <header class="page-header">
+    <p class="eyebrow">Build Log · May 2026 · render-as-html</p>
+    <h1 class="page-title">From idea to one truth — a build log</h1>
+    <p class="page-subtitle">Eleven events across three weeks: scaffolding a skill, fighting its own design fiction, dogfooding the gallery, and shipping a closed seam.</p>
+
+    <div class="header-meta">
+      <!-- Inline SVG: build phase arc / completion wheel -->
+      <svg class="progress-arc" width="80" height="80" viewBox="0 0 80 80" aria-label="Build progress: 11 of 11 events shipped" role="img">
+        <circle cx="40" cy="40" r="32" fill="none" stroke="var(--rule)" stroke-width="6"/>
+        <!-- Full arc = all events shipped. circumference ≈ 201.1 -->
+        <circle cx="40" cy="40" r="32" fill="none" stroke="var(--ok)" stroke-width="6"
+          stroke-dasharray="201.1 201.1"
+          stroke-dashoffset="0"
+          stroke-linecap="round"
+          transform="rotate(-90 40 40)"/>
+        <text x="40" y="37" text-anchor="middle" font-family="ui-monospace,monospace" font-size="14" font-weight="700" fill="var(--ok)">11</text>
+        <text x="40" y="51" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9" fill="var(--muted)">shipped</text>
+      </svg>
+
+      <div class="meta-stats">
+        <div><strong>11</strong> events · <strong>3</strong> weeks · May 2026</div>
+        <div><strong>6</strong> tags · scaffold → ship</div>
+        <div>Oldest-first (build narrative) · toggle ↑↓ above</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════
+       TIMELINE BODY
+  ══════════════════════════════════════════ -->
+  <div class="timeline-body" id="timeline-body">
+    <!-- week groups rendered by JS -->
+  </div>
+
+  <div class="no-results" id="no-results" role="status">No events match your current filters.</div>
+</div>
+
+<!-- FOOTER -->
+<footer class="page-footer" aria-label="Artifact metadata">
+  <span class="footer-path">examples/timeline.html</span>
+  <span class="footer-ts" id="footer-ts"></span>
+</footer>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const ARTIFACT_PATH = 'examples/timeline.html';
+
+const EVENTS = [
+  {
+    id: 'e01',
+    date: '2026-05-01',
+    dateLabel: '01',
+    monthLabel: 'May',
+    week: '2026-W18',
+    weekLabel: 'Week of 27 Apr',
+    title: 'Initial: skill + design system',
+    body: 'First SKILL.md written, 8 page shapes defined, coral/system-font design system drafted. The bones: register, palette, shape-contracts, copy-as-prompt pattern — all there in seed form.',
+    tags: ['scaffold'],
+  },
+  {
+    id: 'e02',
+    date: '2026-05-02',
+    dateLabel: '02',
+    monthLabel: 'May',
+    week: '2026-W18',
+    weekLabel: 'Week of 27 Apr',
+    title: 'Humanize prose; drop self-credit',
+    body: 'A prose pass over README and SKILL.md: trimmer sentences, first-person dropped from skill description, attribution moved out of the hero copy. Public-repo polish — the skill shouldn\'t announce itself.',
+    tags: ['docs'],
+  },
+  {
+    id: 'e03',
+    date: '2026-05-04',
+    dateLabel: '04',
+    monthLabel: 'May',
+    week: '2026-W18',
+    weekLabel: 'Week of 27 Apr',
+    title: 'Make HTML artifacts the source of truth',
+    body: 'Reframing that changes everything: the HTML file is not an export layer over another canonical document — it is the thing you read, edit, share, revisit. The artifact is the record, not a rendering of some notes file.',
+    tags: ['philosophy'],
+  },
+  {
+    id: 'e04',
+    date: '2026-05-05',
+    dateLabel: '05',
+    monthLabel: 'May',
+    week: '2026-W18',
+    weekLabel: 'Week of 27 Apr',
+    title: 'Brainstorm: bring podcastify learnings back',
+    body: 'Recognized that the skill was already emitting serif/cream editorial output while its own design doc still prescribed the original coral/system-font palette — the design system had become prescriptive fiction. The fix: align the spec to what actually shipped, not the other way around.',
+    tags: ['insight', 'decision'],
+  },
+  {
+    id: 'e05',
+    date: '2026-05-06',
+    dateLabel: '06',
+    monthLabel: 'May',
+    week: '2026-W19',
+    weekLabel: 'Week of 4 May',
+    title: 'Spec written + adversarial review',
+    body: 'Full design doc drafted and put in front of a reviewer the same day. First pass approved — the shape-contract table, register distinction, and 8-dimension framework survived intact. Acceptance criterion tightened after review: "≥4 dimensions" became load-bearing language.',
+    tags: ['spec'],
+  },
+  {
+    id: 'e06',
+    date: '2026-05-07',
+    dateLabel: '07',
+    monthLabel: 'May',
+    week: '2026-W19',
+    weekLabel: 'Week of 4 May',
+    title: 'The strange loop',
+    body: 'Decided that index.html — the component gallery that documents the design system — must itself be a render-as-html artifact built with the skill it documents. Self-reference codified. The gallery can\'t prescribe a design system it doesn\'t embody.',
+    tags: ['decision', 'design'],
+  },
+  {
+    id: 'e07',
+    date: '2026-05-08',
+    dateLabel: '08',
+    monthLabel: 'May',
+    week: '2026-W19',
+    weekLabel: 'Week of 4 May',
+    title: 'Plan + 3 review iterations',
+    body: 'Implementation plan written; put through three review passes. Reviewers caught two concrete problems: an unsound register grep that would false-positive on comments, and a no-rename gate stated as a literal diff check — impossible once additive markup lands. Both fixed before execution started.',
+    tags: ['planning'],
+  },
+  {
+    id: 'e08',
+    date: '2026-05-10',
+    dateLabel: '10',
+    monthLabel: 'May',
+    week: '2026-W19',
+    weekLabel: 'Week of 4 May',
+    title: 'Chunk 1–3 executed via subagents',
+    body: 'Three implementation chunks shipped in parallel by subagents: one-truth palette and typography tokens, the editorial 9th shape, the checklist sub-pattern, and index.html dogfooded against its own spec. The gallery became a living artifact.',
+    tags: ['build'],
+  },
+  {
+    id: 'e09',
+    date: '2026-05-12',
+    dateLabel: '12',
+    monthLabel: 'May',
+    week: '2026-W20',
+    weekLabel: 'Week of 11 May',
+    title: 'No-rename bug caught at execution',
+    body: 'The literal-diff gate proved impossible: once additive markup (aria attributes, data attributes) landed, the name comparison as written would always fail. An independent reviewer confirmed the correct test was the name-set invariant — shape names unchanged, not "the diff is zero".',
+    tags: ['bug', 'review'],
+  },
+  {
+    id: 'e10',
+    date: '2026-05-14',
+    dateLabel: '14',
+    monthLabel: 'May',
+    week: '2026-W20',
+    weekLabel: 'Week of 11 May',
+    title: 'Final seam closed + merged to main',
+    body: 'The design-system intro section still contradicted itself: it described two registers correctly but the opening sentence implied the palette was new. Fixed. All 8 acceptance gates green. Merged to main.',
+    tags: ['ship'],
+  },
+  {
+    id: 'e11',
+    date: '2026-05-15',
+    dateLabel: '15',
+    monthLabel: 'May',
+    week: '2026-W20',
+    weekLabel: 'Week of 11 May',
+    title: 'Simplify pass',
+    body: 'Three review agents converged independently on a stateful-regex bug in the editorial find handler. CSS deduplicated, artifact path single-sourced to a const. The kind of cleanup that only happens when you run it through reviewers who weren\'t part of the build.',
+    tags: ['cleanup'],
+  },
+];
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let searchQuery = '';
+let activeTag = null;
+let sortOrder = 'asc'; // 'asc' = oldest first
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function highlightText(rawText, query) {
+  if (!query) return escapeHtml(rawText);
+  const safe = escapeHtml(rawText);
+  // Escape regex special chars in query
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`(${escaped})`, 'gi');
+  return safe.replace(re, '<mark>$1</mark>');
+}
+
+function buildWeekGroups(events) {
+  const groups = {};
+  const order = [];
+  for (const ev of events) {
+    if (!groups[ev.week]) {
+      groups[ev.week] = { weekLabel: ev.weekLabel, events: [] };
+      order.push(ev.week);
+    }
+    groups[ev.week].events.push(ev);
+  }
+  return order.map(w => ({ week: w, ...groups[w] }));
+}
+
+function renderTimeline() {
+  const body = document.getElementById('timeline-body');
+  const noResults = document.getElementById('no-results');
+
+  // Filter
+  let events = EVENTS.slice();
+  if (sortOrder === 'desc') events = events.slice().reverse();
+
+  const query = searchQuery.trim().toLowerCase();
+  const filtered = events.filter(ev => {
+    const matchTag = !activeTag || ev.tags.includes(activeTag);
+    const matchSearch = !query || [ev.title, ev.body, ...ev.tags].some(t => t.toLowerCase().includes(query));
+    return matchTag && matchSearch;
+  });
+
+  // Update count
+  const countEl = document.getElementById('search-count');
+  if (query || activeTag) {
+    countEl.textContent = `${filtered.length} of ${EVENTS.length}`;
+  } else {
+    countEl.textContent = '';
+  }
+
+  if (filtered.length === 0) {
+    body.innerHTML = '';
+    noResults.classList.add('visible');
+    return;
+  }
+  noResults.classList.remove('visible');
+
+  const groups = buildWeekGroups(filtered);
+  let html = '';
+
+  groups.forEach((group, gi) => {
+    const groupId = `week-${group.week.replace(/\W/g,'-')}`;
+    const evCount = group.events.length;
+    html += `<div class="week-group" id="${groupId}" data-week="${group.week}">`;
+    html += `<div class="week-header" role="button" tabindex="0" aria-expanded="true" aria-controls="${groupId}-events" onclick="toggleWeek('${groupId}')" onkeydown="if(event.key==='Enter'||event.key===' ')toggleWeek('${groupId}')">`;
+    html += `<span class="week-header-date">${group.weekLabel.replace('Week of ','')}</span>`;
+    html += `<span class="week-header-rule">`;
+    html += `<span class="week-label">${group.weekLabel}</span>`;
+    html += `<span class="week-count-badge">${evCount} event${evCount!==1?'s':''} collapsed</span>`;
+    html += `<span class="collapse-icon" aria-hidden="true">▾</span>`;
+    html += `</span>`;
+    html += `</div>`;
+
+    html += `<div class="week-events" id="${groupId}-events" role="list">`;
+
+    group.events.forEach((ev, ei) => {
+      const isLast = ei === group.events.length - 1;
+      const titleHl = highlightText(ev.title, query);
+      const bodyHl  = highlightText(ev.body, query);
+
+      html += `<div class="event-row" role="listitem" data-id="${ev.id}">`;
+      // Spine line
+      if (!isLast) html += `<div style="position:absolute;left:calc(var(--spine-w) - 6px);top:24px;bottom:-12px;width:1px;background:var(--rule);z-index:0;pointer-events:none;"></div>`;
+
+      // Date col
+      html += `<div class="event-date-col">`;
+      html += `<span class="event-timestamp">${ev.monthLabel}</span>`;
+      html += `<span class="event-date-num">${ev.dateLabel}</span>`;
+      html += `<div class="event-dot"></div>`;
+      html += `</div>`;
+
+      // Card col
+      html += `<div class="event-card-col">`;
+      html += `<div class="event-card">`;
+      html += `<div class="event-title">${titleHl}</div>`;
+      html += `<div class="event-body" data-original="${escapeHtml(ev.body)}">${bodyHl}</div>`;
+      html += `<div class="event-footer">`;
+      html += `<div class="event-tags">`;
+      ev.tags.forEach(t => {
+        html += `<span class="tag" data-tag="${t}">${t}</span>`;
+      });
+      html += `</div>`;
+      html += `<button class="copy-quote-btn" onclick="copyQuote('${ev.id}')" aria-label="Copy event as quote">copy quote</button>`;
+      html += `</div>`;
+      html += `<div class="copy-fallback-wrap" id="fallback-${ev.id}">`;
+      html += `<textarea class="copy-fallback-textarea" id="fallback-ta-${ev.id}" readonly rows="3"></textarea>`;
+      html += `</div>`;
+      html += `</div>`;
+      html += `</div>`;
+      html += `</div>`;
+    });
+
+    html += `</div>`; // week-events
+    html += `</div>`; // week-group
+  });
+
+  body.innerHTML = html;
+
+  // Restore collapse states
+  const collapseState = JSON.parse(sessionStorage.getItem('collapseState') || '{}');
+  Object.keys(collapseState).forEach(id => {
+    const el = document.getElementById(id);
+    if (el && collapseState[id]) el.classList.add('collapsed');
+  });
+
+  // Set max-heights for animation
+  document.querySelectorAll('.week-events').forEach(el => {
+    el.style.maxHeight = el.scrollHeight + 'px';
+  });
+
+  // Scroll to first match
+  if (query) {
+    const firstMark = body.querySelector('mark');
+    if (firstMark) {
+      setTimeout(() => firstMark.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+    }
+  }
+}
+
+// ══════════════════════════════════════════
+// COLLAPSE
+// ══════════════════════════════════════════
+function toggleWeek(groupId) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  const events = document.getElementById(groupId + '-events');
+  const btn = group.querySelector('.week-header');
+  const isCollapsed = group.classList.contains('collapsed');
+
+  if (isCollapsed) {
+    group.classList.remove('collapsed');
+    events.style.maxHeight = events.scrollHeight + 'px';
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  } else {
+    events.style.maxHeight = events.scrollHeight + 'px';
+    requestAnimationFrame(() => {
+      group.classList.add('collapsed');
+    });
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+
+  // Persist
+  const collapseState = JSON.parse(sessionStorage.getItem('collapseState') || '{}');
+  collapseState[groupId] = !isCollapsed;
+  sessionStorage.setItem('collapseState', JSON.stringify(collapseState));
+}
+
+// ══════════════════════════════════════════
+// COPY AS QUOTE
+// ══════════════════════════════════════════
+function copyQuote(id) {
+  const ev = EVENTS.find(e => e.id === id);
+  if (!ev) return;
+  const dateStr = new Date(ev.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const text = `"${ev.title}" — ${dateStr}\n\n${ev.body}\n\nTags: ${ev.tags.join(', ')}\n\nSource: ${ARTIFACT_PATH}`;
+
+  const btn = document.querySelector(`[data-id="${id}"] .copy-quote-btn`);
+  const fallbackWrap = document.getElementById(`fallback-${id}`);
+  const fallbackTa = document.getElementById(`fallback-ta-${id}`);
+
+  navigator.clipboard.writeText(text).then(() => {
+    if (btn) {
+      btn.textContent = 'copied ✓';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'copy quote';
+        btn.classList.remove('copied');
+      }, 1800);
+    }
+    if (fallbackWrap) fallbackWrap.classList.remove('visible');
+  }).catch(() => {
+    // Fallback: show textarea
+    if (fallbackTa) { fallbackTa.value = text; }
+    if (fallbackWrap) fallbackWrap.classList.add('visible');
+    if (fallbackTa) { fallbackTa.focus(); fallbackTa.select(); }
+  });
+}
+
+// ══════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════
+document.getElementById('search-input').addEventListener('input', function() {
+  searchQuery = this.value;
+  renderTimeline();
+});
+
+document.getElementById('search-clear-btn').addEventListener('click', function() {
+  const input = document.getElementById('search-input');
+  input.value = '';
+  searchQuery = '';
+  renderTimeline();
+  input.focus();
+});
+
+// ══════════════════════════════════════════
+// TAG CHIPS
+// ══════════════════════════════════════════
+const ALL_TAGS = [...new Set(EVENTS.flatMap(e => e.tags))].sort();
+
+function buildTagChips() {
+  const container = document.getElementById('tag-chips');
+  container.innerHTML = '';
+  ALL_TAGS.forEach(tag => {
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (activeTag === tag ? ' active' : '');
+    btn.setAttribute('aria-pressed', activeTag === tag ? 'true' : 'false');
+    btn.setAttribute('aria-label', `Filter by tag: ${tag}`);
+    btn.innerHTML = `${tag}<span class="chip-clear" aria-hidden="true"> ×</span>`;
+    btn.addEventListener('click', () => {
+      activeTag = activeTag === tag ? null : tag;
+      buildTagChips();
+      renderTimeline();
+    });
+    container.appendChild(btn);
+  });
+}
+
+// ══════════════════════════════════════════
+// SORT
+// ══════════════════════════════════════════
+document.getElementById('sort-btn').addEventListener('click', function() {
+  sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+  this.textContent = sortOrder === 'asc' ? 'oldest first ↑' : 'newest first ↓';
+  renderTimeline();
+});
+
+// ══════════════════════════════════════════
+// FOOTER TIMESTAMP
+// ══════════════════════════════════════════
+document.getElementById('footer-ts').textContent =
+  'generated ' + new Date().toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+buildTagChips();
+renderTimeline();
+</script>
+</body>
+</html>

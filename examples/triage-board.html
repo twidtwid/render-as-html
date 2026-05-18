@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>render-as-html — roadmap triage</title>
+<style>
+/* ── Design tokens ─────────────────────────────────────────── */
+:root {
+  --paper:      #faf6ef;
+  --paper-tint: #f3ede1;
+  --paper-card: #fbf7f0;
+  --ink:        #1a1815;
+  --ink-soft:   #4a443c;
+  --muted:      #736d62;
+  --rule:       #d9d1c2;
+  --rule-soft:  #ece5d6;
+  --accent:     #8a3a1a;
+  --accent-2:   #c2901a;
+  --ok:         #2f7d44;
+  --warn:       #9b641d;
+  --note:       #2f6fb3;
+
+  --font-sans:  ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Per-column top-accent colors */
+  --col-now:   #8a3a1a;
+  --col-next:  #2f6fb3;
+  --col-later: #2f7d44;
+  --col-cut:   #8a8378;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:      #1a1815;
+    --paper-tint: #221f1a;
+    --paper-card: #211e19;
+    --ink:        #f0eee8;
+    --ink-soft:   #c9c3b6;
+    --muted:      #9a948a;
+    --rule:       #38332b;
+    --rule-soft:  #2c2820;
+    --accent:     #e0794f;
+    --accent-2:   #d8a73a;
+    --ok:         #5cae6f;
+    --warn:       #c79a4a;
+    --note:       #6f9fd0;
+    --col-now:   #e0794f;
+    --col-next:  #6f9fd0;
+    --col-later: #5cae6f;
+    --col-cut:   #8a8378;
+  }
+}
+
+/* ── Reset / Base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top bar ──────────────────────────────────────────────── */
+.topbar {
+  background: var(--paper-card);
+  border-bottom: 1px solid var(--rule);
+  padding: 14px 20px 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.topbar h1 {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.topbar-meta {
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.topbar-instruction {
+  font-size: 12px;
+  color: var(--ink-soft);
+  flex: 1 1 auto;
+  min-width: 180px;
+}
+.search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+#search {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 5px 9px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink);
+  width: 200px;
+  outline: none;
+}
+#search:focus { border-color: var(--accent); }
+#search-clear {
+  font-size: 11px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 3px;
+  display: none;
+  font-family: var(--font-sans);
+}
+#search-clear.visible {
+  display: inline-block;
+  color: var(--accent);
+}
+#search-clear:hover { background: var(--paper-tint); }
+
+/* ── Board area ───────────────────────────────────────────── */
+.board-outer {
+  flex: 1;
+  overflow-x: auto;
+  padding: 16px 20px;
+}
+.board {
+  display: flex;
+  gap: 14px;
+  max-width: 1280px;
+  margin: 0 auto;
+  min-height: 540px;
+  align-items: flex-start;
+}
+
+/* ── Columns ──────────────────────────────────────────────── */
+.col {
+  flex: 1 1 260px;
+  min-width: 240px;
+  max-width: 320px;
+  background: var(--paper-tint);
+  border-radius: 8px;
+  border: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
+}
+.col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  border-bottom: 2px solid var(--col-accent, var(--rule));
+  border-radius: 8px 8px 0 0;
+}
+.col-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--col-accent, var(--ink));
+}
+.col-sub {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-top: 1px;
+}
+.col-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--col-accent, var(--muted));
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  padding: 1px 7px;
+  min-width: 26px;
+  text-align: center;
+  transition: background 0.15s;
+}
+[data-col="now"]   { --col-accent: var(--col-now); }
+[data-col="next"]  { --col-accent: var(--col-next); }
+[data-col="later"] { --col-accent: var(--col-later); }
+[data-col="cut"]   { --col-accent: var(--col-cut); }
+
+.col-body {
+  flex: 1;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 100px;
+  transition: background 0.1s;
+}
+.col-body.drag-over {
+  background: color-mix(in srgb, var(--col-accent, var(--accent)) 8%, var(--paper-tint));
+  border-radius: 0 0 8px 8px;
+}
+
+/* ── Cards ────────────────────────────────────────────────── */
+.card {
+  background: var(--paper-card);
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+  padding: 9px 10px 7px;
+  cursor: grab;
+  user-select: none;
+  transition: box-shadow 0.12s, opacity 0.12s, border-color 0.12s;
+  position: relative;
+}
+.card:hover {
+  border-color: var(--rule);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+}
+.card.dragging {
+  opacity: 0.35;
+  cursor: grabbing;
+}
+.card.drag-target-above::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: var(--col-accent, var(--accent));
+  border-radius: 2px;
+  margin-bottom: 6px;
+  margin-top: -4px;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+  margin-bottom: 4px;
+}
+.card-title mark {
+  background: color-mix(in srgb, var(--accent-2) 30%, transparent);
+  color: var(--ink);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.card-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  background: var(--paper-tint);
+}
+.card-tag[data-tag="feature"]  { color: var(--accent);  border-color: var(--accent); }
+.card-tag[data-tag="docs"]     { color: var(--note);    border-color: var(--note); }
+.card-tag[data-tag="research"] { color: var(--warn);    border-color: var(--warn); }
+.card-tag[data-tag="infra"]    { color: var(--ink-soft); }
+.card-tag[data-tag="cut"]      { color: var(--muted); }
+.card-size {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+.card-rationale {
+  width: 100%;
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  resize: vertical;
+  outline: none;
+  field-sizing: content;        /* auto-grow to fit the full rationale (Chrome 123+) */
+  min-height: 3.1em;            /* ~3 lines even without field-sizing — nothing truncated */
+  max-height: 11em;
+  overflow-y: auto;             /* fallback: scroll, never clip */
+  white-space: pre-wrap;
+  cursor: text;
+}
+.card-rationale::placeholder { color: var(--muted); font-style: italic; }
+.card-rationale:focus { border-color: var(--accent); }
+
+/* Hidden cards (filtered out) */
+.card.hidden { display: none; }
+
+/* ── Undo toast ───────────────────────────────────────────── */
+#undo-toast {
+  position: fixed;
+  bottom: 72px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 12px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 200;
+  white-space: nowrap;
+}
+#undo-toast.visible {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(-50%) translateY(0);
+}
+#undo-btn {
+  background: var(--accent-2);
+  color: var(--ink);
+  border: none;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  font-weight: 600;
+}
+#undo-btn:hover { background: var(--accent); color: var(--paper); }
+
+/* ── Export bar (sticky bottom) ───────────────────────────── */
+.export-bar {
+  position: sticky;
+  bottom: 0;
+  background: var(--paper-card);
+  border-top: 1px solid var(--rule);
+  padding: 10px 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.export-bar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.counts-summary {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+.count-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  background: var(--paper-tint);
+}
+.count-pill span { font-weight: 700; }
+[data-for="now"]   .count-pill { color: var(--col-now);   border-color: var(--col-now); }
+[data-for="next"]  .count-pill { color: var(--col-next);  border-color: var(--col-next); }
+[data-for="later"] .count-pill { color: var(--col-later); border-color: var(--col-later); }
+[data-for="cut"]   .count-pill { color: var(--col-cut);   border-color: var(--col-cut); }
+
+.export-btn {
+  background: var(--accent-2);
+  color: var(--ink);
+  border: none;
+  border-radius: 5px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.export-btn:hover { background: var(--accent); color: var(--paper); }
+.export-btn.secondary {
+  background: var(--paper-tint);
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+}
+.export-btn.secondary:hover { background: var(--paper); border-color: var(--accent); color: var(--accent); }
+
+/* Prompt textarea fallback */
+#prompt-out {
+  display: none;
+  width: 100%;
+  margin-top: 8px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+  resize: vertical;
+  height: 80px;
+  outline: none;
+}
+#prompt-out.visible { display: block; }
+
+/* ── Footer ───────────────────────────────────────────────── */
+.artifact-footer {
+  text-align: center;
+  padding: 10px 20px 14px;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  border-top: 1px solid var(--rule-soft);
+}
+
+/* ── Card touch-move control ──────────────────────────────── */
+.card-move-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.card-move-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.card-move-select {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 2px 4px;
+  cursor: pointer;
+  flex: 1;
+  max-width: 110px;
+}
+/* Hide on desktop by default; show on touch devices */
+.card-move-wrap { display: none; }
+@media (hover: none) {
+  .card-move-wrap { display: flex; }
+}
+/* Always show via keyboard focus on the select */
+.card-move-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── Mobile ───────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .board {
+    flex-direction: column;
+  }
+  .col {
+    max-width: 100%;
+    min-width: 0;
+    min-height: auto;
+  }
+  .topbar-inner { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .search-wrap { margin-left: 0; width: 100%; }
+  #search { width: 100%; }
+  .export-bar-inner { flex-direction: column; align-items: flex-start; gap: 8px; }
+  /* Always show move controls on small screens regardless of hover capability */
+  .card-move-wrap { display: flex; }
+}
+
+/* ── iOS / mobile hardening ─────────────────────────────────── */
+/* 2. Prevent iOS focus-zoom: keep form controls ≥16px on phones */
+@media (max-width: 768px) {
+  input, textarea, select, #search, .card-rationale, .card-move-select {
+    font-size: 16px !important;
+  }
+  /* 5. Tap targets: search clear button and export buttons */
+  #search-clear {
+    min-height: 40px;
+    padding: 8px 10px;
+  }
+  .export-btn {
+    padding: 10px 16px;
+    min-height: 40px;
+  }
+  .count-pill {
+    padding: 6px 10px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Top bar ── -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <h1>render-as-html — roadmap triage</h1>
+    <span class="topbar-meta">13 candidate improvements</span>
+    <span class="topbar-instruction">Where the skill itself goes next. Drag cards between columns, edit a rationale, hit <strong>copy as prompt</strong> to round-trip the buckets back to this file.</span>
+    <div class="search-wrap">
+      <input type="search" id="search" placeholder="Filter cards…" autocomplete="off" aria-label="Filter cards">
+      <button id="search-clear" aria-label="Clear search">× clear</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── Board ── -->
+<main class="board-outer">
+  <div class="board" id="board">
+
+    <!-- NOW -->
+    <div class="col" data-col="now">
+      <div class="col-header">
+        <span class="col-title">Now<span class="col-sub">ship this cycle</span></span>
+        <span class="col-count" id="count-now">3</span>
+      </div>
+      <div class="col-body" id="col-now" role="list" aria-label="Now">
+
+        <div class="card" draggable="true" data-id="flatten-linter" data-col="now" role="listitem" aria-label="Flatten-test linter (fail build if <3 HTML-native) — Now">
+          <div class="card-title" data-original="Flatten-test linter (fail build if <3 HTML-native)">Flatten-test linter (fail build if &lt;3 HTML-native)</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="infra">infra</span>
+            <span class="card-size">M</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for Flatten-test linter">The bar is currently a self-review honor system. A linter that greps emitted HTML for the named primitives and fails CI under 3 makes "what disappears on flatten?" enforceable instead of aspirational.</textarea>
+        </div>
+
+        <div class="card" draggable="true" data-id="darkmode-aa" data-col="now" role="listitem" aria-label="Dark-mode contrast doc + AA gate — Now">
+          <div class="card-title" data-original="Dark-mode contrast doc + AA gate">Dark-mode contrast doc + AA gate</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="docs">docs</span>
+            <span class="card-size">S</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for Dark-mode contrast doc + AA gate">The palette claims AA but only the light-mode --muted ratio is spelled out. Document every token pair's measured ratio in both modes and add a contrast check so a retune can't silently regress below 4.5:1.</textarea>
+        </div>
+
+        <div class="card" draggable="true" data-id="copy-prompt-spec" data-col="now" role="listitem" aria-label="Copy-as-prompt schema spec — Now">
+          <div class="card-title" data-original="Copy-as-prompt schema spec">Copy-as-prompt schema spec</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="docs">docs</span>
+            <span class="card-size">S</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for Copy-as-prompt schema spec">The load-bearing feature is described prose-only. A small spec — names the artifact, deltas only, natural when pasted, visible fallback — gives every shape one contract to test the round-trip against.</textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- NEXT -->
+    <div class="col" data-col="next">
+      <div class="col-header">
+        <span class="col-title">Next<span class="col-sub">queued, not started</span></span>
+        <span class="col-count" id="count-next">4</span>
+      </div>
+      <div class="col-body" id="col-next" role="list" aria-label="Next">
+
+        <div class="card" draggable="true" data-id="shape-autopicker" data-col="next" role="listitem" aria-label="Shape auto-picker from content signals — Next">
+          <div class="card-title" data-original="Shape auto-picker from content signals">Shape auto-picker from content signals</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="feature">feature</span>
+            <span class="card-size">M</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for Shape auto-picker from content signals">Auto-pick rules exist as a table but the actual decision is left to model judgment per render. A deterministic classifier over signals (table count, date density, procedural markers) makes shape selection reproducible and reviewable.</textarea>
+        </div>
+
+        <div class="card" draggable="true" data-id="cookbook" data-col="next" role="listitem" aria-label="Cookbook: one worked example per shape — Next">
+          <div class="card-title" data-original="Cookbook: one worked example per shape">Cookbook: one worked example per shape</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="docs">docs</span>
+            <span class="card-size">L</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for Cookbook: one worked example per shape">Nine shapes, one canonical sample each, every one passing the flatten bar. Doubles as the regression corpus the linter runs against and as the thing a new contributor reads first.</textarea>
+        </div>
+
+        <div class="card" draggable="true" data-id="a11y-axe-ci" data-col="next" role="listitem" aria-label="a11y CI (axe) on emitted artifacts — Next">
+          <div class="card-title" data-original="a11y CI (axe) on emitted artifacts">a11y CI (axe) on emitted artifacts</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="infra">infra</span>
+            <span class="card-size">M</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for a11y CI on emitted artifacts">Cards already carry aria-labels and roles by convention. Running axe-core over each example in CI catches the silent regressions (missing lang, unlabeled controls, contrast) before they ship as the public reference.</textarea>
+        </div>
+
+        <div class="card" draggable="true" data-id="template-registry" data-col="next" role="listitem" aria-label="Template registry / starter snippets — Next">
+          <div class="card-title" data-original="Template registry / starter snippets">Template registry / starter snippets</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="feature">feature</span>
+            <span class="card-size">M</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for Template registry / starter snippets">Each shape contract is reimplemented from the prose every render. A registry of per-shape skeletons (tokens + scaffold + the required primitives stubbed) cuts time-to-artifact and stops contract drift between renders.</textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- LATER -->
+    <div class="col" data-col="later">
+      <div class="col-header">
+        <span class="col-title">Later<span class="col-sub">worth doing, not soon</span></span>
+        <span class="col-count" id="count-later">4</span>
+      </div>
+      <div class="col-body" id="col-later" role="list" aria-label="Later">
+
+        <div class="card" draggable="true" data-id="more-subpatterns" data-col="later" role="listitem" aria-label="More sub-patterns mined from the source article — Later">
+          <div class="card-title" data-original="More sub-patterns mined from the source article">More sub-patterns mined from the source article</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="research">research</span>
+            <span class="card-size">M</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for More sub-patterns mined from the source article">The eight-dimensions framing came from one article; only a handful of sub-patterns were extracted. A second pass could surface annotation overlays, prompt tuners, and config editors as first-class documented patterns.</textarea>
+        </div>
+
+        <div class="card" draggable="true" data-id="perf-budget" data-col="later" role="listitem" aria-label="Perf budget for big tables — Later">
+          <div class="card-title" data-original="Perf budget for big tables">Perf budget for big tables</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="infra">infra</span>
+            <span class="card-size">M</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for Perf budget for big tables">Dashboards with thousands of rows can jank on filter. A documented budget (row ceiling before virtualization, debounce target) keeps the instrument register fast without pulling in a framework.</textarea>
+        </div>
+
+        <div class="card" draggable="true" data-id="video-walkthrough" data-col="later" role="listitem" aria-label="Video walkthrough of the strange loop — Later">
+          <div class="card-title" data-original="Video walkthrough of the strange loop">Video walkthrough of the strange loop</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="docs">docs</span>
+            <span class="card-size">M</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for Video walkthrough of the strange loop">"Edit in browser → copy as prompt → file rewrites itself" lands harder shown than told. A short screen capture of the round-trip would do more for adoption than another paragraph, but it depends on tooling that exists first.</textarea>
+        </div>
+
+        <div class="card" draggable="true" data-id="i18n-rtl" data-col="later" role="listitem" aria-label="i18n / RTL audit — Later">
+          <div class="card-title" data-original="i18n / RTL audit">i18n / RTL audit</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="research">research</span>
+            <span class="card-size">L</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for i18n / RTL audit">Layouts assume LTR and Latin metrics. An audit of mirrored chrome, logical properties, and CJK line-height would broaden reach, but no current consumer needs it, so it stays parked.</textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CUT -->
+    <div class="col" data-col="cut">
+      <div class="col-header">
+        <span class="col-title">Cut<span class="col-sub">decided against</span></span>
+        <span class="col-count" id="count-cut">2</span>
+      </div>
+      <div class="col-body" id="col-cut" role="list" aria-label="Cut">
+
+        <div class="card" draggable="true" data-id="gantt-shape" data-col="cut" role="listitem" aria-label="New shape candidate: gantt/critical-path? — Cut">
+          <div class="card-title" data-original="New shape candidate: gantt/critical-path?">New shape candidate: gantt/critical-path?</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="cut">cut</span>
+            <span class="card-size">L</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for New shape candidate gantt critical-path">Tempting, but scheduling data is a timeline or a dashboard with a date axis — both already exist. A tenth shape adds surface area and selection ambiguity without carrying information the current set can't. Cut.</textarea>
+        </div>
+
+        <div class="card" draggable="true" data-id="drop-weakest" data-col="cut" role="listitem" aria-label="Drop the weakest sub-pattern — Cut">
+          <div class="card-title" data-original="Drop the weakest sub-pattern">Drop the weakest sub-pattern</div>
+          <div class="card-meta">
+            <span class="card-tag" data-tag="cut">cut</span>
+            <span class="card-size">S</span>
+          </div>
+          <textarea class="card-rationale" placeholder="rationale…" aria-label="Rationale for Drop the weakest sub-pattern">Considered pruning the exploration grid as rarely-reached. But it earns its place on multi-option design work and removing it only saves a paragraph. Not worth the churn — keep the set intact. Cut the cut.</textarea>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /.board -->
+</main>
+
+<!-- ── Undo toast ── -->
+<div id="undo-toast" role="status" aria-live="polite">
+  <span id="undo-msg">Moved card</span>
+  <button id="undo-btn">Undo</button>
+</div>
+
+<!-- ── Export bar ── -->
+<div class="export-bar">
+  <div class="export-bar-inner">
+    <div class="counts-summary">
+      <span data-for="now"><span class="count-pill">Now <span id="bar-now">3</span></span></span>
+      <span data-for="next"><span class="count-pill">Next <span id="bar-next">4</span></span></span>
+      <span data-for="later"><span class="count-pill">Later <span id="bar-later">4</span></span></span>
+      <span data-for="cut"><span class="count-pill">Cut <span id="bar-cut">2</span></span></span>
+    </div>
+    <button class="export-btn" onclick="copyPrompt()" aria-label="Copy triage board state as a prompt">copy as prompt</button>
+    <button class="export-btn secondary" onclick="resetBoard()" aria-label="Reset board to initial state">reset</button>
+    <textarea id="prompt-out" readonly aria-label="Prompt output fallback"></textarea>
+  </div>
+</div>
+
+<!-- ── Footer ── -->
+<footer class="artifact-footer">
+  examples/triage-board.html · render-as-html sample · triage-board shape
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   triage-board.html — vanilla JS, no external deps
+   Subject: render-as-html roadmap triage (the skill triaging itself)
+   Dimensions: Design · Interaction · Workflows · Tables
+   HTML-native features: drag-between-columns, live column counts,
+     filter/search with mark highlighting, copy-as-prompt, undo
+   ══════════════════════════════════════════════════════════ */
+
+const ARTIFACT_PATH = 'examples/triage-board.html';
+
+/* ── Column order (for stable display in prompt) ── */
+const COL_ORDER = ['now','next','later','cut'];
+
+/* ── Initial state snapshot (for reset) ── */
+const INITIAL_STATE = (() => {
+  const state = {};
+  document.querySelectorAll('.card').forEach(card => {
+    state[card.dataset.id] = {
+      col: card.dataset.col,
+      rationale: card.querySelector('.card-rationale').value
+    };
+  });
+  return JSON.parse(JSON.stringify(state));
+})();
+
+/* ── Undo stack ── */
+let undoStack = []; // each entry: { cardId, fromCol, toCol }
+
+/* ── Counts ── */
+function updateCounts() {
+  COL_ORDER.forEach(col => {
+    const visible = document.querySelectorAll(`#col-${col} .card:not(.hidden)`).length;
+    const total   = document.querySelectorAll(`#col-${col} .card`).length;
+    const display = isFiltering() ? `${visible}/${total}` : String(total);
+    document.getElementById(`count-${col}`).textContent = display;
+    document.getElementById(`bar-${col}`).textContent   = display;
+  });
+}
+
+function isFiltering() {
+  return document.getElementById('search').value.trim().length > 0;
+}
+
+/* ── Drag-and-drop ── */
+let dragCard = null;
+let dragSourceCol = null;
+
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('dragstart', onDragStart);
+  card.addEventListener('dragend',   onDragEnd);
+});
+
+document.querySelectorAll('.col-body').forEach(body => {
+  body.addEventListener('dragover',  onDragOver);
+  body.addEventListener('dragleave', onDragLeave);
+  body.addEventListener('drop',      onDrop);
+});
+
+function onDragStart(e) {
+  dragCard = this;
+  dragSourceCol = this.closest('.col').dataset.col;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', this.dataset.id);
+}
+
+function onDragEnd(e) {
+  if (dragCard) dragCard.classList.remove('dragging');
+  document.querySelectorAll('.col-body').forEach(b => b.classList.remove('drag-over'));
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('drag-target-above'));
+  dragCard = null;
+  dragSourceCol = null;
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  this.classList.add('drag-over');
+
+  // Drop indicator: find card to insert before
+  const afterCard = getDragAfterElement(this, e.clientY);
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('drag-target-above'));
+  if (afterCard) afterCard.classList.add('drag-target-above');
+}
+
+function onDragLeave(e) {
+  if (!this.contains(e.relatedTarget)) {
+    this.classList.remove('drag-over');
+  }
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over');
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('drag-target-above'));
+  if (!dragCard) return;
+
+  const targetCol = this.closest('.col').dataset.col;
+  const fromCol   = dragSourceCol;
+
+  // Determine insertion point
+  const afterCard = getDragAfterElement(this, e.clientY);
+
+  if (afterCard) {
+    this.insertBefore(dragCard, afterCard);
+  } else {
+    this.appendChild(dragCard);
+  }
+
+  dragCard.dataset.col = targetCol;
+
+  // Record undo only if actually moved to a different column
+  if (fromCol !== targetCol) {
+    pushUndo(dragCard.dataset.id, fromCol, targetCol);
+  }
+
+  updateCounts();
+}
+
+function getDragAfterElement(container, y) {
+  const draggable = [...container.querySelectorAll('.card:not(.dragging)')];
+  return draggable.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset, element: child };
+    }
+    return closest;
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+/* ── Undo ── */
+function pushUndo(cardId, fromCol, toCol) {
+  undoStack.push({ cardId, fromCol, toCol });
+  showUndoToast(`Moved to ${toCol.toUpperCase()}`);
+}
+
+function showUndoToast(msg) {
+  const toast = document.getElementById('undo-toast');
+  document.getElementById('undo-msg').textContent = msg;
+  toast.classList.add('visible');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('visible'), 5000);
+}
+
+document.getElementById('undo-btn').addEventListener('click', () => {
+  if (undoStack.length === 0) return;
+  const { cardId, fromCol } = undoStack.pop();
+  const card = document.querySelector(`.card[data-id="${cardId}"]`);
+  if (!card) return;
+  const target = document.getElementById(`col-${fromCol}`);
+  target.appendChild(card);
+  card.dataset.col = fromCol;
+  updateCounts();
+  if (undoStack.length === 0) {
+    document.getElementById('undo-toast').classList.remove('visible');
+  } else {
+    showUndoToast('Undo applied');
+  }
+});
+
+/* ── Search / filter with <mark> ── */
+const searchInput = document.getElementById('search');
+const searchClear = document.getElementById('search-clear');
+
+searchInput.addEventListener('input', runFilter);
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  runFilter();
+  searchInput.focus();
+});
+
+function runFilter() {
+  const q = searchInput.value.trim().toLowerCase();
+  searchClear.classList.toggle('visible', q.length > 0);
+
+  document.querySelectorAll('.card').forEach(card => {
+    const titleEl = card.querySelector('.card-title');
+    const original = titleEl.dataset.original;
+
+    if (!q) {
+      card.classList.remove('hidden');
+      titleEl.innerHTML = escapeHtml(original);
+      return;
+    }
+
+    const lower = original.toLowerCase();
+    if (lower.includes(q)) {
+      card.classList.remove('hidden');
+      // Mark matching text
+      const idx = lower.indexOf(q);
+      const before = original.slice(0, idx);
+      const match  = original.slice(idx, idx + q.length);
+      const after  = original.slice(idx + q.length);
+      titleEl.innerHTML = escapeHtml(before) + '<mark>' + escapeHtml(match) + '</mark>' + escapeHtml(after);
+    } else {
+      card.classList.add('hidden');
+      titleEl.innerHTML = escapeHtml(original);
+    }
+  });
+
+  updateCounts();
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ── Copy-as-prompt ── */
+function collectState() {
+  const state = {};
+  COL_ORDER.forEach(col => { state[col] = []; });
+  document.querySelectorAll('.card').forEach(card => {
+    const col       = card.dataset.col;
+    const title     = card.querySelector('.card-title').dataset.original;
+    const rationale = card.querySelector('.card-rationale').value.trim();
+    state[col].push({ title, rationale });
+  });
+  return state;
+}
+
+function copyPrompt() {
+  const state = collectState();
+  const lines = COL_ORDER.map(col => {
+    const items = state[col].map(({ title, rationale }) => {
+      const note = rationale ? ` (${rationale})` : '';
+      return `  - ${title}${note}`;
+    }).join('\n') || '  (empty)';
+    return `${col.toUpperCase()}:\n${items}`;
+  }).join('\n');
+
+  const prompt =
+`In ${ARTIFACT_PATH}, re-bucket the roadmap into Now / Next / Later / Cut:
+
+${lines}
+
+Apply these buckets to the triage-board cards and save.`;
+
+  const out = document.getElementById('prompt-out');
+
+  navigator.clipboard.writeText(prompt).then(() => {
+    out.classList.remove('visible');
+    flashExportBtn();
+  }).catch(() => {
+    out.value = prompt;
+    out.classList.add('visible');
+    out.focus();
+    out.select();
+  });
+}
+
+function flashExportBtn() {
+  const btn = document.querySelector('.export-btn:not(.secondary)');
+  const orig = btn.textContent;
+  btn.textContent = 'copied!';
+  btn.style.background = 'var(--ok)';
+  btn.style.color = 'var(--paper)';
+  setTimeout(() => {
+    btn.textContent = orig;
+    btn.style.background = '';
+    btn.style.color = '';
+  }, 1500);
+}
+
+/* ── Reset ── */
+function resetBoard() {
+  Object.entries(INITIAL_STATE).forEach(([id, { col, rationale }]) => {
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    if (!card) return;
+    const target = document.getElementById(`col-${col}`);
+    target.appendChild(card);
+    card.dataset.col = col;
+    card.querySelector('.card-rationale').value = rationale;
+  });
+  undoStack = [];
+  document.getElementById('undo-toast').classList.remove('visible');
+  searchInput.value = '';
+  runFilter();
+  updateCounts();
+}
+
+/* ── Touch move fallback: per-card column-picker select ── */
+function buildMoveControl(card) {
+  const wrap = document.createElement('div');
+  wrap.className = 'card-move-wrap';
+
+  const label = document.createElement('span');
+  label.className = 'card-move-label';
+  label.textContent = 'move to:';
+
+  const sel = document.createElement('select');
+  sel.className = 'card-move-select';
+  const cardTitle = card.querySelector('.card-title').dataset.original || '';
+  sel.setAttribute('aria-label', 'Move "' + cardTitle + '" to column');
+
+  COL_ORDER.forEach(col => {
+    const opt = document.createElement('option');
+    opt.value = col;
+    opt.textContent = col.charAt(0).toUpperCase() + col.slice(1);
+    sel.appendChild(opt);
+  });
+
+  // Set current column as selected
+  sel.value = card.dataset.col;
+
+  sel.addEventListener('change', () => {
+    const fromCol = card.dataset.col;
+    const toCol = sel.value;
+    if (fromCol === toCol) return;
+
+    const targetBody = document.getElementById('col-' + toCol);
+    targetBody.appendChild(card);
+    card.dataset.col = toCol;
+    // Sync all move selects on this card (only one, but future-proof)
+    card.querySelectorAll('.card-move-select').forEach(s => { s.value = toCol; });
+    pushUndo(card.dataset.id, fromCol, toCol);
+    updateCounts();
+  });
+
+  wrap.appendChild(label);
+  wrap.appendChild(sel);
+  return wrap;
+}
+
+/* Inject move controls into all existing cards */
+document.querySelectorAll('.card').forEach(card => {
+  card.appendChild(buildMoveControl(card));
+});
+
+/* Keep move select in sync after undo */
+document.getElementById('undo-btn').addEventListener('click', () => {
+  // After undo moves a card, sync its move select
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.card').forEach(card => {
+      card.querySelectorAll('.card-move-select').forEach(sel => {
+        sel.value = card.dataset.col;
+      });
+    });
+  });
+});
+
+/* Keep move select in sync after reset */
+const _origReset = window.resetBoard;
+window.resetBoard = function() {
+  _origReset();
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.card').forEach(card => {
+      card.querySelectorAll('.card-move-select').forEach(sel => {
+        sel.value = card.dataset.col;
+      });
+    });
+  });
+};
+
+/* ── Init ── */
+updateCounts();
+</script>
+</body>
+</html>

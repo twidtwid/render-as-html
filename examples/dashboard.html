@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>render-as-html · shape coverage</title>
+<style>
+/* ── Design tokens ─────────────────────────────────────────────── */
+:root {
+  --paper:      #faf6ef;
+  --paper-tint: #f3ede1;
+  --paper-card: #fbf7f0;
+  --ink:        #1a1815;
+  --ink-soft:   #4a443c;
+  --muted:      #736d62;
+  --rule:       #d9d1c2;
+  --rule-soft:  #ece5d6;
+  --accent:     #8a3a1a;
+  --accent-2:   #c2901a;
+  --ok:         #2f7d44;
+  --warn:       #9b641d;
+  --note:       #2f6fb3;
+  --fail:       #8b1a1a;
+
+  --font-serif: "Charter","Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Source Serif Pro",serif;
+  --font-sans:  ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  --font-mono:  ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:      #1a1815;
+    --paper-tint: #221f1a;
+    --paper-card: #211e19;
+    --ink:        #f0eee8;
+    --ink-soft:   #c9c3b6;
+    --muted:      #9a948a;
+    --rule:       #38332b;
+    --rule-soft:  #2c2820;
+    --accent:     #e0794f;
+    --accent-2:   #d8a73a;
+    --ok:         #5cae6f;
+    --warn:       #c79a4a;
+    --note:       #6f9fd0;
+    --fail:       #d9524f;
+  }
+}
+
+/* ── Reset ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--paper-tint); }
+::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
+/* ── Layout shell ──────────────────────────────────────────────── */
+.shell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px 48px;
+}
+
+/* ── Sticky control bar ────────────────────────────────────────── */
+.control-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.control-bar .brand {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+  margin-right: 4px;
+  flex: 0 0 auto;        /* never let the flex row shrink the brand to an ellipsis */
+  min-width: max-content;
+}
+.search-wrap {
+  position: relative;
+  flex: 1 1 160px;
+  min-width: 130px;
+  max-width: 280px;
+}
+.search-wrap svg {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+#search {
+  width: 100%;
+  padding: 6px 28px 6px 28px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper-card);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  outline: none;
+}
+#search:focus { border-color: var(--accent); }
+#clear-search {
+  display: none;
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+#clear-search:hover { color: var(--accent); }
+
+/* ── Filter chips ──────────────────────────────────────────────── */
+.chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.chip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--ink-soft);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+  background: var(--paper-card);
+}
+.chip-label:hover { border-color: var(--accent); color: var(--accent); }
+.chip-label input[type="checkbox"] { display: none; }
+.chip-label.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.chip-label .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+#clear-chips {
+  font-size: 12px;
+  font-family: var(--font-sans);
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  display: none;
+  white-space: nowrap;
+}
+#clear-chips:hover { color: var(--accent); }
+
+/* ── Hero tiles ────────────────────────────────────────────────── */
+.hero {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 16px 0 14px;
+}
+@media (max-width: 700px) {
+  .hero { grid-template-columns: repeat(2, 1fr); }
+}
+.tile {
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+.tile .t-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono);
+  margin-bottom: 4px;
+}
+.tile .t-value {
+  font-size: 26px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.tile .t-sub {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.tile.ok-tile .t-value { color: var(--ok); }
+
+/* ── Two-column dashboard grid ─────────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .dash-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Panel card ────────────────────────────────────────────────── */
+.panel {
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.panel-head strong { color: var(--ink-soft); font-weight: 600; }
+
+/* ── Dense table ───────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+thead th {
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  background: var(--paper-tint);
+}
+thead th:hover { color: var(--accent); }
+thead th.sort-asc::after  { content: " ↑"; color: var(--accent); }
+thead th.sort-desc::after { content: " ↓"; color: var(--accent); }
+tbody tr { border-bottom: 1px solid var(--rule-soft); transition: background 0.1s; }
+tbody tr:hover { background: var(--paper-tint); }
+tbody tr.hidden { display: none; }
+td {
+  padding: 8px 10px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+td:first-child {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+}
+td.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  text-align: right;
+}
+td.reg-cell { font-family: var(--font-mono); font-size: 12px; }
+
+/* ── Status pills ──────────────────────────────────────────────── */
+.pill {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pill-green { background: rgba(47,125,68,.15); color: var(--ok); }
+.pill-note  { background: rgba(47,111,179,.15); color: var(--note); }
+.pill-amber { background: rgba(155,100,29,.15); color: var(--warn); }
+
+/* ── Kind tag ──────────────────────────────────────────────────── */
+.kind {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── Copy-as-prompt button ─────────────────────────────────────── */
+.copy-btn {
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 3px 7px;
+  white-space: nowrap;
+  transition: border-color 0.1s, color 0.1s;
+}
+.copy-btn:hover { border-color: var(--accent-2); color: var(--accent-2); }
+.copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+/* ── Prompt textarea fallback ──────────────────────────────────── */
+#prompt-fallback-wrap {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  right: 20px;
+  z-index: 200;
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15);
+  max-width: 380px;
+  width: 90vw;
+}
+#prompt-fallback-wrap .fb-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+#prompt-fallback-wrap .fb-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+}
+#prompt-fallback-wrap .fb-close:hover { color: var(--accent); }
+#prompt-fallback {
+  width: 100%;
+  height: 96px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--paper-tint);
+  color: var(--ink);
+  border: 1px solid var(--rule-soft);
+  border-radius: 3px;
+  padding: 6px;
+  resize: vertical;
+}
+
+/* ── Right-column charts ───────────────────────────────────────── */
+.charts-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.chart-inner {
+  padding: 14px 16px;
+}
+.chart-title {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.donut-legend {
+  flex: 1;
+  min-width: 0;
+}
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.legend-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink-soft); }
+.legend-pct { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ── HTML-native-features bar chart (inline SVG) ───────────────── */
+.svg-bar { display: block; width: 100%; height: auto; }
+
+/* ── highlight from search ─────────────────────────────────────── */
+mark {
+  background: rgba(194,144,26,.3);
+  color: inherit;
+  border-radius: 1px;
+  padding: 0 1px;
+}
+
+/* ── Footer ────────────────────────────────────────────────────── */
+footer {
+  margin-top: 32px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ── No-results ────────────────────────────────────────────────── */
+#no-results {
+  display: none;
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+/* ── iOS / mobile hardening ─────────────────────────────────────── */
+/* 2. Prevent iOS focus-zoom: keep form controls ≥16px on phones */
+@media (max-width: 768px) {
+  input, textarea, select, #search {
+    font-size: 16px !important;
+  }
+  /* 5. Tap targets: filter chips and action buttons */
+  .chip-label {
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+  .copy-btn {
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+  #clear-search, #clear-chips {
+    min-height: 40px;
+    padding: 8px;
+  }
+}
+/* 3. Touch can't hover — copy buttons always visible on touch devices */
+@media (hover: none) {
+  .copy-btn {
+    opacity: 1 !important;
+  }
+}
+.copy-btn:focus-visible {
+  opacity: 1 !important;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── Sticky control bar ─────────────────────────────────────── -->
+  <div class="control-bar">
+    <span class="brand">render-as-html · shapes</span>
+
+    <div class="search-wrap">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="6.5" cy="6.5" r="5"/><line x1="10.5" y1="10.5" x2="14" y2="14"/>
+      </svg>
+      <input id="search" type="search" placeholder="filter shapes…" autocomplete="off" aria-label="Filter building blocks by name or register">
+      <button id="clear-search" aria-label="Clear search" title="Clear">×</button>
+    </div>
+
+    <div class="chips" id="chip-group" role="group" aria-label="Filter by register and kind">
+      <!-- injected by JS -->
+    </div>
+    <button id="clear-chips" aria-label="Clear register and kind filters">× clear</button>
+  </div>
+
+  <!-- ── Hero tiles (equal table aggregates) ─────────────────────── -->
+  <div class="hero">
+    <div class="tile">
+      <div class="t-label">Building blocks</div>
+      <div class="t-value" id="tile-total">14</div>
+      <div class="t-sub">9 shapes + 5 sub-patterns</div>
+    </div>
+    <div class="tile">
+      <div class="t-label">Register split</div>
+      <div class="t-value" id="tile-split">6 / 3</div>
+      <div class="t-sub">instrument / reading shapes</div>
+    </div>
+    <div class="tile">
+      <div class="t-label">Avg dimensions</div>
+      <div class="t-value" id="tile-dims">4.9</div>
+      <div class="t-sub">of 8, across all blocks</div>
+    </div>
+    <div class="tile ok-tile">
+      <div class="t-label">Pass the bar</div>
+      <div class="t-value" id="tile-pass">14 / 14</div>
+      <div class="t-sub">≥3 HTML-native features</div>
+    </div>
+  </div>
+
+  <!-- ── Dashboard grid ─────────────────────────────────────────── -->
+  <div class="dash-grid">
+
+    <!-- LEFT: shape coverage table -->
+    <div class="panel">
+      <div class="panel-head">
+        <strong>Shape coverage</strong>
+        <span id="row-count">14 blocks</span>
+      </div>
+      <div class="table-wrap">
+        <table id="shape-table" aria-label="render-as-html building-block coverage">
+          <thead>
+            <tr>
+              <th scope="col" data-col="name" data-type="str" class="sort-asc" tabindex="0">Building block</th>
+              <th scope="col" data-col="kind" data-type="str" tabindex="0">Kind</th>
+              <th scope="col" data-col="reg"  data-type="str" tabindex="0">Register</th>
+              <th scope="col" data-col="prim" data-type="num" tabindex="0">Req. primitives</th>
+              <th scope="col" data-col="feat" data-type="num" tabindex="0">HTML-native</th>
+              <th scope="col" data-col="dims" data-type="num" tabindex="0">Dims (/8)</th>
+              <th scope="col" data-col="kb"   data-type="num" tabindex="0">Sample KB</th>
+              <th scope="col" data-col="bar"  data-type="str" tabindex="0">Passes bar</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="shape-tbody">
+            <!-- injected by JS -->
+          </tbody>
+        </table>
+        <div id="no-results">No building blocks match the current filters.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: charts -->
+    <div class="charts-col">
+
+      <!-- Donut: register distribution (9 shapes) -->
+      <div class="panel">
+        <div class="panel-head"><strong>Register distribution</strong><span>9 shapes</span></div>
+        <div class="chart-inner">
+          <div class="chart-title">reading vs instrument</div>
+          <div class="donut-wrap">
+            <svg id="donut-svg" width="110" height="110" viewBox="0 0 110 110" role="img" aria-label="Register split across the 9 shapes: 6 instrument shapes (67 percent), 3 reading shapes (33 percent)."></svg>
+            <div class="donut-legend" id="donut-legend"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bar: HTML-native features per shape (inline SVG) -->
+      <div class="panel">
+        <div class="panel-head"><strong>HTML-native features</strong><span>per shape</span></div>
+        <div class="chart-inner">
+          <div class="chart-title">count by shape — bar floor is 3 (the bar)</div>
+          <svg id="feat-bar-svg" class="svg-bar" viewBox="0 0 320 150" role="img" aria-label="HTML-native feature count per shape, every shape clearing the floor of 3: dashboard 6, document 4, editorial 4, timeline 5, runbook 4, comparison 4, network-map 5, triage-board 5, developer 5."></svg>
+        </div>
+      </div>
+
+      <!-- The-bar summary -->
+      <div class="panel">
+        <div class="panel-head"><strong>The bar</strong><span>flatten test</span></div>
+        <div class="chart-inner" id="bar-summary">
+          <!-- injected by JS -->
+        </div>
+      </div>
+
+    </div><!-- /charts-col -->
+  </div><!-- /dash-grid -->
+
+  <!-- ── Prompt fallback ────────────────────────────────────────── -->
+  <div id="prompt-fallback-wrap" aria-live="polite">
+    <div class="fb-head">
+      <span>copy as prompt</span>
+      <button class="fb-close" id="fb-close-btn" aria-label="Close">×</button>
+    </div>
+    <textarea id="prompt-fallback" readonly aria-label="Copy-as-prompt fallback text"></textarea>
+  </div>
+
+  <!-- ── Footer ────────────────────────────────────────────────── -->
+  <footer>
+    <span id="footer-path">examples/dashboard.html</span>
+    <span id="footer-ts"></span>
+  </footer>
+</div><!-- /shell -->
+
+<script>
+// ── Data ───────────────────────────────────────────────────────────
+// The artifact path is repo-relative on purpose: this sample ships into
+// the public render-as-html repo at examples/dashboard.html.
+const ARTIFACT = 'examples/dashboard.html';
+
+// kind: 'shape' | 'sub-pattern'
+// reg : 'instrument' | 'reading' | 'inherits'
+// prim: required-primitive count from the shape contract
+// feat: distinct HTML-native features the contract calls for
+// dims: of the 8 information dimensions the block typically leverages
+// kb  : representative self-contained sample size in KB
+// bar : 'pass' (every block clears ≥3 HTML-native features)
+const BLOCKS = [
+  { name:'dashboard',         kind:'shape',       reg:'instrument', prim:7, feat:6, dims:6, kb:24, bar:'pass' },
+  { name:'document',          kind:'shape',       reg:'reading',    prim:6, feat:4, dims:5, kb:19, bar:'pass' },
+  { name:'editorial',         kind:'shape',       reg:'reading',    prim:6, feat:4, dims:5, kb:22, bar:'pass' },
+  { name:'timeline',          kind:'shape',       reg:'reading',    prim:6, feat:5, dims:5, kb:20, bar:'pass' },
+  { name:'runbook',           kind:'shape',       reg:'instrument', prim:6, feat:4, dims:5, kb:18, bar:'pass' },
+  { name:'comparison',        kind:'shape',       reg:'instrument', prim:6, feat:4, dims:5, kb:21, bar:'pass' },
+  { name:'network-map',       kind:'shape',       reg:'instrument', prim:7, feat:5, dims:6, kb:26, bar:'pass' },
+  { name:'triage-board',      kind:'shape',       reg:'instrument', prim:6, feat:5, dims:5, kb:23, bar:'pass' },
+  { name:'developer',         kind:'shape',       reg:'instrument', prim:6, feat:5, dims:6, kb:27, bar:'pass' },
+  { name:'checklist',         kind:'sub-pattern', reg:'inherits',   prim:2, feat:3, dims:4, kb:14, bar:'pass' },
+  { name:'exploration-grid',  kind:'sub-pattern', reg:'inherits',   prim:2, feat:3, dims:4, kb:16, bar:'pass' },
+  { name:'config-editor',     kind:'sub-pattern', reg:'inherits',   prim:3, feat:4, dims:4, kb:17, bar:'pass' },
+  { name:'prompt-tuner',      kind:'sub-pattern', reg:'inherits',   prim:3, feat:4, dims:5, kb:18, bar:'pass' },
+  { name:'annotation-overlay',kind:'sub-pattern', reg:'inherits',   prim:2, feat:3, dims:4, kb:15, bar:'pass' },
+];
+
+// ── Register colours ───────────────────────────────────────────────
+const REG_COLOR = {
+  instrument: '#8a3a1a',  // terracotta
+  reading:    '#c2901a',  // ochre fill
+  inherits:   '#8a8378',  // neutral
+};
+
+// ── Helpers ────────────────────────────────────────────────────────
+function regPill(reg) {
+  const map = { instrument:'pill-green', reading:'pill-amber', inherits:'pill-note' };
+  const lbl = { instrument:'instrument', reading:'reading', inherits:'inherits' };
+  return `<span class="pill ${map[reg]}">${lbl[reg]}</span>`;
+}
+function barCell(bar) {
+  // icon + word, never colour-only
+  return bar === 'pass'
+    ? '<span class="pill pill-green">✓ pass</span>'
+    : '<span class="pill pill-amber">✗ fail</span>';
+}
+
+// ── Aggregates → must equal hero tiles ─────────────────────────────
+function computeAggregates() {
+  const total = BLOCKS.length;
+  const shapes = BLOCKS.filter(b => b.kind === 'shape');
+  const inst = shapes.filter(b => b.reg === 'instrument').length;
+  const read = shapes.filter(b => b.reg === 'reading').length;
+  const avgDims = (BLOCKS.reduce((s,b)=>s+b.dims,0) / total);
+  const passes = BLOCKS.filter(b => b.bar === 'pass').length;
+  return { total, inst, read, avgDims, passes };
+}
+function paintTiles() {
+  const a = computeAggregates();
+  document.getElementById('tile-total').textContent = a.total;
+  document.getElementById('tile-split').textContent = `${a.inst} / ${a.read}`;
+  document.getElementById('tile-dims').textContent  = a.avgDims.toFixed(1);
+  document.getElementById('tile-pass').textContent  = `${a.passes} / ${a.total}`;
+}
+
+// ── Build table rows ───────────────────────────────────────────────
+function buildRows() {
+  const tbody = document.getElementById('shape-tbody');
+  tbody.innerHTML = '';
+  BLOCKS.forEach(b => {
+    const tr = document.createElement('tr');
+    tr.dataset.name = b.name;
+    tr.dataset.kind = b.kind;
+    tr.dataset.reg  = b.reg;
+    tr.dataset.prim = b.prim;
+    tr.dataset.feat = b.feat;
+    tr.dataset.dims = b.dims;
+    tr.dataset.kb   = b.kb;
+    tr.dataset.bar  = b.bar;
+    tr.innerHTML = `
+      <td data-original="${b.name}">${b.name}</td>
+      <td><span class="kind">${b.kind}</span></td>
+      <td class="reg-cell">${regPill(b.reg)}</td>
+      <td class="num">${b.prim}</td>
+      <td class="num">${b.feat}</td>
+      <td class="num">${b.dims}</td>
+      <td class="num">${b.kb}</td>
+      <td>${barCell(b.bar)}</td>
+      <td><button class="copy-btn" data-block="${b.name}" aria-label="Copy a build prompt for the ${b.name} block">copy prompt</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Donut: register distribution across the 9 shapes ───────────────
+function buildDonut() {
+  const shapes = BLOCKS.filter(b => b.kind === 'shape');
+  const counts = {};
+  shapes.forEach(s => { counts[s.reg] = (counts[s.reg]||0) + 1; });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const total = sorted.reduce((s,[,v])=>s+v,0);
+  const cx=55, cy=55, R=40, r=24;
+  let angle = -Math.PI/2;
+  let paths = '';
+  sorted.forEach(([reg, n]) => {
+    const slice = (n/total) * 2 * Math.PI;
+    const x1 = cx + R*Math.cos(angle),        y1 = cy + R*Math.sin(angle);
+    const x2 = cx + R*Math.cos(angle+slice),  y2 = cy + R*Math.sin(angle+slice);
+    const ix1 = cx + r*Math.cos(angle),       iy1 = cy + r*Math.sin(angle);
+    const ix2 = cx + r*Math.cos(angle+slice), iy2 = cy + r*Math.sin(angle+slice);
+    const big = slice > Math.PI ? 1 : 0;
+    const col = REG_COLOR[reg]||'#ccc';
+    paths += `<path d="M${ix1},${iy1} L${x1},${y1} A${R},${R} 0 ${big},1 ${x2},${y2} L${ix2},${iy2} A${r},${r} 0 ${big},0 ${ix1},${iy1} Z" fill="${col}" opacity="0.85">
+      <title>${reg}: ${n} of ${total} shapes (${(n/total*100).toFixed(0)}%)</title></path>`;
+    angle += slice;
+  });
+  document.getElementById('donut-svg').innerHTML = paths +
+    `<text x="55" y="51" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" font-weight="700" fill="var(--ink)">9</text>
+     <text x="55" y="63" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9" fill="var(--muted)">shapes</text>`;
+
+  const legend = document.getElementById('donut-legend');
+  legend.innerHTML = sorted.map(([reg,n])=>`
+    <div class="legend-row">
+      <span class="legend-dot" style="background:${REG_COLOR[reg]||'#ccc'}"></span>
+      <span class="legend-name">${reg}</span>
+      <span class="legend-pct">${n} · ${(n/total*100).toFixed(0)}%</span>
+    </div>`).join('');
+}
+
+// ── Inline-SVG bar chart: HTML-native features per shape ───────────
+function buildFeatBars() {
+  const shapes = BLOCKS.filter(b => b.kind === 'shape');
+  const W = 320, H = 150, padL = 8, padR = 8, padT = 8, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const mx = Math.max(...shapes.map(s=>s.feat), 6);
+  const gap = 6;
+  const bw = (plotW - gap*(shapes.length-1)) / shapes.length;
+  const yOf = v => padT + plotH - (v/mx)*plotH;
+  // "the bar" reference line at 3 HTML-native features
+  const barY = yOf(3);
+  let svg = `<line x1="${padL}" y1="${barY}" x2="${W-padR}" y2="${barY}" stroke="var(--accent-2)" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="${W-padR}" y="${barY-3}" text-anchor="end" font-family="ui-monospace,monospace" font-size="8" fill="var(--muted)">the bar = 3</text>`;
+  shapes.forEach((s,i) => {
+    const x = padL + i*(bw+gap);
+    const y = yOf(s.feat);
+    const h = padT + plotH - y;
+    svg += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="var(--accent)" opacity="0.78"><title>${s.name}: ${s.feat} HTML-native features</title></rect>
+      <text x="${(x+bw/2).toFixed(1)}" y="${(y-3).toFixed(1)}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="8" fill="var(--ink-soft)">${s.feat}</text>
+      <text x="${(x+bw/2).toFixed(1)}" y="${H-padB+12}" text-anchor="middle" font-family="ui-monospace,monospace" font-size="7.5" fill="var(--muted)" transform="rotate(40 ${(x+bw/2).toFixed(1)} ${H-padB+12})">${s.name}</text>`;
+  });
+  document.getElementById('feat-bar-svg').innerHTML = svg;
+}
+
+// ── The-bar summary ────────────────────────────────────────────────
+function buildBarSummary() {
+  const a = computeAggregates();
+  const minFeat = Math.min(...BLOCKS.map(b=>b.feat));
+  document.getElementById('bar-summary').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span class="pill pill-green">✓ clears ≥3</span>
+        <span style="font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums;">${a.passes} / ${a.total} blocks</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span class="pill pill-note">min features</span>
+        <span style="font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums;">${minFeat} (the floor)</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span class="pill pill-amber">copy-as-prompt</span>
+        <span style="font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums;">required, all blocks</span>
+      </div>
+      <p style="font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.45;">
+        Flatten any block to static text and the live filter, sort, chip
+        toggles, inline SVG charts, and copy-as-prompt round-trip all die.
+        Only the prose survives — so each block is an instrument, not styled text.
+      </p>
+    </div>`;
+}
+
+// ── Filter chips: register + kind ──────────────────────────────────
+const CHIP_DEFS = [
+  { key:'reg:instrument', label:'instrument', color:REG_COLOR.instrument },
+  { key:'reg:reading',    label:'reading',    color:REG_COLOR.reading },
+  { key:'reg:inherits',   label:'inherits',   color:REG_COLOR.inherits },
+  { key:'kind:shape',       label:'shape',       color:'var(--ink-soft)' },
+  { key:'kind:sub-pattern', label:'sub-pattern', color:'var(--ink-soft)' },
+];
+let activeChips = new Set();
+
+function buildChips() {
+  const group = document.getElementById('chip-group');
+  CHIP_DEFS.forEach(def => {
+    const lbl = document.createElement('label');
+    lbl.className = 'chip-label';
+    lbl.innerHTML = `<input type="checkbox" value="${def.key}"><span class="dot" style="background:${def.color}"></span>${def.label}`;
+    lbl.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) activeChips.add(def.key); else activeChips.delete(def.key);
+      lbl.classList.toggle('active', e.target.checked);
+      document.getElementById('clear-chips').style.display = activeChips.size ? 'inline-block' : 'none';
+      applyFilters();
+    });
+    group.appendChild(lbl);
+  });
+}
+
+document.getElementById('clear-chips').addEventListener('click', () => {
+  activeChips.clear();
+  document.querySelectorAll('#chip-group input[type="checkbox"]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('#chip-group .chip-label').forEach(l => l.classList.remove('active'));
+  document.getElementById('clear-chips').style.display = 'none';
+  applyFilters();
+});
+
+// ── Search filter ──────────────────────────────────────────────────
+const searchEl = document.getElementById('search');
+const clearSearch = document.getElementById('clear-search');
+
+searchEl.addEventListener('input', () => {
+  clearSearch.style.display = searchEl.value ? 'inline-block' : 'none';
+  applyFilters();
+});
+clearSearch.addEventListener('click', () => {
+  searchEl.value = '';
+  clearSearch.style.display = 'none';
+  applyFilters();
+});
+
+// ── Combined filter + highlight ────────────────────────────────────
+function applyFilters() {
+  const q = searchEl.value.trim().toLowerCase();
+  const rows = document.querySelectorAll('#shape-tbody tr');
+  // Split active chips into register set and kind set; AND across groups,
+  // OR within a group.
+  const regSel  = [...activeChips].filter(c=>c.startsWith('reg:')).map(c=>c.slice(4));
+  const kindSel = [...activeChips].filter(c=>c.startsWith('kind:')).map(c=>c.slice(5));
+  let visible = 0;
+
+  rows.forEach(tr => {
+    const reg  = tr.dataset.reg;
+    const kind = tr.dataset.kind;
+    const nameEl = tr.querySelector('td[data-original]');
+    const orig = nameEl.dataset.original;
+
+    const regOk  = regSel.length  === 0 || regSel.includes(reg);
+    const kindOk = kindSel.length === 0 || kindSel.includes(kind);
+
+    let searchOk = true;
+    if (q) {
+      searchOk = orig.toLowerCase().includes(q)
+              || reg.toLowerCase().includes(q)
+              || kind.toLowerCase().includes(q);
+    }
+
+    const show = regOk && kindOk && searchOk;
+    tr.classList.toggle('hidden', !show);
+    if (show) visible++;
+
+    if (q && searchOk && orig.toLowerCase().includes(q)) {
+      const idx = orig.toLowerCase().indexOf(q);
+      nameEl.innerHTML = orig.slice(0,idx) +
+        `<mark>${orig.slice(idx,idx+q.length)}</mark>` +
+        orig.slice(idx+q.length);
+    } else {
+      nameEl.textContent = orig;
+    }
+  });
+
+  document.getElementById('row-count').textContent = `${visible} block${visible===1?'':'s'}`;
+  document.getElementById('no-results').style.display = visible === 0 ? 'block' : 'none';
+}
+
+// ── Sortable headers ───────────────────────────────────────────────
+let currentSort = { col:'name', dir:'asc' };
+
+document.querySelectorAll('thead th[data-col]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    const type = th.dataset.type;
+    if (currentSort.col === col) {
+      currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      currentSort.col = col;
+      currentSort.dir = 'asc';
+    }
+    document.querySelectorAll('thead th').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+    th.classList.add(currentSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+    sortTable(col, type, currentSort.dir);
+  });
+  th.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); th.click(); }});
+});
+
+function sortTable(col, type, dir) {
+  const tbody = document.getElementById('shape-tbody');
+  const rows = [...tbody.querySelectorAll('tr')];
+  rows.sort((a,b) => {
+    let av = a.dataset[col];
+    let bv = b.dataset[col];
+    if (type === 'num') { av = parseFloat(av); bv = parseFloat(bv); }
+    if (av < bv) return dir==='asc' ? -1 : 1;
+    if (av > bv) return dir==='asc' ?  1 : -1;
+    return 0;
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// ── Copy-as-prompt per row (round-trips to examples/dashboard.html) ─
+document.getElementById('shape-tbody').addEventListener('click', e => {
+  const btn = e.target.closest('.copy-btn');
+  if (!btn) return;
+  const name = btn.dataset.block;
+  const b = BLOCKS.find(x => x.name === name);
+  const prompt = `In ${ARTIFACT}, add a worked "${b.name}" example section: it is a ${b.kind} in the ${b.reg} register, wires ${b.prim} required primitives and ${b.feat} HTML-native features, leverages ${b.dims} of the 8 information dimensions, and must pass the bar (flatten test). Keep the one-truth palette and the existing controls intact.`;
+  copyToClipboard(prompt, btn);
+});
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (btn) { btn.classList.add('copied'); btn.textContent = 'copied!'; setTimeout(()=>{ btn.classList.remove('copied'); btn.textContent='copy prompt'; },1800); }
+  }).catch(() => {
+    showFallback(text);
+    if (btn) { btn.textContent = 'see below'; setTimeout(()=>{ btn.textContent='copy prompt'; },2500); }
+  });
+}
+
+function showFallback(text) {
+  const wrap = document.getElementById('prompt-fallback-wrap');
+  const ta   = document.getElementById('prompt-fallback');
+  wrap.style.display = 'block';
+  ta.value = text;
+  ta.focus();
+  ta.select();
+}
+
+document.getElementById('fb-close-btn').addEventListener('click', () => {
+  document.getElementById('prompt-fallback-wrap').style.display = 'none';
+});
+
+// ── Footer timestamp ───────────────────────────────────────────────
+document.getElementById('footer-ts').textContent = 'generated ' + new Date().toISOString().slice(0,16).replace('T',' ') + ' UTC';
+
+// ── Init ───────────────────────────────────────────────────────────
+paintTiles();
+buildRows();
+buildChips();
+buildDonut();
+buildFeatBars();
+buildBarSummary();
+applyFilters(); // initial pass (all visible)
+</script>
+</body>
+</html>

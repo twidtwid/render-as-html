@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Runbook: author a new render-as-html artifact that passes the bar</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --paper:      #faf6ef;
+  --paper-tint: #f3ede1;
+  --paper-card: #fbf7f0;
+  --ink:        #1a1815;
+  --ink-soft:   #4a443c;
+  --muted:      #736d62;
+  --rule:       #d9d1c2;
+  --rule-soft:  #ece5d6;
+  --accent:     #8a3a1a;
+  --accent-2:   #c2901a;
+  --ok:         #2f7d44;
+  --warn:       #9b641d;
+  --note:       #2f6fb3;
+  --danger-bg:  #fdf0ec;
+  --danger-border: #c84b26;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --step-done-bg: #f0f7f2;
+  --step-done-border: #b8dcc5;
+
+  --branch-bg: #fef9ec;
+  --branch-border: #d9b84a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:      #1a1815;
+    --paper-tint: #221f1a;
+    --paper-card: #211e19;
+    --ink:        #f0eee8;
+    --ink-soft:   #c9c3b6;
+    --muted:      #9a948a;
+    --rule:       #38332b;
+    --rule-soft:  #2c2820;
+    --accent:     #e0794f;
+    --accent-2:   #d8a73a;
+    --ok:         #5cae6f;
+    --warn:       #c79a4a;
+    --note:       #6f9fd0;
+    --danger-bg:  #2a1810;
+    --danger-border: #c84b26;
+    --step-done-bg: #172118;
+    --step-done-border: #3a6b4a;
+    --branch-bg: #211d0e;
+    --branch-border: #8a7428;
+  }
+}
+
+html { font-size: 15px; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ── Sticky header ───────────────────────────────────── */
+#sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--paper-card);
+  border-bottom: 1px solid var(--rule);
+  padding: 0;
+}
+
+.header-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 10px 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: 1;
+  min-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#step-counter {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+#stuck-btn {
+  margin-left: auto;
+  background: var(--paper-tint);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  transition: background 0.15s, color 0.15s;
+}
+#stuck-btn:hover { background: var(--rule); color: var(--ink); }
+
+/* ── Progress bar ─────────────────────────────────────── */
+#progress-track {
+  height: 4px;
+  background: var(--rule);
+  margin-top: 10px;
+  position: relative;
+  overflow: hidden;
+}
+#progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+#progress-fill.complete { background: var(--ok); }
+
+/* ── Main layout ─────────────────────────────────────── */
+#main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+
+/* ── Page title block ─────────────────────────────────── */
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.page-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  margin-bottom: 18px;
+}
+
+/* ── Danger callout ───────────────────────────────────── */
+.danger-callout {
+  background: var(--danger-bg);
+  border: 1.5px solid var(--danger-border);
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin-bottom: 26px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.danger-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.danger-body {}
+.danger-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--danger-border);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.danger-text {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.danger-text strong { color: var(--ink); font-weight: 600; }
+
+/* ── Step cards ───────────────────────────────────────── */
+.step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.step-card {
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.2s, background 0.2s;
+}
+.step-card.done {
+  background: var(--step-done-bg);
+  border-color: var(--step-done-border);
+}
+.step-card.branch-hidden {
+  display: none;
+}
+.step-card.branch-card {
+  border-color: var(--branch-border);
+  background: var(--branch-bg);
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+}
+.step-header:hover { background: var(--paper-tint); }
+.step-card.done .step-header:hover { background: color-mix(in srgb, var(--step-done-bg) 80%, var(--ok) 20%); }
+
+.step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--paper-tint);
+  border: 1.5px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.step-card.done .step-num {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+.step-card.branch-card .step-num {
+  background: var(--branch-border);
+  border-color: var(--branch-border);
+  color: var(--ink);
+}
+
+.step-checkbox-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.step-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--ok);
+}
+
+.step-title-text {
+  flex: 1;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.step-card.done .step-title-text {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+  text-decoration-color: var(--ok);
+}
+
+.step-chevron {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+.step-card.expanded .step-chevron { transform: rotate(180deg); }
+
+.step-body {
+  display: none;
+  border-top: 1px solid var(--rule-soft);
+  padding: 18px 18px 18px 58px;
+}
+.step-card.expanded .step-body { display: block; }
+
+.step-desc {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+.step-desc code, .step-title-text code, .danger-text code, .inline-note code, .inline-warn code, .inline-ok code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--paper-tint);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ── Code blocks ─────────────────────────────────────── */
+.code-block-wrap {
+  position: relative;
+  margin: 0 0 14px;
+}
+.code-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+}
+.code-block {
+  background: var(--paper-tint);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 12px 48px 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.6;
+  white-space: pre;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.code-block .c { color: var(--muted); }          /* comment */
+.code-block .kw { color: var(--accent); font-weight: 600; } /* keyword */
+.code-block .str { color: var(--ok); }            /* string */
+.code-block .var { color: var(--note); }          /* variable / token */
+.code-block .cmd { color: var(--accent-2); font-weight: 600; } /* fn / selector */
+
+.copy-code-btn {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background 0.15s, color 0.15s;
+}
+.copy-code-btn:hover { background: var(--rule); color: var(--ink); }
+.copy-code-btn.copied { color: var(--ok); border-color: var(--ok); }
+
+/* ── Expected output callouts ─────────────────────────── */
+.expected-wrap {
+  margin: 0 0 14px;
+}
+.expected-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--note);
+  padding: 0 0 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.expected-toggle .e-chevron { font-size: 10px; transition: transform 0.2s; }
+.expected-toggle.open .e-chevron { transform: rotate(90deg); }
+
+.expected-body {
+  display: none;
+  background: color-mix(in srgb, var(--paper-tint) 60%, var(--note) 8%);
+  border: 1px solid color-mix(in srgb, var(--rule) 70%, var(--note) 30%);
+  border-radius: 5px;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+.expected-body.open { display: block; }
+
+/* ── Branch marker ────────────────────────────────────── */
+.branch-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--branch-bg);
+  border: 1px solid var(--branch-border);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--warn);
+  margin: 10px 0 14px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  user-select: none;
+  transition: background 0.15s;
+}
+.branch-marker:hover { background: color-mix(in srgb, var(--branch-bg) 70%, var(--branch-border) 15%); }
+.branch-marker .branch-icon { font-size: 14px; }
+
+/* ── Note callout inline (top-rule, never left-handle) ── */
+.inline-note {
+  background: color-mix(in srgb, var(--paper-tint) 60%, var(--note) 8%);
+  border-top: 2px solid var(--note);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.inline-warn {
+  background: color-mix(in srgb, var(--paper-tint) 60%, var(--warn) 10%);
+  border-top: 2px solid var(--warn);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.inline-ok {
+  background: color-mix(in srgb, var(--paper-tint) 60%, var(--ok) 8%);
+  border-top: 2px solid var(--ok);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+/* ── Stuck prompt panel ───────────────────────────────── */
+#stuck-panel {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: var(--paper-card);
+  border-top: 2px solid var(--accent);
+  padding: 16px 20px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+}
+#stuck-panel.visible { display: block; }
+
+.stuck-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.stuck-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+#stuck-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px;
+}
+#stuck-close:hover { color: var(--ink); }
+
+#stuck-textarea {
+  width: 100%;
+  max-width: 860px;
+  height: 96px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--paper-tint);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 8px 10px;
+  color: var(--ink);
+  resize: vertical;
+  display: block;
+  margin-bottom: 8px;
+}
+.stuck-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+#stuck-copy-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: opacity 0.15s;
+}
+#stuck-copy-btn:hover { opacity: 0.85; }
+#stuck-copy-btn.copied { background: var(--ok); }
+.stuck-hint {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── Footer ───────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--rule);
+  padding: 20px;
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.footer-path {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.footer-ts {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── SVG progress donut in header ───────────────────── */
+.header-donut {
+  flex-shrink: 0;
+}
+
+/* ── Mobile ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+  #main { padding: 18px 14px 80px; }
+  .step-body { padding: 14px 14px 14px 14px; }
+  .step-header { padding: 12px 14px; }
+  .header-inner { padding: 8px 14px 0; gap: 10px; }
+  .header-title { font-size: 11px; }
+  .page-title { font-size: 18px; }
+  #stuck-panel { padding: 12px 14px; }
+}
+
+/* ── iOS / Mobile hardening ───────────────────────────── */
+
+/* 2. Prevent iOS focus-zoom: inputs must be ≥16px on phones */
+@media (max-width: 768px) {
+  input, textarea, select, [contenteditable] {
+    font-size: 16px !important;
+  }
+}
+
+/* 4. Code blocks: overflow-x:auto and -webkit-overflow-scrolling:touch
+      are already set on .code-block above — no page-pushing on phones. */
+
+/* 5. Tap targets: step headers, checkboxes, copy/stuck buttons ≥40px on phones */
+@media (max-width: 768px) {
+  .step-header {
+    min-height: 44px;
+  }
+  .step-checkbox {
+    width: 22px;
+    height: 22px;
+  }
+  .copy-code-btn {
+    min-height: 40px;
+    min-width: 40px;
+    padding: 8px 10px;
+  }
+  #stuck-btn {
+    min-height: 40px;
+    padding: 8px 14px;
+  }
+  #stuck-copy-btn {
+    min-height: 44px;
+    padding: 10px 18px;
+  }
+  #stuck-close {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 8px;
+  }
+  .expected-toggle {
+    min-height: 40px;
+    padding: 8px 0;
+  }
+  .branch-marker {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Sticky header ──────────────────────────────────────── -->
+<div id="sticky-header">
+  <div class="header-inner">
+    <div class="header-title">Runbook · author a render-as-html artifact</div>
+
+    <!-- Inline SVG progress donut -->
+    <svg class="header-donut" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Progress: 0 of 10 steps complete" id="donut-svg">
+      <circle cx="16" cy="16" r="12" fill="none" stroke="var(--rule)" stroke-width="3.5"/>
+      <circle id="donut-arc" cx="16" cy="16" r="12" fill="none" stroke="var(--accent)"
+        stroke-width="3.5" stroke-linecap="round"
+        stroke-dasharray="75.4" stroke-dashoffset="75.4"
+        transform="rotate(-90 16 16)"
+        style="transition: stroke-dashoffset 0.3s ease, stroke 0.3s;"/>
+    </svg>
+
+    <span id="step-counter">0 / 10 complete</span>
+    <button id="stuck-btn" onclick="openStuck()">I'm stuck on this step →</button>
+  </div>
+  <div id="progress-track">
+    <div id="progress-fill"></div>
+  </div>
+</div>
+
+<!-- ── Main ──────────────────────────────────────────────── -->
+<main id="main">
+
+  <h1 class="page-title">Runbook: author a new render-as-html artifact that passes the bar</h1>
+  <div class="page-subtitle">Runbook · examples/runbook.html</div>
+
+  <!-- Danger callout -->
+  <div class="danger-callout">
+    <div class="danger-icon">⚠</div>
+    <div class="danger-body">
+      <div class="danger-title">The bar is the gate, not a suggestion</div>
+      <div class="danger-text">
+        An artifact that <strong>flattens to static text losing only its diagram</strong> is styled prose, not an HTML artifact — it fails. The flatten test at step 7 is the hard gate.
+        If the only things that die on flatten are cosmetics, do <strong>not</strong> ship and patch later — jump back to step 3 and redesign the HTML-native features before continuing.
+        Shipping a flat artifact means it gets used as a viewer, the edit loop never happens, and the whole point is lost.
+      </div>
+    </div>
+  </div>
+
+  <!-- Step list -->
+  <div class="step-list" id="step-list">
+
+    <!-- STEP 1 -->
+    <div class="step-card expanded" id="step-1" data-step="1">
+      <div class="step-header" onclick="toggleStep(1)" role="button" aria-expanded="true" aria-controls="step-1-body">
+        <div class="step-num">1</div>
+        <input type="checkbox" class="step-checkbox" id="cb-1" onclick="handleCheck(event,1)" aria-label="Mark step 1 complete: Read the content and pick the page shape">
+        <div class="step-title-text">Read the content, extract its signals, and pick the page shape</div>
+        <span class="step-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="step-body" id="step-1-body">
+        <p class="step-desc">Different content wants different bones. Read the source fully, then classify it against the auto-pick rules. The shape constrains every later decision, so getting it wrong here costs a full rewrite.</p>
+
+        <div class="code-block-wrap">
+          <div class="code-label">shape signal → decision</div>
+          <pre class="code-block"><span class="c"># Match the dominant structure, not the topic</span>
+<span class="cmd">&gt;5 similar tables</span>          <span class="kw">→</span> dashboard
+<span class="cmd">headings + prose, reference</span> <span class="kw">→</span> document
+<span class="cmd">dates as primary structure</span>  <span class="kw">→</span> timeline
+<span class="cmd">ordered steps + commands</span>    <span class="kw">→</span> runbook   <span class="c">← this file</span>
+<span class="cmd">sustained argument + entities</span><span class="kw">→</span> editorial
+<span class="cmd">X vs Y vs Z decision</span>        <span class="kw">→</span> comparison
+<span class="cmd">ambiguous</span>                   <span class="kw">→</span> ask the user</pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="expected-wrap">
+          <button class="expected-toggle" onclick="toggleExpected(this)" aria-expanded="false">
+            <span class="e-chevron">▶</span> Expected output
+          </button>
+          <div class="expected-body">Source: an ordered procedure with shell/code steps and a fallback path.
+Decision: runbook. Procedural + executed-not-read → unambiguous.
+Explicit user override of the shape always wins over auto-pick.</div>
+        </div>
+
+        <div class="inline-note">Write the chosen shape down before doing anything else. If you can't name it in one word, the content isn't understood yet — re-read.</div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step-card expanded" id="step-2" data-step="2">
+      <div class="step-header" onclick="toggleStep(2)" role="button" aria-expanded="true" aria-controls="step-2-body">
+        <div class="step-num">2</div>
+        <input type="checkbox" class="step-checkbox" id="cb-2" onclick="handleCheck(event,2)" aria-label="Mark step 2 complete: Lock the register the shape dictates">
+        <div class="step-title-text">Lock the register the shape dictates — reading vs instrument</div>
+        <span class="step-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="step-body" id="step-2-body">
+        <p class="step-desc">The register is not a taste choice — the shape determines it. Reading register (serif, cream, 17–18px) for prose you read paragraph-to-paragraph. Instrument register (sans, 14–15px, dense) for things you operate. A runbook is operated, so it is instrument.</p>
+
+        <div class="code-block-wrap">
+          <div class="code-label">register is a function of shape</div>
+          <pre class="code-block"><span class="cmd">Reading</span>    <span class="kw">→</span> document, editorial, timeline
+           serif display + body, 17–18px / 1.6, measure ≤46rem
+<span class="cmd">Instrument</span> <span class="kw">→</span> dashboard, comparison, developer,
+              runbook, triage-board, network-map
+           sans display + body, 14–15px / 1.5, dense, mono code</pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="inline-warn">Never mix registers or let the user pick fonts ad hoc. A serif "report" wrapper around an instrument procedure reads as a converted document — exactly the anti-pattern the skill forbids.</div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step-card expanded" id="step-3" data-step="3">
+      <div class="step-header" onclick="toggleStep(3)" role="button" aria-expanded="true" aria-controls="step-3-body">
+        <div class="step-num">3</div>
+        <input type="checkbox" class="step-checkbox" id="cb-3" onclick="handleCheck(event,3)" aria-label="Mark step 3 complete: Plan at least three HTML-native features and write them down">
+        <div class="step-title-text">Plan ≥3 HTML-native features — and write them down before any markup</div>
+        <span class="step-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="step-body" id="step-3-body">
+        <p class="step-desc">Pick concrete features that do something static text cannot. At least three, named explicitly, on paper, before you write a tag. "It'll be styled nicely" is not a feature. For a runbook the load-bearing set is fixed.</p>
+
+        <div class="code-block-wrap">
+          <div class="code-label">written feature plan (runbook contract)</div>
+          <pre class="code-block"><span class="cmd">1.</span> Per-step progress tracking (checkboxes → donut + bar + counter)
+<span class="cmd">2.</span> Per-code-block copy button with clipboard fallback
+<span class="cmd">3.</span> Conditional branch step (hidden until its condition fires)
+<span class="cmd">4.</span> "I'm stuck" copy-as-prompt that round-trips current state
+<span class="c"># 4 named features. The skill requires ≥3. Branch step</span>
+<span class="c"># is the runbook's distinguishing primitive — keep it.</span></pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="expected-wrap">
+          <button class="expected-toggle" onclick="toggleExpected(this)" aria-expanded="false">
+            <span class="e-chevron">▶</span> Expected output
+          </button>
+          <div class="expected-body">A four-line written list. If you skip writing it down you will
+discover at step 7 that you built styled prose. The list is the
+contract step 7 checks against.</div>
+        </div>
+
+        <div class="inline-note">This is the step the danger callout sends you back to. Treat the written list as binding — step 9's self-review reads it back.</div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step-card expanded" id="step-4" data-step="4">
+      <div class="step-header" onclick="toggleStep(4)" role="button" aria-expanded="true" aria-controls="step-4-body">
+        <div class="step-num">4</div>
+        <input type="checkbox" class="step-checkbox" id="cb-4" onclick="handleCheck(event,4)" aria-label="Mark step 4 complete: Map to at least four of the eight information dimensions">
+        <div class="step-title-text">Map the artifact to ≥4 of the 8 information dimensions</div>
+        <span class="step-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="step-body" id="step-4-body">
+        <p class="step-desc">HTML can carry eight dimensions of information. An artifact leveraging fewer than four is under-using the medium. Name which four (or more) before writing — if you can only name two, redesign now, not after.</p>
+
+        <div class="code-block-wrap">
+          <div class="code-label">dimensions used by this runbook</div>
+          <pre class="code-block"><span class="cmd">Code</span>         <span class="kw">✓</span> highlighted snippets, local CSS classes
+<span class="cmd">Interaction</span>  <span class="kw">✓</span> checkboxes, toggles, JS-driven progress
+<span class="cmd">Workflows</span>    <span class="kw">✓</span> ordered steps + a conditional branch
+<span class="cmd">Illustrations</span><span class="kw">✓</span> inline SVG progress donut from live data
+<span class="cmd">Design</span>       <span class="kw">✓</span> register + palette tokens as information
+<span class="c"># 5 of 8. Tables / Spatial / Images not needed here —</span>
+<span class="c"># don't add a chart just to pad the count.</span></pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="inline-warn">Padding the count with a decorative chart is its own anti-pattern. Four real dimensions beat eight ornamental ones. Each must carry information the reader actually needs.</div>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step-card expanded" id="step-5" data-step="5">
+      <div class="step-header" onclick="toggleStep(5)" role="button" aria-expanded="true" aria-controls="step-5-body">
+        <div class="step-num">5</div>
+        <input type="checkbox" class="step-checkbox" id="cb-5" onclick="handleCheck(event,5)" aria-label="Mark step 5 complete: Write the self-contained file with one-truth palette tokens">
+        <div class="step-title-text">Write the self-contained file — one-truth palette tokens, no CDN</div>
+        <span class="step-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="step-body" id="step-5-body">
+        <p class="step-desc">One file. All CSS inline, all JS inline and vanilla, no external fonts or CDN. Every color comes from one <code>:root</code> token set with a dark-mode override — never a hard-coded hex in markup. This is the single source of truth for the palette.</p>
+
+        <div class="code-block-wrap">
+          <div class="code-label">:root one-truth palette tokens</div>
+          <pre class="code-block"><span class="cmd">:root</span> {
+  <span class="var">--paper</span>:    <span class="str">#faf6ef</span>;  <span class="c">/* warm cream */</span>
+  <span class="var">--ink</span>:      <span class="str">#1a1815</span>;  <span class="c">/* warm near-black */</span>
+  <span class="var">--muted</span>:    <span class="str">#736d62</span>;  <span class="c">/* AA 4.76:1 on paper */</span>
+  <span class="var">--accent</span>:   <span class="str">#8a3a1a</span>;  <span class="c">/* terracotta — THE accent */</span>
+  <span class="var">--accent-2</span>: <span class="str">#c2901a</span>;  <span class="c">/* ochre — fill only */</span>
+}
+<span class="cmd">@media</span> (prefers-color-scheme: dark) {
+  <span class="cmd">:root</span> { <span class="var">--paper</span>:<span class="str">#1a1815</span>; <span class="var">--ink</span>:<span class="str">#f0eee8</span>;
+          <span class="var">--muted</span>:<span class="str">#9a948a</span>; <span class="c">/* AA 5.89:1 */</span> }
+}
+<span class="c"># Ochre is a background fill with --ink text, never</span>
+<span class="c"># white-on-ochre and never ochre text on cream.</span></pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="inline-note">One primary accent, one affirmative-action color. No third accent, no corporate blue, no left-handle accent bars — use top-rules and type weight for emphasis instead.</div>
+      </div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="step-card expanded" id="step-6" data-step="6">
+      <div class="step-header" onclick="toggleStep(6)" role="button" aria-expanded="true" aria-controls="step-6-body">
+        <div class="step-num">6</div>
+        <input type="checkbox" class="step-checkbox" id="cb-6" onclick="handleCheck(event,6)" aria-label="Mark step 6 complete: Wire copy-as-prompt that round-trips state back to this file">
+        <div class="step-title-text">Wire copy-as-prompt — round-trip live state back to this file</div>
+        <span class="step-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="step-body" id="step-6-body">
+        <p class="step-desc">This is the load-bearing HTML-native feature. The artifact becomes an editing surface: the reader mutates state in the browser, hits a button, and gets a paste-able prompt that names this file and the exact deltas. ~20 lines of JS for a real edit loop.</p>
+
+        <div class="code-block-wrap">
+          <div class="code-label">copy-as-prompt JS skeleton</div>
+          <pre class="code-block"><span class="kw">const</span> <span class="var">ARTIFACT_PATH</span> = <span class="str">'examples/runbook.html'</span>;
+
+<span class="kw">function</span> <span class="cmd">copyPrompt</span>() {
+  <span class="kw">const</span> changes = collectChanges();   <span class="c">// read mutated state</span>
+  <span class="kw">const</span> prompt =
+    <span class="str">`In ${ARTIFACT_PATH}, apply these changes:\n`</span> +
+    formatAsInstructions(changes);
+  <span class="kw">const</span> out = document.querySelector(<span class="str">'#prompt-output'</span>);
+  out.value = prompt;
+  navigator.clipboard.writeText(prompt).<span class="cmd">catch</span>(() =&gt; {
+    out.focus(); out.select();   <span class="c">// visible fallback</span>
+  });
+}</pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="inline-warn">The prompt must name <strong>this</strong> <code>.html</code> file — never a notes file, source doc, or parallel document. The artifact is the source of truth; the round-trip edits the artifact, nothing else.</div>
+      </div>
+    </div>
+
+    <!-- STEP 7 -->
+    <div class="step-card expanded" id="step-7" data-step="7">
+      <div class="step-header" onclick="toggleStep(7)" role="button" aria-expanded="true" aria-controls="step-7-body">
+        <div class="step-num">7</div>
+        <input type="checkbox" class="step-checkbox" id="cb-7" onclick="handleCheck(event,7)" aria-label="Mark step 7 complete: Run the flatten test — what disappears">
+        <div class="step-title-text">Run the flatten test — strip all CSS/JS, ask <em>what disappears?</em></div>
+        <span class="step-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="step-body" id="step-7-body">
+        <p class="step-desc">Mentally (or literally) flatten the artifact to static text. Enumerate everything that dies. If the dead list is only colors, spacing, and a diagram, you built styled prose. The dead list must include real interaction.</p>
+
+        <div class="code-block-wrap">
+          <div class="code-label">flatten-test mental checklist</div>
+          <pre class="code-block"><span class="c"># Flatten to plain text. What is GONE?</span>
+<span class="kw">[ ]</span> Per-step progress tracking (donut + bar + counter)
+<span class="kw">[ ]</span> Per-code-block copy buttons
+<span class="kw">[ ]</span> The conditional branch reveal
+<span class="kw">[ ]</span> The "I'm stuck" copy-as-prompt generator
+<span class="c"># If ALL four survive removal → it was never HTML-native.</span>
+<span class="c"># If only color/spacing/diagram die → styled prose.</span></pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="expected-wrap">
+          <button class="expected-toggle" onclick="toggleExpected(this)" aria-expanded="false">
+            <span class="e-chevron">▶</span> Expected output
+          </button>
+          <div class="expected-body">PASS — flattening kills: progress tracking, code-copy, the
+branch reveal, the stuck-prompt generator. Those are content,
+not chrome. This artifact earns the medium.</div>
+        </div>
+
+        <!-- Branch marker — reveals the redesign step when flatten fails -->
+        <div class="branch-marker" id="branch-to-8" onclick="activateRedesign()" role="button" tabindex="0"
+             onkeydown="if(event.key==='Enter'||event.key===' ')activateRedesign()">
+          <span class="branch-icon">⤵</span>
+          If only cosmetics vanish on flatten — jump to step 3-R: redesign the HTML-native features
+        </div>
+
+        <div class="inline-ok">If the four load-bearing behaviors all disappear on flatten, the artifact passes the bar. Continue to step 8.</div>
+      </div>
+    </div>
+
+    <!-- STEP 3-R — redesign loop, conditionally visible -->
+    <div class="step-card branch-card branch-hidden" id="step-8" data-step="8">
+      <div class="step-header" onclick="toggleStep(8)" role="button" aria-expanded="true" aria-controls="step-8-body">
+        <div class="step-num" style="background:var(--branch-border);border-color:var(--branch-border);color:var(--ink);">3R</div>
+        <input type="checkbox" class="step-checkbox" id="cb-8" onclick="handleCheck(event,8)" aria-label="Mark step 3-R complete: Redesign the HTML-native features and re-flatten">
+        <div class="step-title-text">Redesign the HTML-native features, then re-run the flatten test</div>
+        <span class="step-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="step-body" id="step-8-body">
+        <p class="step-desc">Reached only when step 7's flatten test fails — the artifact is styled prose. Do not patch cosmetics. Go back to the step 3 written feature plan and replace decorative elements with behaviors that genuinely require HTML.</p>
+
+        <div class="inline-warn">You are here because flatten left only colors/spacing/diagram. Adding more styling will not fix this. The fix is structural: real interaction the static version cannot reproduce.</div>
+
+        <div class="code-block-wrap">
+          <div class="code-label">redesign moves that survive flatten</div>
+          <pre class="code-block"><span class="c"># Swap ornament for behavior:</span>
+<span class="kw">replace</span> static "Done" badges  <span class="kw">→</span> live checkbox + progress
+<span class="kw">replace</span> a screenshot of code <span class="kw">→</span> copy-able code block
+<span class="kw">replace</span> "if X see appendix"  <span class="kw">→</span> conditional branch reveal
+<span class="kw">replace</span> a "contact us" line  <span class="kw">→</span> copy-as-prompt generator</pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="code-block-wrap">
+          <div class="code-label">then re-verify against the written plan</div>
+          <pre class="code-block"><span class="cmd">re-read</span> the step 3 feature list  <span class="c"># still ≥3, still real?</span>
+<span class="cmd">re-run</span> the step 7 flatten test  <span class="c"># dead list = behaviors?</span>
+<span class="cmd">loop</span> until flatten kills behavior, not just chrome</pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="inline-note">After the redesigned artifact passes the flatten test, return to step 8 (accessibility pass). Steps 8–10 are the same regardless of how many redesign loops it took.</div>
+      </div>
+    </div>
+
+    <!-- STEP 8 -->
+    <div class="step-card expanded" id="step-9" data-step="9">
+      <div class="step-header" onclick="toggleStep(9)" role="button" aria-expanded="true" aria-controls="step-9-body">
+        <div class="step-num">8</div>
+        <input type="checkbox" class="step-checkbox" id="cb-9" onclick="handleCheck(event,9)" aria-label="Mark step 8 complete: Accessibility and contrast pass">
+        <div class="step-title-text">Accessibility &amp; contrast pass — AA, colorblind-safe, real semantics</div>
+        <span class="step-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="step-body" id="step-9-body">
+        <p class="step-desc">Every text token must meet WCAG AA on its background, including the lightest one. Color is never the only signal. Interactive elements use real controls with real labels and wired ARIA state.</p>
+
+        <div class="code-block-wrap">
+          <div class="code-label">a11y checklist</div>
+          <pre class="code-block"><span class="kw">[ ]</span> <span class="var">html lang</span> set; one <span class="var">&lt;main&gt;</span> landmark
+<span class="kw">[ ]</span> --muted ≥4.5:1 on --paper, both light + dark
+<span class="kw">[ ]</span> every checkbox / icon-button has <span class="var">aria-label</span>
+<span class="kw">[ ]</span> toggle headers: <span class="var">role=button</span> + <span class="var">aria-expanded</span>
+       + <span class="var">aria-controls</span>, kept in sync in the toggle JS
+<span class="kw">[ ]</span> code copy buttons labelled ("Copy code")
+<span class="kw">[ ]</span> progress SVG <span class="var">role=img</span> + live <span class="var">aria-label</span>
+<span class="kw">[ ]</span> state carried by shape/text too, not color alone</pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="expected-wrap">
+          <button class="expected-toggle" onclick="toggleExpected(this)" aria-expanded="false">
+            <span class="e-chevron">▶</span> Expected output
+          </button>
+          <div class="expected-body">All AA ratios pass. Done state = strikethrough + green + checked,
+not green alone. Donut aria-label updates as steps complete.
+Toggle JS writes aria-expanded on every open/close.</div>
+        </div>
+
+        <div class="inline-ok">A keyboard-only, screen-reader, and colorblind pass all succeed? The artifact is accessible. Continue to self-review.</div>
+      </div>
+    </div>
+
+    <!-- STEP 9 -->
+    <div class="step-card expanded" id="step-10" data-step="10">
+      <div class="step-header" onclick="toggleStep(10)" role="button" aria-expanded="true" aria-controls="step-10-body">
+        <div class="step-num">9</div>
+        <input type="checkbox" class="step-checkbox" id="cb-10" onclick="handleCheck(event,10)" aria-label="Mark step 9 complete: Self-review against content discipline">
+        <div class="step-title-text">Self-review against Content discipline</div>
+        <span class="step-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="step-body" id="step-10-body">
+        <p class="step-desc">Read the rendered artifact back as a critic. Surface the subject, never the fact that the artifact exists. Headlines argue a position; bodies add the mechanism the headline promised. Scan for the known decoration anti-patterns.</p>
+
+        <div class="code-block-wrap">
+          <div class="code-label">content-discipline scan</div>
+          <pre class="code-block"><span class="kw">[ ]</span> No artifact-counting hero stats ("12 sections")
+<span class="kw">[ ]</span> Headlines take a position, not a noun label
+<span class="kw">[ ]</span> Each body adds info beyond its own headline
+<span class="kw">[ ]</span> No left-handle accent bars anywhere
+<span class="kw">[ ]</span> No identical-tile SaaS grid; cards stack as columns
+<span class="kw">[ ]</span> Search highlights actual matches, not whole blocks
+<span class="kw">[ ]</span> 1–3 emoji total, not one per heading</pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="inline-warn">"Found 6 claims" as a hero stat is slop. Live UI state ("3 / 10 complete") is feedback and fine. The distinction is whether the number describes the subject or the artifact's own production.</div>
+      </div>
+    </div>
+
+    <!-- STEP 10 -->
+    <div class="step-card expanded" id="step-11" data-step="11">
+      <div class="step-header" onclick="toggleStep(11)" role="button" aria-expanded="true" aria-controls="step-11-body">
+        <div class="step-num">10</div>
+        <input type="checkbox" class="step-checkbox" id="cb-11" onclick="handleCheck(event,11)" aria-label="Mark step 10 complete: Ship the artifact">
+        <div class="step-title-text">Ship — write the file, set the footer path, open it</div>
+        <span class="step-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div class="step-body" id="step-11-body">
+        <p class="step-desc">Write the single self-contained file to its output path, stamp the footer with that exact path and the generated/updated timestamp, and open it so it lands in the browser — the browser is where this thing lives.</p>
+
+        <div class="code-block-wrap">
+          <div class="code-label">ship checklist</div>
+          <pre class="code-block"><span class="kw">[ ]</span> One file, self-contained, no external requests
+<span class="kw">[ ]</span> Footer shows the artifact's own path + timestamp
+<span class="kw">[ ]</span> copy-as-prompt path == the footer path == this file
+<span class="kw">[ ]</span> If publishing public: run the sensitivity scan
+       (creds, private IPs, /home or ~ paths, hostnames)
+<span class="kw">[ ]</span> Open the file when the environment allows</pre>
+          <button class="copy-code-btn" onclick="copyCode(this)" aria-label="Copy code">copy</button>
+        </div>
+
+        <div class="expected-wrap">
+          <button class="expected-toggle" onclick="toggleExpected(this)" aria-expanded="false">
+            <span class="e-chevron">▶</span> Expected output
+          </button>
+          <div class="expected-body">Footer: examples/runbook.html · Generated &lt;date&gt; · render-as-html
+Sensitivity scan: clean. File opens in browser.
+Artifact is the source of truth — not an export of anything.</div>
+        </div>
+
+        <div class="inline-ok">Shipped. The HTML file is the report and the instrument. Markdown source, if any, stays canonical alongside it — this artifact is the thing people read, edit, and round-trip.</div>
+      </div>
+    </div>
+
+  </div><!-- /step-list -->
+</main><!-- /main -->
+
+<!-- ── Stuck panel ─────────────────────────────────────────── -->
+<div id="stuck-panel" role="dialog" aria-label="Stuck prompt generator" aria-modal="true">
+  <div class="stuck-header">
+    <span class="stuck-title">Stuck prompt — paste this into your coding agent</span>
+    <button id="stuck-close" onclick="closeStuck()" aria-label="Close stuck prompt panel">&times;</button>
+  </div>
+  <textarea id="stuck-textarea" readonly aria-label="Generated stuck prompt"></textarea>
+  <div class="stuck-actions">
+    <button id="stuck-copy-btn" onclick="copyStuckPrompt()">Copy prompt</button>
+    <span class="stuck-hint" id="stuck-hint">Select all in the box above if copy is blocked</span>
+  </div>
+</div>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer>
+  <span class="footer-path">examples/runbook.html</span>
+  <span class="footer-ts">Generated 2026-05-18 · render-as-html</span>
+</footer>
+
+<script>
+// ── Constants ────────────────────────────────────────────────
+const ARTIFACT_PATH = 'examples/runbook.html';
+
+// Canonical step list. data-step ids 1..11; id 8 is the conditional
+// redesign loop (labelled "3R") and is excluded from the normal count.
+const NORMAL_STEPS = [1,2,3,4,5,6,7,9,10,11]; // 8 is the branch (3R)
+
+let checked = {}; // step -> bool
+let redesignActive = false;
+
+// ── Step toggle (collapse-on-click; starts expanded) ─────────
+function toggleStep(n) {
+  const card = document.getElementById('step-' + n);
+  if (!card) return;
+  card.classList.toggle('expanded');
+  const header = card.querySelector('.step-header');
+  if (header) {
+    header.setAttribute('aria-expanded', card.classList.contains('expanded') ? 'true' : 'false');
+  }
+}
+
+// ── Checkbox ─────────────────────────────────────────────────
+function handleCheck(e, n) {
+  e.stopPropagation();
+  const cb = document.getElementById('cb-' + n);
+  const card = document.getElementById('step-' + n);
+  checked[n] = cb.checked;
+  if (cb.checked) {
+    card.classList.add('done');
+    card.classList.remove('expanded');
+    const header = card.querySelector('.step-header');
+    if (header) header.setAttribute('aria-expanded', 'false');
+  } else {
+    card.classList.remove('done');
+  }
+  updateProgress();
+}
+
+// ── Progress tracking ────────────────────────────────────────
+function updateProgress() {
+  const stepsInPlay = redesignActive
+    ? [1,2,3,4,5,6,7,8,9,10,11]
+    : NORMAL_STEPS;
+
+  const total = stepsInPlay.length;
+  const done = stepsInPlay.filter(n => checked[n]).length;
+
+  document.getElementById('step-counter').textContent = done + ' / ' + total + ' complete';
+
+  const pct = total > 0 ? (done / total) * 100 : 0;
+  const fill = document.getElementById('progress-fill');
+  fill.style.width = pct + '%';
+  if (pct >= 100) fill.classList.add('complete');
+  else fill.classList.remove('complete');
+
+  // Donut SVG arc
+  const arc = document.getElementById('donut-arc');
+  const circumference = 75.4;
+  const offset = circumference - (circumference * pct / 100);
+  arc.setAttribute('stroke-dashoffset', offset.toFixed(1));
+  arc.setAttribute('stroke', pct >= 100 ? 'var(--ok)' : 'var(--accent)');
+
+  const donutSvg = document.getElementById('donut-svg');
+  if (donutSvg) {
+    donutSvg.setAttribute('aria-label', 'Progress: ' + done + ' of ' + total + ' steps complete');
+  }
+}
+
+// ── Branch: reveal the redesign loop when flatten fails ──────
+function activateRedesign() {
+  redesignActive = true;
+  const card = document.getElementById('step-8'); // the "3R" redesign card
+  card.classList.remove('branch-hidden');
+  card.classList.add('expanded');
+  card.querySelector('.step-header').setAttribute('aria-expanded', 'true');
+  setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  updateProgress();
+
+  const marker = document.getElementById('branch-to-8');
+  if (marker) {
+    marker.style.opacity = '0.6';
+    marker.textContent = '✓ Jumped to step 3-R — redesign the HTML-native features';
+    marker.style.cursor = 'default';
+    marker.onclick = null;
+  }
+}
+
+// ── Per-block copy buttons (with fallback) ───────────────────
+function copyCode(btn) {
+  const pre = btn.parentElement.querySelector('.code-block');
+  const text = pre.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1600);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch(_) {}
+    document.body.removeChild(ta);
+    btn.textContent = '✓ selected';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+// ── Expected output toggles ───────────────────────────────────
+function toggleExpected(btn) {
+  btn.classList.toggle('open');
+  const body = btn.nextElementSibling;
+  body.classList.toggle('open');
+  btn.setAttribute('aria-expanded', body.classList.contains('open') ? 'true' : 'false');
+}
+
+// ── Stuck prompt generator (round-trips state to this file) ──
+function getCurrentStep() {
+  const expanded = [...document.querySelectorAll('.step-card.expanded')];
+  if (expanded.length === 0) return 'unknown';
+  const last = expanded[expanded.length - 1];
+  const n = last.dataset.step;
+  const title = last.querySelector('.step-title-text');
+  return 'Step ' + n + ': ' + (title ? title.textContent.trim() : '');
+}
+
+function openStuck() {
+  document.getElementById('stuck-panel').classList.add('visible');
+  generateStuckPrompt();
+}
+
+function closeStuck() {
+  document.getElementById('stuck-panel').classList.remove('visible');
+}
+
+function generateStuckPrompt() {
+  const stepLabel = getCurrentStep();
+  const doneSteps = Object.keys(checked).filter(k => checked[k]).map(k => 'Step ' + k);
+  const doneStr = doneSteps.length > 0 ? doneSteps.join(', ') : 'none';
+  const prompt = `I am working through the runbook at ${ARTIFACT_PATH} (authoring a render-as-html artifact) and am stuck.
+
+Current step: ${stepLabel}
+Completed steps: ${doneStr}
+Redesign loop active: ${redesignActive ? 'yes (flatten test failed, in step 3-R)' : 'no'}
+
+Help me get unstuck on this step. Refer to the runbook at the path above for what this step requires, and to the render-as-html skill for the bar this artifact must pass.`;
+
+  const ta = document.getElementById('stuck-textarea');
+  ta.value = prompt;
+  ta.focus();
+  ta.select();
+}
+
+function copyStuckPrompt() {
+  const ta = document.getElementById('stuck-textarea');
+  const text = ta.value;
+  const btn = document.getElementById('stuck-copy-btn');
+  const hint = document.getElementById('stuck-hint');
+
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    hint.textContent = 'Prompt is on your clipboard — paste it into your coding agent.';
+    setTimeout(() => {
+      btn.textContent = 'Copy prompt';
+      btn.classList.remove('copied');
+      hint.textContent = 'Select all in the box above if copy is blocked';
+    }, 2500);
+  }).catch(() => {
+    ta.focus();
+    ta.select();
+    hint.textContent = 'Clipboard blocked — select all and copy manually.';
+  });
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeStuck();
+});
+
+// ── Init ────────────────────────────────────────────────────
+updateProgress();
+// All step cards start expanded by default (class in HTML) for scannability;
+// clicking a header collapses it.
+</script>
+</body>
+</html>

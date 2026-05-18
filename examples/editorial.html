@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Why the file you keep should be the file you can poke</title>
+<style>
+/* ── TOKENS ──────────────────────────────────────────────── */
+:root {
+  --paper:       #faf6ef;
+  --paper-tint:  #f3ede1;
+  --paper-card:  #fbf7f0;
+  --ink:         #1a1815;
+  --ink-soft:    #4a443c;
+  --muted:       #736d62;
+  --rule:        #d9d1c2;
+  --rule-soft:   #ece5d6;
+  --accent:      #8a3a1a;
+  --accent-2:    #c2901a;
+  --ok:          #2f7d44;
+  --warn:        #9b641d;
+  --note:        #2f6fb3;
+
+  --font-serif: "Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Source Serif Pro", serif;
+  --font-sans:  ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --rail-w: 22rem;
+  --center-max: 46rem;
+  --studio-max: 1280px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:       #1a1815;
+    --paper-tint:  #221f1a;
+    --paper-card:  #211e19;
+    --ink:         #f0eee8;
+    --ink-soft:    #c9c3b6;
+    --muted:       #9a948a;
+    --rule:        #38332b;
+    --rule-soft:   #2c2820;
+    --accent:      #e0794f;
+    --accent-2:    #d8a73a;
+    --ok:          #5cae6f;
+    --warn:        #c79a4a;
+    --note:        #6f9fd0;
+  }
+}
+
+/* ── RESET ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── SEARCH BAR ──────────────────────────────────────────── */
+#search-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: var(--paper-card);
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1.25rem;
+}
+#search-bar label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+#search-input {
+  flex: 1;
+  max-width: 28rem;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  padding: 0.3rem 0.6rem;
+  border-radius: 3px;
+  outline: none;
+}
+#search-input:focus { border-color: var(--accent); }
+#search-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 4rem;
+}
+#search-clear {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  display: none;
+}
+#search-clear:hover { background: var(--paper-tint); }
+mark {
+  background: #f0d97a;
+  color: var(--ink);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+mark.entity-highlight {
+  background: #f5c17a;
+}
+@media (prefers-color-scheme: dark) {
+  mark { background: #7a6a20; color: var(--ink); }
+  mark.entity-highlight { background: #7a4f20; }
+}
+
+/* ── STUDIO LAYOUT ───────────────────────────────────────── */
+.studio {
+  max-width: var(--studio-max);
+  margin: 0 auto;
+  padding-top: 3rem; /* below search bar */
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr var(--rail-w);
+  grid-template-areas: "left center right";
+  gap: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ── LEFT RAIL ───────────────────────────────────────────── */
+.rail-left {
+  grid-area: left;
+  position: sticky;
+  top: 3rem;
+  height: calc(100vh - 3rem);
+  height: calc(100dvh - 3rem);
+  overflow-y: auto;
+  padding: 2.5rem 1.75rem 2.5rem 1.25rem;
+  border-right: 1px solid var(--rule);
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.85rem;
+}
+.rail-title {
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 1.5rem;
+}
+.rail-title a { color: inherit; text-decoration: none; }
+.about-card {
+  background: var(--paper-tint);
+  border: 1px solid var(--rule-soft);
+  border-radius: 4px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 2rem;
+}
+.about-card h3 {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.about-card p {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* section nav scroll-spy */
+.section-nav {
+  margin-top: 1.5rem;
+}
+.section-nav h3 {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+.section-nav a {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 0.25rem 0;
+  border-left: 2px solid transparent;
+  padding-left: 0.6rem;
+  margin-left: -0.6rem;
+  transition: color 0.15s, border-color 0.15s;
+  line-height: 1.35;
+}
+.section-nav a:hover { color: var(--accent); }
+.section-nav a.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── CENTER PROSE ────────────────────────────────────────── */
+.center {
+  grid-area: center;
+  padding: 2.5rem 2.5rem 4rem;
+}
+.prose-wrap {
+  max-width: var(--center-max);
+}
+
+/* thesis */
+.thesis {
+  font-style: italic;
+  font-size: 1.175rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  margin-bottom: 2.5rem;
+  /* explicitly no left border bar */
+}
+
+/* body typography */
+.prose-wrap p {
+  margin-bottom: 1.4rem;
+  font-size: 17px;
+  line-height: 1.65;
+}
+.prose-wrap hr {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 2.5rem 0;
+}
+
+/* section headings with copy-as-prompt */
+.section-heading {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 2.75rem;
+  margin-bottom: 1.1rem;
+}
+.section-heading h2 {
+  font-family: var(--font-serif);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  flex: 1;
+}
+.copy-section-btn {
+  opacity: 0;
+  pointer-events: none;
+  background: none;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+.section-heading:hover .copy-section-btn,
+.section-heading:focus-within .copy-section-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+.copy-section-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.copy-section-btn.copied {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+/* claim cards */
+.claim-card {
+  background: var(--paper-card);
+  border: 1px solid var(--rule-soft);
+  border-top: 2px solid var(--accent);
+  border-radius: 4px;
+  padding: 1.35rem 1.5rem;
+  margin-bottom: 1.75rem;
+}
+.claim-card h3 {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+  margin-bottom: 0.65rem;
+}
+.claim-card p {
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin-bottom: 0.5rem;
+}
+.claim-card .evidence {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  border-top: 1px solid var(--rule-soft);
+  padding-top: 0.6rem;
+  margin-top: 0.75rem;
+  line-height: 1.5;
+}
+.claim-card .evidence strong {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* inline code */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--paper-tint);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  color: var(--accent);
+}
+
+/* SVG diagram block */
+.diagram-block {
+  background: var(--paper-tint);
+  border: 1px solid var(--rule-soft);
+  border-radius: 4px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  overflow-x: auto;
+}
+.diagram-block figcaption {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+/* numbered takeaways */
+.takeaways {
+  margin: 2.5rem 0;
+}
+.takeaways h2 {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+  color: var(--ink);
+}
+.takeaway-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.takeaway-item:last-child { border-bottom: none; }
+.takeaway-num {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.4;
+  min-width: 1.8rem;
+  text-align: right;
+}
+.takeaway-text {
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.takeaway-text strong { color: var(--ink); }
+
+/* ── RIGHT INSPECTOR ─────────────────────────────────────── */
+.rail-right {
+  grid-area: right;
+  position: sticky;
+  top: 3rem;
+  height: calc(100vh - 3rem);
+  height: calc(100dvh - 3rem);
+  overflow-y: auto;
+  padding: 2.5rem 1.25rem 2.5rem 1.5rem;
+  border-left: 1px solid var(--rule);
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+.inspector-section {
+  margin-bottom: 2rem;
+}
+.inspector-section h3 {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.entity-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.12s;
+  margin-bottom: 0.1rem;
+}
+.entity-row:hover { background: var(--paper-tint); }
+.entity-row.active { background: var(--paper-tint); }
+.cat-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.45rem;
+}
+.cat-dot.people    { background: #c25a1a; }
+.cat-dot.concepts  { background: #2f6fb3; }
+.cat-dot.tools     { background: #2f7d44; }
+.entity-body { flex: 1; }
+.entity-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.entity-name a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.entity-name a:hover { text-decoration: underline; }
+.entity-note {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-top: 0.15rem;
+}
+
+/* read-next */
+.read-next h3 {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.read-next-list { list-style: none; }
+.read-next-list li { margin-bottom: 0.65rem; }
+.read-next-list a {
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  line-height: 1.45;
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+.read-next-list a:hover { text-decoration: underline; }
+.read-next-list .rn-label {
+  font-size: 11px;
+  color: var(--muted);
+  display: block;
+  margin-top: 0.1rem;
+}
+
+/* prompt fallback textarea */
+.prompt-fallback {
+  margin-top: 0.75rem;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--paper-tint);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  padding: 0.5rem;
+  border-radius: 3px;
+  display: none;
+  resize: vertical;
+  min-height: 5rem;
+}
+
+/* ── FOOTER ──────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--rule);
+  padding: 1.5rem 1.25rem;
+  max-width: var(--studio-max);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  align-items: baseline;
+}
+footer .ft-path {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+footer .ft-ts {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── RESPONSIVE: inspector collapses <1180px ─────────────── */
+@media (max-width: 1180px) {
+  .studio {
+    grid-template-columns: var(--rail-w) 1fr;
+    grid-template-areas:
+      "left center"
+      "left inspector-below";
+  }
+  .rail-right {
+    grid-area: auto;
+    position: static;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid var(--rule);
+    padding: 2rem 1.25rem;
+    grid-column: 2;
+  }
+  .studio::after { content: none; }
+}
+
+/* ── RESPONSIVE: single column <820px ───────────────────── */
+@media (max-width: 820px) {
+  .studio {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "center"
+      "right"
+      "left";
+  }
+  .rail-left {
+    grid-area: left;
+    position: static;
+    height: auto;
+    border-right: none;
+    border-top: 1px solid var(--rule);
+    padding: 1.5rem 1.25rem;
+  }
+  .rail-right {
+    /* Reset the grid-column:2 set by the 1180px rule — without this reset
+       the browser auto-creates an implicit second column in the 1fr grid,
+       breaking the single-column stack on phones. */
+    grid-area: right;
+    grid-column: auto;
+    position: static;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid var(--rule);
+    padding: 1.5rem 1.25rem;
+  }
+  .center { padding: 1.5rem 1.25rem 3rem; }
+  .prose-wrap { max-width: 100%; }
+  .copy-section-btn { opacity: 1; pointer-events: auto; }
+}
+
+@media (max-width: 480px) {
+  body { font-size: 15px; }
+  .rail-title { font-size: 1.2rem; }
+}
+
+/* ── INSTRUMENT: flatten-test toggle (in search bar) ─────── */
+.flatten-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid var(--rule);
+  padding: 0.28rem 0.55rem;
+  border-radius: 3px;
+  background: var(--paper);
+}
+.flatten-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.flatten-toggle input { accent-color: var(--accent); cursor: pointer; margin: 0; }
+body.flattened .flatten-toggle { border-color: var(--accent); color: var(--accent); }
+
+/* flatten banner */
+#flatten-banner {
+  display: none;
+  position: fixed;
+  top: 2.85rem;
+  left: 0; right: 0;
+  z-index: 99;
+  background: var(--accent-2);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 0.7rem 1.25rem;
+  border-bottom: 1px solid var(--rule);
+}
+body.flattened #flatten-banner { display: block; }
+body.flattened .studio { padding-top: 6.5rem; }
+body.flattened .rail-left,
+body.flattened .rail-right { top: 6.5rem; height: calc(100vh - 6.5rem); height: calc(100dvh - 6.5rem); }
+#flatten-banner strong { font-weight: 700; }
+
+/* what flattening does: kill interactivity, grey the instruments */
+body.flattened #search-bar #search-input,
+body.flattened #search-bar #search-count,
+body.flattened #search-bar #search-clear { display: none; }
+body.flattened .copy-section-btn { display: none !important; }
+body.flattened .entity-row {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.55;
+}
+body.flattened .entity-row .cat-dot { filter: grayscale(1); }
+body.flattened .poke-block {
+  opacity: 0.45;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+body.flattened .poke-block::after {
+  content: "— inert in a static export —";
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  letter-spacing: 0.04em;
+}
+body.flattened #composer-panel {
+  opacity: 0.45;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+body.flattened #composer-panel .composer-strip { display: none; }
+body.flattened mark { background: transparent; color: inherit; padding: 0; }
+
+/* ── INSTRUMENT: per-claim poke controls ─────────────────── */
+.poke-block {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--rule-soft);
+}
+.poke-prompt {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.55rem;
+}
+.poke-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+.poke-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  background: var(--paper);
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.poke-opt:hover { border-color: var(--accent); }
+.poke-opt input { accent-color: var(--accent); margin: 0; cursor: pointer; }
+.poke-opt.sel-accept { border-color: var(--ok); color: var(--ok); background: var(--paper-tint); }
+.poke-opt.sel-reject { border-color: var(--accent); color: var(--accent); background: var(--paper-tint); }
+.poke-opt.sel-unsure { border-color: var(--warn); color: var(--warn); background: var(--paper-tint); }
+.poke-note {
+  width: 100%;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.5rem 0.65rem;
+  resize: none;
+  overflow: hidden;
+  min-height: 2.4rem;
+  display: block;
+}
+.poke-note:focus { outline: none; border-color: var(--accent); }
+.poke-note::placeholder { color: var(--muted); font-style: italic; }
+
+/* live tally region (under thesis) */
+#poke-tally {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  border-top: 1px solid var(--rule-soft);
+  border-bottom: 1px solid var(--rule-soft);
+  padding: 0.7rem 0;
+  margin-bottom: 2.5rem;
+}
+#poke-tally strong { color: var(--accent); font-weight: 700; }
+
+/* ── INSTRUMENT: live round-trip composer ────────────────── */
+#composer-panel {
+  background: var(--paper-card);
+  border: 1px solid var(--rule-soft);
+  border-top: 2px solid var(--accent);
+  border-radius: 4px;
+  padding: 1.5rem 1.6rem;
+  margin: 2.75rem 0;
+}
+#composer-panel h2 {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+#composer-panel .composer-lede {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin-bottom: 1rem;
+}
+#composer-out {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--paper-tint);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.85rem 0.95rem;
+  resize: vertical;
+  min-height: 9rem;
+  white-space: pre-wrap;
+}
+#composer-out:focus { outline: none; border-color: var(--accent); }
+.composer-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+  flex-wrap: wrap;
+}
+#composer-copy {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--accent-2);
+  border: 1px solid var(--accent-2);
+  padding: 0.45rem 0.9rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+#composer-copy:hover { opacity: 0.88; }
+#composer-copy.copied { background: var(--ok); border-color: var(--ok); color: var(--paper); }
+.composer-hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── iOS / Mobile hardening ──────────────────────────────────────────── */
+
+/* 1. Search bar: wrap to two rows on phones so FLATTEN stays visible */
+@media (max-width: 600px) {
+  #search-bar {
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+    padding: 0.55rem 0.85rem;
+  }
+  #search-bar label:first-child {
+    /* "FIND" label: keep on first row with input */
+    order: 0;
+  }
+  #search-input {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+  #search-count {
+    order: 2;
+    min-width: 3rem;
+  }
+  #search-clear {
+    order: 3;
+  }
+  .flatten-toggle {
+    order: 4;
+    /* push to second row */
+    flex-basis: 100%;
+    justify-content: center;
+  }
+}
+
+/* 2. Prevent iOS focus-zoom */
+@media (max-width: 768px) {
+  input, textarea, select, [contenteditable] {
+    font-size: 16px !important;
+  }
+}
+
+/* 3. Touch can't hover: copy-as-prompt section buttons already set
+      opacity:1 at ≤820px; ensure pointer-events and focus-visible too */
+@media (hover: none) {
+  .copy-section-btn {
+    opacity: 1 !important;
+    pointer-events: auto;
+  }
+}
+.copy-section-btn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 5. Tap targets on phones */
+@media (max-width: 768px) {
+  #search-input {
+    min-height: 44px;
+  }
+  #search-clear {
+    min-height: 44px;
+    padding: 0 10px;
+  }
+  .flatten-toggle {
+    min-height: 44px;
+    padding: 0.5rem 0.65rem;
+  }
+  .section-nav a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 6px 0 6px 0.6rem;
+  }
+  .copy-section-btn {
+    min-height: 40px;
+    padding: 6px 10px;
+  }
+  .poke-opt {
+    min-height: 44px;
+    padding: 0.5rem 0.7rem;
+  }
+  #composer-copy {
+    min-height: 44px;
+    padding: 0.65rem 1.1rem;
+  }
+  .entity-row {
+    min-height: 44px;
+    padding: 0.55rem 0.5rem;
+  }
+}
+
+/* 6. Poke panel + composer: stack single-column ≤480px */
+@media (max-width: 480px) {
+  .poke-options {
+    flex-direction: column;
+  }
+  .poke-opt {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  #composer-out {
+    font-size: 14px;
+  }
+  .composer-strip {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  #composer-copy {
+    width: 100%;
+    text-align: center;
+  }
+  .poke-note {
+    font-size: 16px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- SEARCH BAR -->
+<div id="search-bar" role="search">
+  <label for="search-input">Find</label>
+  <input id="search-input" type="search" placeholder="search in text…" autocomplete="off" spellcheck="false" aria-label="Search text">
+  <span id="search-count" aria-live="polite"></span>
+  <button id="search-clear" aria-label="Clear search">× clear</button>
+  <label class="flatten-toggle" title="Strip the page to static text — see what disappears">
+    <input type="checkbox" id="flatten-checkbox" aria-label="Flatten test: strip this artifact to static text">
+    flatten test
+  </label>
+</div>
+
+<!-- FLATTEN BANNER (shown only when flatten test is on) -->
+<div id="flatten-banner" role="status">
+  <strong>Flattened to static text.</strong> Find is gone. The entity inspector no longer cross-highlights. Per-section copy-as-prompt is gone. Your accept/reject marks on each claim, your notes, and the live round-trip composer are inert and greyed. <strong>This is exactly the loss the essay is about</strong> — uncheck to restore the instrument.
+</div>
+
+<!-- PROMPT FALLBACK (hidden, filled by copy-as-prompt JS) -->
+<textarea id="global-prompt-fallback" class="prompt-fallback" style="position:fixed;bottom:0;left:0;right:0;z-index:200;display:none;min-height:7rem;border-radius:0;border-top:2px solid var(--accent);" readonly aria-label="Copy-as-prompt text"></textarea>
+
+<div class="studio">
+
+  <!-- ── LEFT RAIL ── -->
+  <aside class="rail-left" aria-label="Article navigation">
+    <p class="kicker">Essay · May 2026</p>
+    <h1 class="rail-title">
+      <a href="#top">Why the file you keep should be the file you can poke</a>
+    </h1>
+
+    <div class="about-card">
+      <h3>About this argument</h3>
+      <p>This essay argues from mechanism, not preference. The claim is architectural: an artifact that can filter, recompute, and hand instructions back to the model that made it is categorically different from a static export — and that difference is not cosmetic.</p>
+    </div>
+
+    <nav class="section-nav" aria-label="Sections">
+      <h3>Sections</h3>
+      <a href="#section-dead" id="nav-dead">The dead weight of inert documents</a>
+      <a href="#section-filter" id="nav-filter">A filter is not a feature — it's a different kind of object</a>
+      <a href="#section-loop" id="nav-loop">The round-trip changes what the model can do</a>
+      <a href="#section-strange" id="nav-strange">The strange-loop argument: the document eats itself</a>
+      <a href="#section-cost" id="nav-cost">The cost is already paid</a>
+      <a href="#composer-panel" id="nav-composer">The round-trip, performed on this page</a>
+      <a href="#section-takeaways" id="nav-takeaways">Takeaways</a>
+    </nav>
+  </aside>
+
+  <!-- ── CENTER PROSE ── -->
+  <main class="center" id="top">
+    <div class="prose-wrap">
+
+      <p class="thesis" data-search-target>
+        The canonical artifact of knowledge work should be an interactive HTML file, not a PDF or Doc export — because the moment a document can filter, recompute, and hand a precise instruction back to the model that made it, it stops being a record and becomes an instrument.
+      </p>
+
+      <div id="poke-tally" role="status" aria-live="polite">
+        Poke the argument: take a position on each claim card below. <strong id="poke-tally-text">No claims marked yet</strong> — the composer near the end will turn your stance into a precise instruction back to this file.
+      </div>
+
+      <!-- SECTION 1 -->
+      <div class="section-heading" id="section-dead">
+        <h2>The dead weight of inert documents</h2>
+        <button class="copy-section-btn" data-section="section-dead" aria-label="Copy as prompt for this section">copy as prompt</button>
+      </div>
+
+      <div class="claim-card" data-entity-refs="pdf,progressive-disclosure">
+        <h3>A PDF is a photograph of thinking, not the thinking itself</h3>
+        <p>When you export a report to PDF, you freeze its state at the moment of export. Every subsequent question — <em>show me only the open items</em>, <em>what changed since last week</em>, <em>hide the boilerplate and let me see the numbers</em> — requires a new conversation, a new export, a new file. The format does not survive contact with a follow-up question.</p>
+        <p>This is not a minor ergonomic complaint. It is an architectural property. The document cannot update itself because it has no model of its own contents. It is a picture of a table, not a table.</p>
+        <div class="evidence"><strong>Evidence:</strong> A 40-page strategy brief exported to PDF. Stakeholder asks "just the risks and owners." Answer: copy-paste to a new doc, manually filter, re-send. Median turnaround: one business day. The artifact failed the first use.</div>
+      </div>
+
+      <p>The format we inherited — sequential prose frozen at export time — made sense when reproduction was expensive and revision cycles were measured in print runs. Neither constraint applies now. The only reason we're still passing PDFs and Docs around is that the tools for making something better became available about eighteen months ago and most workflows haven't caught up.</p>
+
+      <p>What changed is not the web browser (that's been here). What changed is that the model generating the document can also generate the interaction layer — the filters, the toggles, the copy-as-prompt buttons — in the same pass. The cost of the instrument collapsed to near zero.</p>
+
+      <hr>
+
+      <!-- SECTION 2 -->
+      <div class="section-heading" id="section-filter">
+        <h2>A filter is not a feature — it's a different kind of object</h2>
+        <button class="copy-section-btn" data-section="section-filter" aria-label="Copy as prompt for this section">copy as prompt</button>
+      </div>
+
+      <div class="claim-card" data-entity-refs="progressive-disclosure,html-artifact">
+        <h3>Progressive disclosure turns a document into a question-answering machine</h3>
+        <p>A document with a live filter input is not a document with a search bar bolted on. It is a different category of thing. When you type a term and watch unrelated rows collapse, you are performing an operation on a data structure — you are querying it. The document has become queryable. That shift is non-trivial: it means the reader can express intent to the artifact directly, without going through the author.</p>
+        <p>This matters most when the reader's question was not anticipated. Static documents serve the author's anticipated questions well and all other questions poorly. An interactive artifact serves the reader's actual question — whatever it turns out to be.</p>
+        <div class="evidence"><strong>Evidence:</strong> A network-scan report rendered as dashboard HTML. Security engineer needs "all open ports above 1024 on Linux hosts." In PDF: grep, copy, reformat. In the HTML artifact: two filter inputs, three seconds. Same data, order-of-magnitude difference in access cost.</div>
+      </div>
+
+      <!-- SVG DIAGRAM: Document vs Instrument -->
+      <figure class="diagram-block" aria-label="Diagram showing static document versus interactive instrument workflow">
+        <svg viewBox="0 0 520 180" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two workflow paths: static export loops through author; interactive HTML answers reader directly">
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#736d62"/>
+            </marker>
+            <marker id="arr-accent" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L8,3 z" fill="#8a3a1a"/>
+            </marker>
+          </defs>
+          <!-- STATIC PATH -->
+          <text x="10" y="22" font-family="ui-monospace, monospace" font-size="10" fill="#736d62" letter-spacing="0.08em">STATIC EXPORT</text>
+          <rect x="10" y="32" width="100" height="36" rx="4" fill="#f3ede1" stroke="#d9d1c2" stroke-width="1"/>
+          <text x="60" y="52" text-anchor="middle" font-family="Georgia, serif" font-size="12" fill="#4a443c">Author</text>
+          <text x="60" y="64" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#736d62">→ exports PDF</text>
+          <line x1="110" y1="50" x2="175" y2="50" stroke="#736d62" stroke-width="1.5" marker-end="url(#arr)"/>
+          <rect x="175" y="32" width="100" height="36" rx="4" fill="#f3ede1" stroke="#d9d1c2" stroke-width="1"/>
+          <text x="225" y="52" text-anchor="middle" font-family="Georgia, serif" font-size="12" fill="#4a443c">Reader</text>
+          <text x="225" y="64" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#736d62">has a question</text>
+          <line x1="275" y1="50" x2="340" y2="50" stroke="#736d62" stroke-width="1.5" marker-end="url(#arr)"/>
+          <rect x="340" y="32" width="100" height="36" rx="4" fill="#f3ede1" stroke="#d9d1c2" stroke-width="1"/>
+          <text x="390" y="52" text-anchor="middle" font-family="Georgia, serif" font-size="12" fill="#4a443c">Author again</text>
+          <text x="390" y="64" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#736d62">→ new export</text>
+          <!-- loop arrow back -->
+          <path d="M390,68 Q390,95 225,95 Q60,95 60,68" fill="none" stroke="#d9d1c2" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+
+          <!-- INTERACTIVE PATH -->
+          <text x="10" y="126" font-family="ui-monospace, monospace" font-size="10" fill="#8a3a1a" letter-spacing="0.08em">INTERACTIVE HTML</text>
+          <rect x="10" y="136" width="100" height="36" rx="4" fill="#faf6ef" stroke="#8a3a1a" stroke-width="1.5"/>
+          <text x="60" y="156" text-anchor="middle" font-family="Georgia, serif" font-size="12" fill="#4a443c">HTML artifact</text>
+          <text x="60" y="168" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#736d62">filter · query · copy</text>
+          <line x1="110" y1="154" x2="175" y2="154" stroke="#8a3a1a" stroke-width="1.5" marker-end="url(#arr-accent)"/>
+          <rect x="175" y="136" width="100" height="36" rx="4" fill="#faf6ef" stroke="#8a3a1a" stroke-width="1.5"/>
+          <text x="225" y="154" text-anchor="middle" font-family="Georgia, serif" font-size="12" fill="#4a443c">Reader</text>
+          <text x="225" y="168" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#8a3a1a">answers directly</text>
+        </svg>
+        <figcaption>Static exports loop through the author. Interactive HTML answers the reader's actual question directly.</figcaption>
+      </figure>
+
+      <hr>
+
+      <!-- SECTION 3 -->
+      <div class="section-heading" id="section-loop">
+        <h2>The round-trip changes what the model can do</h2>
+        <button class="copy-section-btn" data-section="section-loop" aria-label="Copy as prompt for this section">copy as prompt</button>
+      </div>
+
+      <div class="claim-card" data-entity-refs="copy-as-prompt,render-as-html">
+        <h3>Copy-as-prompt closes the loop: the artifact becomes an editing surface</h3>
+        <p>The most important primitive in interactive knowledge artifacts is the copy-as-prompt button. When you adjust state in the browser — check items, reorder priorities, tune weights — and hit a button that produces a precise, pasteable instruction targeting the <em>specific file by path</em>, you have created a closed-loop system. The reader's intent flows back to the model with zero information loss. No re-explaining the context. No re-typing what changed. The artifact itself is the edit surface, and the model is the actuator.</p>
+        <p>This is not a UX nicety. It changes the fundamental character of the relationship between a document and its revision history. Instead of the author pushing new versions, the reader pulls them by expressing intent to the instrument.</p>
+        <div class="evidence"><strong>Evidence:</strong> In the render-as-html skill, a triage-board artifact generates prompts like: <code>"In examples/plan.html, re-bucket these items: Now=[auth-flow, rate-limit] Next=[search, notifications] Cut=[legacy-import]"</code>. The model applies exactly those changes with zero ambiguity. The round-trip is lossless.</div>
+      </div>
+
+      <div class="claim-card" data-entity-refs="html-artifact,progressive-disclosure">
+        <h3>Precision beats prose in the edit channel</h3>
+        <p>A conversational edit request — "can you move the risk items up and deprioritize the infrastructure stuff" — is lossy. The model has to infer which items, what "up" means in context, and which infrastructure items the reader didn't mean. A copy-as-prompt from the artifact is precise by construction: it names the file, names the items, names the target bucket. The diff between intent and instruction is zero.</p>
+        <p>The upshot is that interactive HTML artifacts are not just better to read — they are better to edit. They make the reader's intent legible to the model without an interpretation layer.</p>
+        <div class="evidence"><strong>Evidence:</strong> A comparison artifact with weighted criteria. User adjusts weights in-browser (security: 40%, cost: 20%, DX: 40%), clicks copy-as-prompt. Output: <code>"In comparison.html, update criterion weights to: security=0.4, cost=0.2, developer-experience=0.4 and recompute the winner row."</code> Unambiguous. Immediately actionable.</div>
+      </div>
+
+      <hr>
+
+      <!-- SECTION 4 -->
+      <div class="section-heading" id="section-strange">
+        <h2>The strange-loop argument: the document eats itself</h2>
+        <button class="copy-section-btn" data-section="section-strange" aria-label="Copy as prompt for this section">copy as prompt</button>
+      </div>
+
+      <div class="claim-card" data-entity-refs="strange-loop,render-as-html,trq212">
+        <h3>When the artifact can instruct the model that made it, authorship changes shape</h3>
+        <p>The Hofstadter strange loop shows up in an unexpected place here: the artifact you're reading was generated by a model, and it contains buttons that generate instructions back to that same model — instructions that will modify this artifact. The document is eating its own tail. This is not a gimmick; it is a qualitatively different kind of object than anything that could exist before the model generation layer.</p>
+        <p>The practical consequence: the role of "author" in knowledge work is shifting from someone who produces a finished document to someone who seeds an artifact and then steers it through reader interactions. The HTML file is the seed. The copy-as-prompt buttons are the steering mechanism. The model is the engine.</p>
+        <div class="evidence"><strong>Evidence:</strong> The render-as-html skill ships a "dogfood gallery" of sample artifacts — each generated by the model, each containing copy-as-prompt buttons that produce instructions targeting that very file. The gallery itself demonstrates the loop: the artifact instructs its own revision. See the <code>strange-loop</code> gallery entry in the sample set.</div>
+      </div>
+
+      <p>The implication for knowledge management is non-trivial. If the artifact is the edit surface, then the collection of artifacts is the edit surface for a body of knowledge. Version history is not a sequence of frozen snapshots — it is a log of copy-as-prompt instructions, each one a precise diff. The diff log <em>is</em> the reasoning trace.</p>
+
+      <hr>
+
+      <!-- SECTION 5 -->
+      <div class="section-heading" id="section-cost">
+        <h2>The cost is already paid</h2>
+        <button class="copy-section-btn" data-section="section-cost" aria-label="Copy as prompt for this section">copy as prompt</button>
+      </div>
+
+      <div class="claim-card" data-entity-refs="self-contained-html,render-as-html">
+        <h3>A self-contained HTML file travels exactly as well as a PDF</h3>
+        <p>The objection that interactive documents are harder to share is empirically false in 2026. A self-contained HTML file with all CSS and JS inlined opens in any browser, on any device, without installation. It emails, it Slacks, it commits to git. It renders identically on iOS Safari and desktop Chrome. It has no server dependency, no runtime, no framework. The only constraint is that it must be genuinely self-contained — no CDN calls, no external fonts, no analytics pings.</p>
+        <div class="evidence"><strong>Evidence:</strong> The render-as-html skill enforces self-containment as a hard constraint: zero external network requests in private artifacts. The resulting files average 60–180KB — smaller than a typical PDF with embedded images. They open offline. They diff cleanly in git.</div>
+      </div>
+
+      <div class="claim-card" data-entity-refs="render-as-html,copy-as-prompt">
+        <h3>The interaction layer costs ~20 lines of vanilla JS</h3>
+        <p>The copy-as-prompt mechanism — the thing that closes the loop between reader intent and model action — is approximately 20 lines of JavaScript. No framework. No build step. No dependency. The model generates it inline, in the same pass as the content. The marginal cost of turning a static document into an instrument is near zero when the author is a model rather than a human developer.</p>
+        <p>This is the key economic fact. Before LLMs, building the interaction layer required a developer, a framework, a deployment pipeline, and ongoing maintenance. Now it requires the same request that produces the content. The economics are decisively in favor of the instrument.</p>
+        <div class="evidence"><strong>Evidence:</strong> Every render-as-html artifact includes a copy-as-prompt pattern in ~20 lines. The implementation: collect mutated state from the DOM, format as a precise instruction naming the artifact path, write to clipboard with a visible textarea fallback for blocked contexts. The full pattern is in SKILL.md §Copy-as-prompt.</div>
+      </div>
+
+      <hr>
+
+      <!-- LIVE ROUND-TRIP COMPOSER -->
+      <section id="composer-panel" aria-label="Live round-trip prompt composer">
+        <h2>The round-trip, performed on this page</h2>
+        <p class="composer-lede">The essay claims an artifact can hand a precise instruction back to the model that made it. So watch it happen. Below is the exact copy-as-prompt instruction — recomputed live from the position you took on each claim card and the notes you wrote. Change a stance above and this rewrites itself. Flatten the page and it dies.</p>
+        <textarea id="composer-out" readonly spellcheck="false" aria-label="Live-composed round-trip prompt for this artifact"></textarea>
+        <div class="composer-strip">
+          <button id="composer-copy" type="button">copy as prompt</button>
+          <span class="composer-hint" id="composer-hint">naming this file by path · only your deltas, not the whole essay</span>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- TAKEAWAYS -->
+      <div id="section-takeaways">
+        <div class="takeaways">
+          <h2>Five things to carry out of here</h2>
+
+          <div class="takeaway-item">
+            <span class="takeaway-num">1</span>
+            <span class="takeaway-text"><strong>The format constraint is historical, not technical.</strong> PDFs and Docs are habits from a world where the interaction layer was expensive to build. That constraint no longer applies when a model generates both content and interaction in the same pass.</span>
+          </div>
+
+          <div class="takeaway-item">
+            <span class="takeaway-num">2</span>
+            <span class="takeaway-text"><strong>A filter is a query interface, not a UI decoration.</strong> When a reader can express intent directly to the artifact, the author's anticipation of questions is no longer the bottleneck. The reader's actual question is what gets answered.</span>
+          </div>
+
+          <div class="takeaway-item">
+            <span class="takeaway-num">3</span>
+            <span class="takeaway-text"><strong>Copy-as-prompt makes the edit loop lossless.</strong> Naming the file, naming the items, naming the target state — zero interpretation required. The reader's intent reaches the model without compression.</span>
+          </div>
+
+          <div class="takeaway-item">
+            <span class="takeaway-num">4</span>
+            <span class="takeaway-text"><strong>Self-contained HTML travels as well as PDF.</strong> Zero runtime dependency, offline-capable, smaller than most PDFs with images, diffs cleanly in git. The sharing objection is empirically false.</span>
+          </div>
+
+          <div class="takeaway-item">
+            <span class="takeaway-num">5</span>
+            <span class="takeaway-text"><strong>The artifact that can instruct its own revision is a new kind of object.</strong> Not a document with buttons. A different category — one where authorship is steering rather than producing, and where the model is the engine that acts on the reader's expressed intent.</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /prose-wrap -->
+  </main>
+
+  <!-- ── RIGHT INSPECTOR ── -->
+  <aside class="rail-right" id="entity-inspector" aria-label="Entity inspector">
+
+    <div class="inspector-section">
+      <h3>People</h3>
+
+      <div class="entity-row" data-entity-key="trq212" role="button" tabindex="0" aria-label="Highlight Thariq mentions in text">
+        <span class="cat-dot people" aria-hidden="true"></span>
+        <div class="entity-body">
+          <div class="entity-name"><a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">@trq212 ↗</a></div>
+          <div class="entity-note">HTML-artifact framing; "Unreasonable Effectiveness of HTML"</div>
+        </div>
+      </div>
+
+      <div class="entity-row" data-entity-key="hofstadter" role="button" tabindex="0" aria-label="Highlight Hofstadter mentions in text">
+        <span class="cat-dot people" aria-hidden="true"></span>
+        <div class="entity-body">
+          <div class="entity-name"><a href="https://en.wikipedia.org/wiki/Douglas_Hofstadter" target="_blank" rel="noopener noreferrer">Douglas Hofstadter ↗</a></div>
+          <div class="entity-note">Strange-loop concept; <em>Gödel, Escher, Bach</em></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inspector-section">
+      <h3>Concepts</h3>
+
+      <div class="entity-row" data-entity-key="copy-as-prompt" role="button" tabindex="0" aria-label="Highlight copy-as-prompt mentions in text">
+        <span class="cat-dot concepts" aria-hidden="true"></span>
+        <div class="entity-body">
+          <div class="entity-name">Copy-as-prompt</div>
+          <div class="entity-note">Generates a precise, model-ready instruction from current artifact state</div>
+        </div>
+      </div>
+
+      <div class="entity-row" data-entity-key="progressive-disclosure" role="button" tabindex="0" aria-label="Highlight progressive disclosure mentions in text">
+        <span class="cat-dot concepts" aria-hidden="true"></span>
+        <div class="entity-body">
+          <div class="entity-name">Progressive disclosure</div>
+          <div class="entity-note">Filtering reveals relevant content; hides noise without destroying it</div>
+        </div>
+      </div>
+
+      <div class="entity-row" data-entity-key="strange-loop" role="button" tabindex="0" aria-label="Highlight strange loop mentions in text">
+        <span class="cat-dot concepts" aria-hidden="true"></span>
+        <div class="entity-body">
+          <div class="entity-name">Strange loop</div>
+          <div class="entity-note">Artifact instructs its own revision; authorship becomes steering</div>
+        </div>
+      </div>
+
+      <div class="entity-row" data-entity-key="html-artifact" role="button" tabindex="0" aria-label="Highlight HTML artifact mentions in text">
+        <span class="cat-dot concepts" aria-hidden="true"></span>
+        <div class="entity-body">
+          <div class="entity-name">HTML artifact</div>
+          <div class="entity-note">Self-contained, single-file, instrument rather than record</div>
+        </div>
+      </div>
+
+      <div class="entity-row" data-entity-key="pdf" role="button" tabindex="0" aria-label="Highlight PDF mentions in text">
+        <span class="cat-dot concepts" aria-hidden="true"></span>
+        <div class="entity-body">
+          <div class="entity-name">PDF / static export</div>
+          <div class="entity-note">Frozen at export time; cannot express reader intent back to author</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="inspector-section">
+      <h3>Tools</h3>
+
+      <div class="entity-row" data-entity-key="render-as-html" role="button" tabindex="0" aria-label="Highlight render-as-html mentions in text">
+        <span class="cat-dot tools" aria-hidden="true"></span>
+        <div class="entity-body">
+          <div class="entity-name"><a href="https://github.com/clockless-org/html-anything" target="_blank" rel="noopener noreferrer">render-as-html ↗</a></div>
+          <div class="entity-note">Claude Code skill; 9 page shapes; reading + instrument registers</div>
+        </div>
+      </div>
+
+      <div class="entity-row" data-entity-key="self-contained-html" role="button" tabindex="0" aria-label="Highlight self-contained HTML mentions in text">
+        <span class="cat-dot tools" aria-hidden="true"></span>
+        <div class="entity-body">
+          <div class="entity-name">Self-contained HTML</div>
+          <div class="entity-note">No CDN, no runtime, offline-capable; travels as well as PDF</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="read-next">
+      <h3>Read next</h3>
+      <ul class="read-next-list">
+        <li>
+          <a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">
+            "The Unreasonable Effectiveness of HTML" ↗
+          </a>
+          <span class="rn-label">@trq212 — the framing that seeded this argument</span>
+        </li>
+        <li>
+          <a href="https://github.com/clockless-org/html-anything" target="_blank" rel="noopener noreferrer">
+            html-anything (clockless-org) ↗
+          </a>
+          <span class="rn-label">Content-matched page shapes; the shape-selection idea</span>
+        </li>
+        <li>
+          <a href="https://en.wikipedia.org/wiki/G%C3%B6del%2C_Escher%2C_Bach" target="_blank" rel="noopener noreferrer">
+            Gödel, Escher, Bach — Hofstadter ↗
+          </a>
+          <span class="rn-label">Strange loops; self-referential systems; the theoretical spine</span>
+        </li>
+      </ul>
+    </div>
+
+  </aside>
+
+</div><!-- /studio -->
+
+<footer>
+  <span class="ft-path">examples/editorial.html</span>
+  <span class="ft-ts">Generated 2026-05-18</span>
+</footer>
+
+<script>
+// ── CONSTANTS ────────────────────────────────────────────────────────────────
+const ARTIFACT_PATH = 'examples/editorial.html';
+
+// ── ENTITY SEARCH TERMS (what to highlight in prose per entity key) ──────────
+const ENTITY_TERMS = {
+  'trq212':               ['trq212', 'Thariq', 'Unreasonable Effectiveness'],
+  'hofstadter':           ['Hofstadter', 'strange loop', 'strange-loop'],
+  'copy-as-prompt':       ['copy-as-prompt', 'copy as prompt', 'copyPrompt'],
+  'progressive-disclosure': ['progressive disclosure', 'Progressive disclosure', 'filter input', 'live filter'],
+  'strange-loop':         ['strange loop', 'strange-loop', 'Hofstadter', 'eating its own tail'],
+  'html-artifact':        ['HTML artifact', 'HTML file', 'interactive HTML'],
+  'pdf':                  ['PDF', 'static export', 'frozen at export', 'Doc export'],
+  'render-as-html':       ['render-as-html', 'render as html', 'SKILL.md'],
+  'self-contained-html':  ['self-contained', 'self contained', 'single-file', 'inlined'],
+};
+
+// ── SEARCH / MARK ────────────────────────────────────────────────────────────
+const searchInput  = document.getElementById('search-input');
+const searchCount  = document.getElementById('search-count');
+const searchClear  = document.getElementById('search-clear');
+const proseRoot    = document.querySelector('.center');
+
+// Cache original HTML of all searchable text nodes' containers once
+let searchTargets = [];
+
+function buildSearchTargets() {
+  // Collect leaf-ish text containers inside prose (not in SVG)
+  const walker = document.createTreeWalker(
+    proseRoot,
+    NodeFilter.SHOW_ELEMENT,
+    { acceptNode: n =>
+        ['P','H2','H3','LI','SPAN','DIV'].includes(n.tagName) &&
+        !n.closest('svg') &&
+        !n.closest('#search-bar') &&
+        !n.closest('.poke-block') &&
+        !n.closest('#composer-panel') &&
+        n.childNodes.length &&
+        [...n.childNodes].some(c => c.nodeType === Node.TEXT_NODE && c.textContent.trim())
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_SKIP
+    }
+  );
+  let node;
+  while ((node = walker.nextNode())) {
+    if (!node.dataset.original) {
+      node.dataset.original = node.innerHTML;
+    }
+    searchTargets.push(node);
+  }
+}
+
+function escapeRx(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function markText(container, query, cssClass) {
+  if (!query) {
+    container.innerHTML = container.dataset.original || container.innerHTML;
+    return 0;
+  }
+  const original = container.dataset.original || container.innerHTML;
+  const rx = new RegExp(`(${escapeRx(query)})`, 'gi');
+  const marked = original.replace(rx, `<mark class="${cssClass || ''}">$1</mark>`);
+  container.innerHTML = marked;
+  return (marked.match(/<mark/g) || []).length;
+}
+
+let currentSearch = '';
+let currentEntityKey = '';
+
+function applySearch(query) {
+  currentSearch = query;
+  let total = 0;
+  searchTargets.forEach(el => {
+    const count = markText(el, query, '');
+    total += count;
+  });
+  searchCount.textContent = query ? `${total} match${total !== 1 ? 'es' : ''}` : '';
+  searchClear.style.display = query ? 'inline-block' : 'none';
+  if (query && total > 0) {
+    const first = proseRoot.querySelector('mark');
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+searchInput.addEventListener('input', () => {
+  currentEntityKey = '';
+  clearEntityActive();
+  applySearch(searchInput.value.trim());
+});
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  applySearch('');
+});
+
+// ── ENTITY CLICK → CROSS-HIGHLIGHT ──────────────────────────────────────────
+function clearEntityActive() {
+  document.querySelectorAll('.entity-row.active').forEach(r => r.classList.remove('active'));
+}
+
+function highlightEntity(key) {
+  const terms = ENTITY_TERMS[key];
+  if (!terms || !terms.length) return;
+  // restore original first
+  searchTargets.forEach(el => {
+    el.innerHTML = el.dataset.original || el.innerHTML;
+  });
+  let total = 0;
+  searchTargets.forEach(el => {
+    const original = el.dataset.original || el.innerHTML;
+    // replace all terms
+    let html = original;
+    terms.forEach(term => {
+      const rx = new RegExp(`(${escapeRx(term)})`, 'gi');
+      html = html.replace(rx, '<mark class="entity-highlight">$1</mark>');
+    });
+    el.innerHTML = html;
+    total += (html.match(/<mark class="entity-highlight"/g) || []).length;
+  });
+  // scroll to first
+  const first = proseRoot.querySelector('mark.entity-highlight');
+  if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+document.querySelectorAll('.entity-row').forEach(row => {
+  row.addEventListener('click', () => {
+    const key = row.dataset.entityKey;
+    if (currentEntityKey === key) {
+      // toggle off
+      currentEntityKey = '';
+      clearEntityActive();
+      searchTargets.forEach(el => { el.innerHTML = el.dataset.original || el.innerHTML; });
+      // re-apply text search if active
+      if (currentSearch) applySearch(currentSearch);
+      return;
+    }
+    currentEntityKey = key;
+    clearEntityActive();
+    row.classList.add('active');
+    // clear text search marks
+    searchInput.value = '';
+    currentSearch = '';
+    searchCount.textContent = '';
+    searchClear.style.display = 'none';
+    highlightEntity(key);
+  });
+  row.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); row.click(); }
+  });
+});
+
+// ── SCROLL SPY ───────────────────────────────────────────────────────────────
+const sections = [
+  { id: 'section-dead',     navId: 'nav-dead'     },
+  { id: 'section-filter',   navId: 'nav-filter'   },
+  { id: 'section-loop',     navId: 'nav-loop'     },
+  { id: 'section-strange',  navId: 'nav-strange'  },
+  { id: 'section-cost',     navId: 'nav-cost'     },
+  { id: 'composer-panel',   navId: 'nav-composer' },
+  { id: 'section-takeaways',navId: 'nav-takeaways'},
+];
+
+function onScroll() {
+  const scrollY = window.scrollY + 120;
+  let active = sections[0];
+  sections.forEach(s => {
+    const el = document.getElementById(s.id);
+    if (el && el.getBoundingClientRect().top + window.scrollY <= scrollY) active = s;
+  });
+  document.querySelectorAll('.section-nav a').forEach(a => a.classList.remove('active'));
+  const activeLink = document.getElementById(active.navId);
+  if (activeLink) activeLink.classList.add('active');
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+// ── PER-SECTION COPY-AS-PROMPT ───────────────────────────────────────────────
+const fallbackTA = document.getElementById('global-prompt-fallback');
+
+function getSectionContent(sectionId) {
+  const heading = document.getElementById(sectionId);
+  if (!heading) return '';
+  // Collect text until next section heading
+  const sectionEl = heading.closest('.section-heading') || heading;
+  let text = '';
+  let el = sectionEl.nextElementSibling;
+  while (el && !el.querySelector('.section-heading') && !el.id?.startsWith('section-')) {
+    const t = el.innerText || el.textContent;
+    if (t) text += t.trim() + '\n';
+    el = el.nextElementSibling;
+  }
+  return text.trim().slice(0, 400);
+}
+
+document.querySelectorAll('.copy-section-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const sectionId = btn.dataset.section;
+    const headingEl = document.getElementById(sectionId);
+    const headingText = headingEl?.querySelector('h2')?.innerText || sectionId;
+    const preview = getSectionContent(sectionId);
+
+    const prompt = `In ${ARTIFACT_PATH}, revise the section "${headingText}". Here is the current content for context:\n\n${preview}\n\nApply these changes: [describe your edits here]`;
+
+    btn.classList.add('copied');
+    btn.textContent = 'copied ✓';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.textContent = 'copy as prompt';
+    }, 2000);
+
+    navigator.clipboard.writeText(prompt).catch(() => {
+      // fallback
+      fallbackTA.value = prompt;
+      fallbackTA.style.display = 'block';
+      fallbackTA.focus();
+      fallbackTA.select();
+    });
+  });
+});
+
+// Hide fallback on click outside
+document.addEventListener('click', e => {
+  if (e.target !== fallbackTA) {
+    fallbackTA.style.display = 'none';
+  }
+});
+
+// ── INSTRUMENT 1: POKE THIS ARGUMENT (per-claim stance + note) ───────────────
+// State is held in the DOM-driven `claimState` map. It is read by the composer.
+// None of this survives a flatten to static text — that is the point.
+const claimState = {};   // id -> { title, stance: ''|'accept'|'reject'|'unsure', note: '' }
+
+function slugifyClaim(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
+}
+
+function autoSize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = (ta.scrollHeight) + 'px';
+}
+
+const claimCards = [...document.querySelectorAll('.claim-card')];
+claimCards.forEach((card, i) => {
+  const titleEl = card.querySelector('h3');
+  const title = titleEl ? titleEl.textContent.trim() : ('Claim ' + (i + 1));
+  const id = 'claim-' + (i + 1) + '-' + slugifyClaim(title);
+  card.dataset.claimId = id;
+  claimState[id] = { title: title, stance: '', note: '' };
+
+  const block = document.createElement('div');
+  block.className = 'poke-block';
+  const grp = 'stance-' + id;
+  block.innerHTML =
+    '<div class="poke-prompt">Poke this claim — take a position</div>' +
+    '<div class="poke-options" role="radiogroup" aria-label="Your position on: ' +
+      title.replace(/"/g, '&quot;') + '">' +
+      '<label class="poke-opt" data-v="accept"><input type="radio" name="' + grp +
+        '" value="accept" aria-label="Accept this claim"> accept</label>' +
+      '<label class="poke-opt" data-v="reject"><input type="radio" name="' + grp +
+        '" value="reject" aria-label="Reject this claim"> reject</label>' +
+      '<label class="poke-opt" data-v="unsure"><input type="radio" name="' + grp +
+        '" value="unsure" aria-label="Unsure about this claim"> unsure</label>' +
+    '</div>' +
+    '<textarea class="poke-note" rows="1" aria-label="Optional note on: ' +
+      title.replace(/"/g, '&quot;') +
+      '" placeholder="Optional: why? what should change? (full text stays visible)"></textarea>';
+  card.appendChild(block);
+
+  const opts = [...block.querySelectorAll('.poke-opt')];
+  block.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      claimState[id].stance = radio.value;
+      opts.forEach(o => {
+        o.classList.remove('sel-accept', 'sel-reject', 'sel-unsure');
+        if (o.dataset.v === radio.value) o.classList.add('sel-' + radio.value);
+      });
+      recompute();
+    });
+  });
+
+  const note = block.querySelector('.poke-note');
+  note.addEventListener('input', () => {
+    claimState[id].note = note.value;
+    autoSize(note);
+    recompute();
+  });
+  // initialize auto-size
+  requestAnimationFrame(() => autoSize(note));
+});
+
+// ── INSTRUMENT 2: LIVE ROUND-TRIP COMPOSER ───────────────────────────────────
+const tallyText  = document.getElementById('poke-tally-text');
+const composerOut = document.getElementById('composer-out');
+const composerCopy = document.getElementById('composer-copy');
+
+function recompute() {
+  const ids = Object.keys(claimState);
+  const total = ids.length;
+  const accepted = ids.filter(k => claimState[k].stance === 'accept');
+  const rejected = ids.filter(k => claimState[k].stance === 'reject');
+  const unsure   = ids.filter(k => claimState[k].stance === 'unsure');
+  const marked   = accepted.length + rejected.length + unsure.length;
+
+  // live tally region
+  if (marked === 0) {
+    tallyText.textContent = 'No claims marked yet';
+  } else {
+    let t = 'You accept ' + accepted.length + ' of ' + total + ' claims';
+    if (rejected.length) t += ' · reject ' + rejected.length;
+    if (unsure.length)   t += ' · unsure on ' + unsure.length;
+    tallyText.textContent = t;
+  }
+
+  // live-composed round-trip prompt
+  if (marked === 0) {
+    composerOut.value =
+      'In ' + ARTIFACT_PATH + ', revise this essay based on my read of its own claims.\n\n' +
+      '(Mark accept / reject / unsure on the claim cards above and this instruction ' +
+      'will compose itself — naming each claim and any note you wrote.)';
+    recomputeWidthState();
+    return;
+  }
+
+  const lines = [];
+  lines.push('In ' + ARTIFACT_PATH + ', revise this essay using my read of its own claims.');
+  lines.push('');
+
+  if (rejected.length) {
+    lines.push('CUT or substantially rework these claims — I do not buy them:');
+    rejected.forEach(k => {
+      lines.push('  - "' + claimState[k].title + '"' +
+        (claimState[k].note ? '  — reason: ' + claimState[k].note.trim() : ''));
+    });
+    lines.push('');
+  }
+  if (unsure.length) {
+    lines.push('STRENGTHEN the evidence on these — I am not yet convinced:');
+    unsure.forEach(k => {
+      lines.push('  - "' + claimState[k].title + '"' +
+        (claimState[k].note ? '  — what would convince me: ' + claimState[k].note.trim() : ''));
+    });
+    lines.push('');
+  }
+  if (accepted.length) {
+    lines.push('KEEP these as load-bearing — I accept them' +
+      (accepted.some(k => claimState[k].note) ? ' (notes below)' : '') + ':');
+    accepted.forEach(k => {
+      lines.push('  - "' + claimState[k].title + '"' +
+        (claimState[k].note ? '  — note: ' + claimState[k].note.trim() : ''));
+    });
+    lines.push('');
+  }
+  lines.push('Keep the prose voice, the three-zone editorial layout, and the existing ' +
+    'interactivity. Do not restate the whole essay back — apply only these deltas.');
+
+  composerOut.value = lines.join('\n');
+  recomputeWidthState();
+}
+
+function recomputeWidthState() {
+  // grow the composer textarea to fit, but cap it
+  composerOut.style.height = 'auto';
+  composerOut.style.height = Math.min(composerOut.scrollHeight, 520) + 'px';
+}
+
+composerCopy.addEventListener('click', () => {
+  const txt = composerOut.value;
+  function ok() {
+    composerCopy.classList.add('copied');
+    composerCopy.textContent = 'copied ✓';
+    setTimeout(() => {
+      composerCopy.classList.remove('copied');
+      composerCopy.textContent = 'copy as prompt';
+    }, 2000);
+  }
+  navigator.clipboard.writeText(txt).then(ok).catch(() => {
+    // visible fallback: the composer textarea is already on-screen — focus + select it
+    composerOut.removeAttribute('readonly');
+    composerOut.focus();
+    composerOut.select();
+    composerOut.setAttribute('readonly', '');
+    document.getElementById('composer-hint').textContent =
+      'clipboard blocked — text is selected above, press ⌘/Ctrl-C';
+  });
+});
+
+// ── INSTRUMENT 3: FLATTEN TEST ───────────────────────────────────────────────
+const flattenCb = document.getElementById('flatten-checkbox');
+flattenCb.addEventListener('change', () => {
+  if (flattenCb.checked) {
+    document.body.classList.add('flattened');
+    // kill live find: restore prose to original, drop marks
+    if (typeof searchInput !== 'undefined') searchInput.value = '';
+    currentSearch = '';
+    currentEntityKey = '';
+    clearEntityActive();
+    searchTargets.forEach(el => { el.innerHTML = el.dataset.original || el.innerHTML; });
+    if (searchCount) searchCount.textContent = '';
+    if (searchClear) searchClear.style.display = 'none';
+  } else {
+    document.body.classList.remove('flattened');
+  }
+});
+
+// ── INIT: build search targets after DOM ready ───────────────────────────────
+buildSearchTargets();
+recompute();
+</script>
+</body>
+</html>

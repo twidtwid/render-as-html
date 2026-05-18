@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>render-as-html — example gallery</title>
+<style>
+  :root{
+    --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+    --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+    --rule:#d9d1c2; --rule-soft:#ece5d6;
+    --accent:#8a3a1a; --accent-2:#c2901a;
+    --serif:"Charter","Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Source Serif Pro",serif;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+    --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+    --rule:#38332b; --rule-soft:#2c2820; --accent:#e0794f; --accent-2:#d8a73a;
+  }}
+  *{box-sizing:border-box}
+  html,body{margin:0;max-width:100%;overflow-x:hidden}
+  body{background:var(--paper);color:var(--ink);font-family:var(--serif);
+    font-size:18px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:60rem;margin:0 auto;padding:4rem 1.5rem 6rem}
+  .kicker{font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em;
+    font-size:.72rem;color:var(--accent);margin:0 0 .8rem}
+  h1{font-family:var(--serif);font-weight:800;font-size:clamp(2rem,7vw,3rem);
+    letter-spacing:-.022em;line-height:1.05;margin:0 0 .6rem}
+  .lede{font-style:italic;color:var(--ink-soft);font-size:1.2rem;max-width:42rem;margin:0 0 .4rem}
+  .lede a{color:inherit}
+  .meta{font-family:var(--mono);font-size:.78rem;color:var(--muted);margin:1rem 0 0}
+  .meta b{color:var(--accent-2)}
+  hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}}
+  a.card{display:block;text-decoration:none;color:inherit;background:var(--paper-card);
+    border:1px solid var(--rule);border-radius:14px;padding:1.2rem 1.35rem;
+    transition:border-color .12s,transform .12s}
+  a.card:hover,a.card:focus-visible{border-color:var(--accent);transform:translateY(-2px);outline:none}
+  .tag{font-family:var(--mono);font-size:.68rem;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--accent-2)}
+  .ct{font-family:var(--sans);font-weight:700;font-size:1.12rem;margin:.35rem 0 .3rem;letter-spacing:-.01em}
+  .cd{font-size:.95rem;color:var(--ink-soft);line-height:1.45;margin:0}
+  footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--rule);
+    font-family:var(--mono);font-size:.72rem;color:var(--muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+  footer a{color:var(--accent);text-decoration:none}
+  @media (max-width:768px){
+    a.card{min-height:44px}
+    .wrap{padding:2.5rem 1.1rem 4rem}
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <p class="kicker">render-as-html · example gallery</p>
+  <h1>The examples are about the thing that made them.</h1>
+  <p class="lede">Ten self-contained artifacts — one per document type the skill produces — and every one is about render-as-html itself or <a href="https://x.com/trq212/status/2052809885763747935">@trq212's "The Unreasonable Effectiveness of HTML."</a> A gallery that documents the system by being built in it.</p>
+  <p class="meta">10 examples · <b>self-contained</b>, zero external requests · WCAG-AA · mobile-tested</p>
+  <hr>
+  <div class="grid">
+    <a class="card" href="dashboard.html"><span class="tag">dashboard · instrument</span><div class="ct">Shape coverage</div><p class="cd">The skill's own 9 shapes + 5 sub-patterns as a dense table — register split, dimensions, passes-the-bar — with live filter, sortable headers, a register donut, copy-as-prompt.</p></a>
+    <a class="card" href="document.html"><span class="tag">document · reading</span><div class="ct">The Unreasonable Effectiveness of HTML</div><p class="cd">A briefing on @trq212's thesis and how render-as-html operationalizes it — sticky TOC, open footnotes, a sortable shapes table, and a live "is your doc an instrument?" scorer.</p></a>
+    <a class="card" href="timeline.html"><span class="tag">timeline · reading</span><div class="ct">From idea to one truth — a build log</div><p class="cd">render-as-html's real idea→ship history on a date spine: live event search, tag-chip filters, week cluster-collapse, per-event copy-as-quote.</p></a>
+    <a class="card" href="runbook.html"><span class="tag">runbook · instrument</span><div class="ct">Author an artifact that passes the bar</div><p class="cd">The procedure for producing a good render-as-html artifact: sticky progress, steps expanded by default, per-block code copy, a redesign branch, an "I'm stuck" prompt.</p></a>
+    <a class="card" href="comparison.html"><span class="tag">comparison · instrument</span><div class="ct">Where should the artifact live?</div><p class="cd">The article's core argument as a matrix — HTML vs PDF vs Notion vs Doc vs Markdown — items as columns, live weight tuning, a must-have toggle, copy-as-recommendation.</p></a>
+    <a class="card" href="network-map.html"><span class="tag">network-map · instrument</span><div class="ct">The render-as-html concept graph</div><p class="cd">Shapes, sub-patterns, principles, and lineage (the article, html-anything) as an SVG graph: click-to-focus, hover-edge-highlight, search-to-focus, cluster toggles.</p></a>
+    <a class="card" href="triage-board.html"><span class="tag">triage-board · instrument</span><div class="ct">Roadmap triage</div><p class="cd">Where the skill goes next — candidate improvements dragged across Now / Next / Later / Cut (with a touch move-picker), live counts, rationale notes, copy-as-prompt.</p></a>
+    <a class="card" href="developer.html"><span class="tag">developer · instrument</span><div class="ct">PR: the one-truth design system</div><p class="cd">An annotated-diff + severity-findings writeup of render-as-html's real PR — files-changed nav, local syntax highlighting, click-to-copy findings.</p></a>
+    <a class="card" href="editorial.html"><span class="tag">editorial · reading</span><div class="ct">Why the file you keep should be pokeable</div><p class="cd">An essay that demonstrates its own thesis: take a position on each claim, watch it compose a round-trip prompt live, then hit "flatten" to see what dies.</p></a>
+    <a class="card" href="checklist.html"><span class="tag">checklist · sub-pattern</span><div class="ct">Pre-ship review</div><p class="cd">render-as-html's own pre-ship criteria — star + note per item, sticky live count, batch copy-as-prompt with a visible textarea fallback.</p></a>
+  </div>
+  <footer><span>examples/index.html</span><span>render-as-html · <a href="https://x.com/trq212/status/2052809885763747935">the unreasonable effectiveness of HTML</a></span></footer>
+</main>
+</body>
+</html>

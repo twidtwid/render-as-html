@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pre-ship review — render-as-html v1</title>
+<style>
+/* ── One-truth design tokens ── */
+:root {
+  --paper:       #faf6ef;
+  --paper-tint:  #f3ede1;
+  --paper-card:  #fbf7f0;
+  --ink:         #1a1815;
+  --ink-soft:    #4a443c;
+  --muted:       #736d62;
+  --rule:        #d9d1c2;
+  --rule-soft:   #ece5d6;
+  --accent:      #8a3a1a;
+  --accent-2:    #c2901a;
+  --ok:          #2f7d44;
+  --warn:        #9b641d;
+  --note:        #2f6fb3;
+
+  --font-serif: "Charter", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Source Serif Pro", serif;
+  --font-sans:  ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:       #1a1815;
+    --paper-tint:  #221f1a;
+    --paper-card:  #211e19;
+    --ink:         #f0eee8;
+    --ink-soft:    #c9c3b6;
+    --muted:       #9a948a;
+    --rule:        #38332b;
+    --rule-soft:   #2c2820;
+    --accent:      #e0794f;
+    --accent-2:    #d8a73a;
+    --ok:          #5cae6f;
+    --warn:        #c79a4a;
+    --note:        #6f9fd0;
+  }
+}
+
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 17px; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  line-height: 1.6;
+  min-height: 100vh;
+  min-height: 100dvh; /* iOS dynamic viewport */
+  /* bottom padding so sticky bar never covers last item */
+  padding-bottom: 120px;
+}
+
+/* ── Layout ── */
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 0;
+}
+
+/* ── Header ── */
+.page-header {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1.5rem;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 0.6rem;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ── Summary bar (inline SVG progress + live count) ── */
+.summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0.5rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--rule-soft);
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.summary-bar svg { flex-shrink: 0; }
+
+.summary-text {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.summary-text strong {
+  font-family: var(--font-mono);
+  color: var(--accent-2);
+  font-size: 1rem;
+}
+
+/* ── Checklist ── */
+.checklist {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.checklist-item {
+  border-bottom: 1px solid var(--rule-soft);
+  padding: 1rem 0;
+  transition: background 0.15s;
+}
+
+.checklist-item:first-child {
+  border-top: 1px solid var(--rule-soft);
+}
+
+.item-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+/* Star toggle button — a real <button> */
+.star-btn {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;   /* touch target */
+  min-height: 2rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, transform 0.1s;
+  color: var(--rule);
+  padding: 0;
+}
+
+.star-btn:hover {
+  background: var(--paper-tint);
+}
+
+.star-btn:active {
+  transform: scale(0.9);
+}
+
+.star-btn[aria-pressed="true"] {
+  color: var(--accent-2);
+}
+
+.star-btn svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  transition: fill 0.15s, color 0.15s;
+}
+
+.star-btn[aria-pressed="false"] svg {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+}
+
+.star-btn[aria-pressed="true"] svg {
+  fill: var(--accent-2);
+  stroke: var(--accent-2);
+  stroke-width: 1.5;
+}
+
+/* Item body */
+.item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+  margin-bottom: 0.2rem;
+}
+
+.checklist-item[data-starred="true"] .item-title {
+  color: var(--accent);
+}
+
+.item-meta {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* Note textarea */
+.note-toggle {
+  margin-top: 0.45rem;
+}
+
+.note-toggle-btn {
+  background: none;
+  border: none;
+  font-family: var(--font-serif);
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  transition: color 0.12s;
+}
+
+.note-toggle-btn:hover {
+  color: var(--accent);
+}
+
+.note-area {
+  display: none;
+  margin-top: 0.4rem;
+}
+
+.note-area.open {
+  display: block;
+}
+
+.note-textarea {
+  width: 100%;
+  font-family: var(--font-serif);
+  font-size: 0.88rem;
+  color: var(--ink);
+  background: var(--paper-tint);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.5rem 0.6rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 3.5rem;
+  outline: none;
+  transition: border-color 0.15s;
+  /* HTML-native: textarea element */
+}
+
+.note-textarea:focus {
+  border-color: var(--accent);
+}
+
+.note-textarea::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ── Sticky bottom bar ── */
+.sticky-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--paper-card);
+  border-top: 1px solid var(--rule);
+  z-index: 100;
+  padding: 0.7rem 1.5rem;
+  /* CSS backdrop-filter — HTML-native visual enhancement */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.bar-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.bar-count {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.bar-count strong {
+  color: var(--accent-2);
+  font-size: 1rem;
+}
+
+.bar-count em {
+  font-style: normal;
+  color: var(--muted);
+}
+
+.btn-copy {
+  background: var(--accent-2);
+  color: var(--ink);
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.38rem 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s, transform 0.1s;
+  min-height: 2rem;
+}
+
+.btn-copy:hover { opacity: 0.88; }
+.btn-copy:active { transform: scale(0.97); }
+.btn-copy:disabled {
+  background: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-clear {
+  background: none;
+  border: 1px solid var(--rule);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  padding: 0.35rem 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 2rem;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.btn-clear:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Visible textarea fallback (shown when clipboard blocked) */
+.prompt-fallback {
+  display: none;
+  margin-top: 0.6rem;
+  width: 100%;
+}
+
+.prompt-fallback.visible {
+  display: block;
+}
+
+.prompt-textarea {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink);
+  background: var(--paper-tint);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.5rem;
+  resize: vertical;
+  min-height: 5rem;
+  outline: none;
+  line-height: 1.5;
+}
+
+.prompt-textarea:focus {
+  border-color: var(--accent);
+}
+
+/* ── Footer ── */
+.page-footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  html { font-size: 15px; }
+
+  .page { padding: 1.5rem 1rem 0; }
+
+  h1 { font-size: 1.4rem; }
+
+  .bar-inner { gap: 0.5rem; }
+
+  .btn-copy, .btn-clear { font-size: 0.78rem; padding: 0.38rem 0.65rem; }
+}
+
+/* ── iOS mobile hardening ── */
+
+/* Prevent iOS focus-zoom: note textareas and prompt textarea must be ≥16px */
+@media (max-width: 768px) {
+  input, textarea, select, [contenteditable] { font-size: 16px !important; }
+  .note-textarea { font-size: 16px !important; }
+  .prompt-textarea { font-size: 16px !important; }
+}
+
+/* Tap targets ≥40px on phones */
+@media (max-width: 768px) {
+  .star-btn {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+  .note-toggle-btn {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .btn-copy {
+    min-height: 44px;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .btn-clear {
+    min-height: 44px;
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Page ── -->
+<main class="page" id="main-content">
+
+  <header class="page-header">
+    <p class="kicker">render-as-html · pre-ship review</p>
+    <h1>Pre-ship review — render-as-html v1</h1>
+    <p class="subtitle">Star each criterion you've confirmed. Add notes where context helps. Use "copy as prompt" to hand the gaps to Claude.</p>
+
+    <!-- Live progress summary with inline SVG donut — dimension: Illustrations + Interaction -->
+    <div class="summary-bar" aria-live="polite" aria-atomic="true">
+      <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+        <circle cx="18" cy="18" r="13" fill="none" stroke="var(--rule)" stroke-width="4"/>
+        <circle id="progress-arc" cx="18" cy="18" r="13" fill="none"
+                stroke="var(--accent-2)" stroke-width="4"
+                stroke-dasharray="0 81.68"
+                stroke-linecap="round"
+                transform="rotate(-90 18 18)"
+                style="transition: stroke-dasharray 0.35s ease"/>
+      </svg>
+      <span class="summary-text">
+        <strong id="summary-count">0</strong>
+        <em> of 12 marked</em>
+      </span>
+    </div>
+  </header>
+
+  <!-- ── Checklist ── -->
+  <ul class="checklist" id="checklist" role="list">
+
+    <!-- Item 1 — starred, with note -->
+    <li class="checklist-item" data-starred="true" data-id="1">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="true" aria-label="Mark: Self-contained" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">Self-contained: no external font/CDN/network</div>
+          <div class="item-meta">contract · HTML artifacts ship with zero network deps</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="true">hide note</button>
+            <div class="note-area open">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: Self-contained">Verified — all fonts are system-stack, no @import, no src= pointing off-disk. Confirmed with browser devtools network tab showing zero external requests.</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <!-- Item 2 — starred, with note -->
+    <li class="checklist-item" data-starred="true" data-id="2">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="true" aria-label="Mark: Dark mode coherent" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">Dark mode coherent (prefers-color-scheme)</div>
+          <div class="item-meta">design system · one-truth palette in both modes</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="true">hide note</button>
+            <div class="note-area open">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: Dark mode coherent">All tokens swap via the @media block. Star color (ochre) reads at WCAG AA on both --paper values. Tested in Safari with System Appearance toggled.</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <!-- Item 3 -->
+    <li class="checklist-item" data-starred="false" data-id="3">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="false" aria-label="Mark: Mobile OK" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">Mobile OK at ~375px, no body h-scroll</div>
+          <div class="item-meta">layout · touch targets ≥32px, font sizes step down</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="false">add note</button>
+            <div class="note-area">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: Mobile OK"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <!-- Item 4 -->
+    <li class="checklist-item" data-starred="false" data-id="4">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="false" aria-label="Mark: HTML-native features" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">≥3 HTML-native features per shape</div>
+          <div class="item-meta">bar · not styled prose, real instrument</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="false">add note</button>
+            <div class="note-area">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: HTML-native features"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <!-- Item 5 -->
+    <li class="checklist-item" data-starred="false" data-id="5">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="false" aria-label="Mark: Copy-as-prompt names artifact path" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">Copy-as-prompt names the artifact path</div>
+          <div class="item-meta">copy-as-prompt contract · so Claude knows what file to edit</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="false">add note</button>
+            <div class="note-area">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: Copy-as-prompt names artifact path"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <!-- Item 6 -->
+    <li class="checklist-item" data-starred="false" data-id="6">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="false" aria-label="Mark: Copy buttons have textarea fallback" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">Copy buttons have a visible textarea fallback</div>
+          <div class="item-meta">interactivity · clipboard API fails in local files</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="false">add note</button>
+            <div class="note-area">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: Copy buttons have textarea fallback"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <!-- Item 7 -->
+    <li class="checklist-item" data-starred="false" data-id="7">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="false" aria-label="Mark: No left-handle accent bars" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">No left-handle accent bars anywhere</div>
+          <div class="item-meta">anti-pattern · visual fingerprint of AI-generated layouts</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="false">add note</button>
+            <div class="note-area">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: No left-handle accent bars"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <!-- Item 8 -->
+    <li class="checklist-item" data-starred="false" data-id="8">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="false" aria-label="Mark: Headlines argue a position" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">Headlines argue a position, not category labels</div>
+          <div class="item-meta">content discipline · 4–10 word claim, not a noun phrase</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="false">add note</button>
+            <div class="note-area">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: Headlines argue a position"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <!-- Item 9 -->
+    <li class="checklist-item" data-starred="false" data-id="9">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="false" aria-label="Mark: Counts orient subject not slop" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">Counts orient (subject) not slop (artifact's own output)</div>
+          <div class="item-meta">content discipline · hero stats must be about the domain</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="false">add note</button>
+            <div class="note-area">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: Counts orient subject not slop"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <!-- Item 10 -->
+    <li class="checklist-item" data-starred="false" data-id="10">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="false" aria-label="Mark: All 9 shape contracts name their register" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">All 9 shape contracts name their register</div>
+          <div class="item-meta">SKILL.md · Reading vs Instrument determined by shape</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="false">add note</button>
+            <div class="note-area">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: All 9 shape contracts name their register"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <!-- Item 11 -->
+    <li class="checklist-item" data-starred="false" data-id="11">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="false" aria-label="Mark: index.html dogfoods one-truth system" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">index.html dogfoods the one-truth system</div>
+          <div class="item-meta">canonical gallery · the gallery IS the design system reference</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="false">add note</button>
+            <div class="note-area">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: index.html dogfoods"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <!-- Item 12 -->
+    <li class="checklist-item" data-starred="false" data-id="12">
+      <div class="item-main">
+        <button class="star-btn" aria-pressed="false" aria-label="Mark: Footer shows artifact path + timestamp" onclick="toggleStar(this)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+        </button>
+        <div class="item-body">
+          <div class="item-title">Footer shows artifact path + timestamp</div>
+          <div class="item-meta">output contract · every render-as-html artifact shows provenance</div>
+          <div class="note-toggle">
+            <button class="note-toggle-btn" onclick="toggleNote(this)" aria-expanded="false">add note</button>
+            <div class="note-area">
+              <textarea class="note-textarea" placeholder="Add a note…" aria-label="Note for: Footer shows artifact path + timestamp"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </li>
+
+  </ul><!-- /checklist -->
+
+  <!-- ── Footer ── -->
+  <footer class="page-footer">
+    <div>examples/checklist.html</div>
+    <div id="footer-ts"></div>
+  </footer>
+
+</main><!-- /page -->
+
+<!-- ── Sticky bar ── -->
+<div class="sticky-bar" role="region" aria-label="Checklist actions">
+  <div class="bar-inner">
+    <span class="bar-count" aria-live="polite">
+      <strong id="bar-count">0</strong>
+      <em> of 12 marked</em>
+    </span>
+    <button class="btn-copy" id="copy-btn" onclick="copyAsPrompt()" aria-label="Copy checklist state as a prompt">copy as prompt</button>
+    <button class="btn-clear" id="clear-btn" onclick="clearPrompt()" style="display:none" aria-label="Clear prompt output">× clear</button>
+  </div>
+  <!-- Visible textarea fallback — shown when clipboard API is blocked -->
+  <div class="bar-inner prompt-fallback" id="prompt-fallback">
+    <textarea class="prompt-textarea" id="prompt-output" readonly
+              aria-label="Prompt output — select all and copy"></textarea>
+  </div>
+</div>
+
+<script>
+/* ── Constants ── */
+const ARTIFACT = 'examples/checklist.html';
+const TOTAL = 12;
+
+/* ── Boot ── */
+document.addEventListener('DOMContentLoaded', () => {
+  updateCounts();
+  document.getElementById('footer-ts').textContent =
+    'Generated ' + new Date().toLocaleString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+});
+
+/* ── Star toggle — HTML-native interaction ── */
+function toggleStar(btn) {
+  const item = btn.closest('.checklist-item');
+  const pressed = btn.getAttribute('aria-pressed') === 'true';
+  btn.setAttribute('aria-pressed', String(!pressed));
+  item.dataset.starred = String(!pressed);
+  updateCounts();
+}
+
+/* ── Note toggle ── */
+function toggleNote(btn) {
+  const expanded = btn.getAttribute('aria-expanded') === 'true';
+  const area = btn.nextElementSibling;
+  if (expanded) {
+    btn.setAttribute('aria-expanded', 'false');
+    btn.textContent = 'add note';
+    area.classList.remove('open');
+  } else {
+    btn.setAttribute('aria-expanded', 'true');
+    btn.textContent = 'hide note';
+    area.classList.add('open');
+    area.querySelector('textarea').focus();
+  }
+}
+
+/* ── Live count + SVG donut arc ── */
+function updateCounts() {
+  const items = document.querySelectorAll('.checklist-item');
+  let starred = 0;
+  items.forEach(item => {
+    if (item.dataset.starred === 'true') starred++;
+  });
+
+  // Update text counts
+  document.getElementById('summary-count').textContent = starred;
+  document.getElementById('bar-count').textContent = starred;
+
+  // Update SVG donut arc (circumference of r=13 circle ≈ 81.68)
+  const circ = 2 * Math.PI * 13;
+  const fill = (starred / TOTAL) * circ;
+  const arc = document.getElementById('progress-arc');
+  arc.setAttribute('stroke-dasharray', `${fill.toFixed(2)} ${circ.toFixed(2)}`);
+}
+
+/* ── Copy-as-prompt — HTML-native clipboard API + fallback ── */
+function copyAsPrompt() {
+  const items = document.querySelectorAll('.checklist-item');
+  const marked = [];
+  const unmarked = [];
+
+  items.forEach(item => {
+    const title = item.querySelector('.item-title').textContent.trim();
+    const starred = item.dataset.starred === 'true';
+    const noteTA = item.querySelector('.note-textarea');
+    const note = noteTA ? noteTA.value.trim() : '';
+
+    if (starred) {
+      marked.push({ title, note });
+    } else {
+      unmarked.push({ title });
+    }
+  });
+
+  const markedLines = marked.map(m => {
+    const notePart = m.note ? `\n  Note: ${m.note}` : '';
+    return `  ★ ${m.title}${notePart}`;
+  }).join('\n');
+
+  const unmarkedLines = unmarked.map(u => `  ○ ${u.title}`).join('\n');
+
+  const prompt = [
+    `In ${ARTIFACT}, apply these checklist updates:`,
+    '',
+    `Marked (${marked.length} of ${TOTAL}):`,
+    markedLines || '  (none)',
+    '',
+    `Not yet marked (${unmarked.length}):`,
+    unmarkedLines || '  (none)',
+    '',
+    'Please update the pre-seeded starred state and notes to reflect the above,',
+    'and flag any unmarked items that look like blockers for shipping v1.'
+  ].join('\n');
+
+  const out = document.getElementById('prompt-output');
+  out.value = prompt;
+
+  navigator.clipboard.writeText(prompt).then(() => {
+    const btn = document.getElementById('copy-btn');
+    const prev = btn.textContent;
+    btn.textContent = 'copied!';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = prev;
+      btn.disabled = false;
+    }, 1800);
+    // Keep fallback hidden on success
+    document.getElementById('prompt-fallback').classList.remove('visible');
+    document.getElementById('clear-btn').style.display = 'none';
+  }).catch(() => {
+    // Clipboard blocked — show visible fallback
+    const fallback = document.getElementById('prompt-fallback');
+    fallback.classList.add('visible');
+    document.getElementById('clear-btn').style.display = '';
+    out.focus();
+    out.select();
+  });
+}
+
+/* ── Clear fallback ── */
+function clearPrompt() {
+  const fallback = document.getElementById('prompt-fallback');
+  fallback.classList.remove('visible');
+  document.getElementById('clear-btn').style.display = 'none';
+  document.getElementById('prompt-output').value = '';
+}
+</script>
+
+</body>
+</html>

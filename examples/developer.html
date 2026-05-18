@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PR: Editorial shape + one-truth design system (render-as-html)</title>
+<style>
+/* ── Design system tokens ── */
+:root {
+  --paper:      #faf6ef;
+  --paper-tint: #f3ede1;
+  --paper-card: #fbf7f0;
+  --ink:        #1a1815;
+  --ink-soft:   #4a443c;
+  --muted:      #736d62;
+  --rule:       #d9d1c2;
+  --rule-soft:  #ece5d6;
+  --accent:     #8a3a1a;
+  --accent-2:   #c2901a;
+  --ok:         #2f7d44;
+  --warn:       #9b641d;
+  --note:       #2f6fb3;
+
+  --font-sans:  ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* severity */
+  --critical-bg:  #fff0ee;
+  --critical-bd:  #c74438;
+  --critical-ink: #7a1f15;
+  --warning-bg:   #fff8ed;
+  --warning-bd:   #c2901a;
+  --warning-ink:  #7a5a0a;
+  --nit-bg:       #f2f5ff;
+  --nit-bd:       #6b7cc4;
+  --nit-ink:      #3a4580;
+
+  /* diff gutters */
+  --diff-add-bg: #eaf6ec;
+  --diff-add-num: #c8e8ca;
+  --diff-del-bg: #fdecea;
+  --diff-del-num: #f5c8c4;
+  --diff-ctx-bg: var(--paper-tint);
+  --diff-ctx-num: var(--rule);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:      #1a1815;
+    --paper-tint: #221f1a;
+    --paper-card: #211e19;
+    --ink:        #f0eee8;
+    --ink-soft:   #c9c3b6;
+    --muted:      #9a948a;
+    --rule:       #38332b;
+    --rule-soft:  #2c2820;
+    --accent:     #e0794f;
+    --accent-2:   #d8a73a;
+    --ok:         #5cae6f;
+    --warn:       #c79a4a;
+    --note:       #6f9fd0;
+    --critical-bg:  #2a1210;
+    --critical-bd:  #c74438;
+    --critical-ink: #f5a09a;
+    --warning-bg:   #241a08;
+    --warning-bd:   #c2901a;
+    --warning-ink:  #eac06a;
+    --nit-bg:       #10131f;
+    --nit-bd:       #6b7cc4;
+    --nit-ink:      #a0aae8;
+    --diff-add-bg:  #0d2210;
+    --diff-add-num: #1a3f1e;
+    --diff-del-bg:  #250c0a;
+    --diff-del-num: #3e1210;
+    --diff-ctx-bg:  var(--paper-tint);
+    --diff-ctx-num: var(--rule);
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper);
+  min-height: 100vh;
+  min-height: 100dvh; /* iOS dynamic viewport */
+}
+
+/* ── Page shell ── */
+.shell {
+  display: flex;
+  max-width: 1280px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh; /* iOS dynamic viewport */
+}
+
+/* ── Left rail ── */
+.rail {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh; /* iOS dynamic viewport — priority fix for sticky rail */
+  overflow-y: auto;
+  border-right: 1px solid var(--rule);
+  padding: 20px 0;
+  background: var(--paper-tint);
+}
+
+.rail-head {
+  padding: 0 16px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 8px;
+}
+
+.rail-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rail-file:hover { background: var(--rule-soft); color: var(--ink); }
+.rail-file.active { border-left-color: var(--accent); color: var(--accent); background: var(--paper); }
+
+.rail-file .badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-family: var(--font-sans);
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--rule);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-file .badge.add { background: var(--diff-add-bg); color: var(--ok); }
+.rail-file .badge.mix { background: var(--warning-bg); color: var(--warn); }
+
+/* ── Main content ── */
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 32px 60px;
+}
+
+/* ── PR header ── */
+.pr-title {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.pr-title .pr-num {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 8px;
+}
+
+/* ── Metadata strip ── */
+.meta-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  background: var(--paper-card);
+}
+
+.meta-item {
+  padding: 9px 16px;
+  border-right: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.meta-item:last-child { border-right: none; }
+
+.meta-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.meta-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.meta-value .branch-arrow { color: var(--muted); margin: 0 4px; }
+
+.pill-merged {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #e9d5ff;
+  color: #5b21b6;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pill-merged { background: #2e1065; color: #c4b5fd; }
+}
+
+/* ── Risk callouts ── */
+.risk-callouts {
+  margin-bottom: 24px;
+}
+
+.risk-head {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.risk-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 1px solid var(--warning-bd);
+  border-radius: 5px;
+  background: var(--warning-bg);
+  color: var(--warning-ink);
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.risk-icon { font-size: 14px; flex-shrink: 0; }
+
+/* ── Findings summary bar ── */
+.findings-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  margin-bottom: 28px;
+}
+
+.findings-bar .fb-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-right: 4px;
+}
+
+.sev-count {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sev-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sev-pill.critical { background: var(--critical-bg); color: var(--critical-ink); border: 1px solid var(--critical-bd); }
+.sev-pill.warning  { background: var(--warning-bg);  color: var(--warning-ink);  border: 1px solid var(--warning-bd); }
+.sev-pill.nit      { background: var(--nit-bg);      color: var(--nit-ink);      border: 1px solid var(--nit-bd); }
+
+/* ── Section headings ── */
+.section-anchor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 32px 0 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--rule);
+}
+
+.section-anchor h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.section-anchor .file-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── Diff block ── */
+.diff-block {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.diff-header {
+  padding: 7px 14px;
+  background: var(--paper-tint);
+  border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.diff-header .hunk-range { color: var(--note); font-weight: 600; }
+
+.diff-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.diff-table td {
+  padding: 0;
+  vertical-align: top;
+}
+
+.ln {
+  width: 38px;
+  padding: 2px 6px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--muted);
+  user-select: none;
+  border-right: 1px solid var(--rule-soft);
+  background: var(--diff-ctx-num);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.code-cell {
+  padding: 2px 12px;
+  white-space: pre;
+  overflow-x: auto;
+  width: 100%;
+  line-height: 1.6;
+}
+
+tr.add  .ln   { background: var(--diff-add-num); }
+tr.add  .code-cell { background: var(--diff-add-bg); }
+tr.del  .ln   { background: var(--diff-del-num); }
+tr.del  .code-cell { background: var(--diff-del-bg); }
+tr.ctx  .ln   { background: var(--diff-ctx-num); }
+tr.ctx  .code-cell { background: var(--diff-ctx-bg); }
+
+.diff-sign {
+  display: inline-block;
+  width: 14px;
+  margin-right: 4px;
+  color: var(--muted);
+}
+tr.add .diff-sign { color: var(--ok); }
+tr.del .diff-sign { color: var(--critical-bd); }
+
+/* ── Inline annotation ── */
+.annotation {
+  position: relative;
+  margin: 0;
+}
+
+.annotation-bubble {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--paper-card);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.annotation-bubble.critical { border-top: 2px solid var(--critical-bd); }
+.annotation-bubble.warning  { border-top: 2px solid var(--warning-bd); }
+.annotation-bubble.nit      { border-top: 2px solid var(--nit-bd); }
+
+/* ── Syntax highlighting (local CSS classes, no CDN) ── */
+.kw   { color: #8a3a1a; font-weight: 600; }         /* keyword */
+.fn   { color: #2f6fb3; }                            /* function */
+.str  { color: #2f7d44; }                            /* string */
+.rx   { color: #c2901a; font-weight: 600; }          /* regex / special */
+.cm   { color: var(--muted); font-style: italic; }   /* comment */
+.op   { color: var(--muted); }                       /* operator */
+.num  { color: #6b4fa0; font-variant-numeric: tabular-nums; } /* number */
+.prop { color: #1a6b6b; }                            /* property/method */
+.cls  { color: #5b4a98; }                            /* CSS selector/class */
+.val  { color: #8a6020; }                            /* CSS value */
+.var  { color: #c2901a; }                            /* CSS variable name */
+.hex  { color: #2f7d44; }                            /* hex color */
+
+@media (prefers-color-scheme: dark) {
+  .kw  { color: #e0794f; }
+  .fn  { color: #6f9fd0; }
+  .str { color: #5cae6f; }
+  .rx  { color: #d8a73a; }
+  .prop{ color: #3abfbf; }
+  .cls { color: #a89fe0; }
+  .val { color: #c79a4a; }
+  .var { color: #d8a73a; }
+  .hex { color: #5cae6f; }
+  .num { color: #a89fe0; }
+}
+
+/* ── Finding cards ── */
+.findings-section {
+  margin: 32px 0;
+}
+
+.findings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.finding-card {
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--paper-card);
+  position: relative;
+}
+
+.finding-card.critical { border-color: var(--critical-bd); }
+.finding-card.warning  { border-color: var(--warning-bd); }
+.finding-card.nit      { border-color: var(--nit-bd); }
+
+.finding-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.finding-card.critical .finding-head { background: var(--critical-bg); }
+.finding-card.warning  .finding-head { background: var(--warning-bg); }
+.finding-card.nit      .finding-head { background: var(--nit-bg); }
+
+.finding-title {
+  font-weight: 600;
+  font-size: 13px;
+  flex: 1;
+  color: var(--ink);
+}
+
+.finding-loc {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.finding-body {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.finding-body p + p { margin-top: 6px; }
+
+.finding-why {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: var(--paper-tint);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.finding-why strong { color: var(--ink); }
+
+.finding-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-pill.fixed   { background: #dcfce7; color: #166534; }
+.status-pill.resolved{ background: #dbeafe; color: #1e40af; }
+.status-pill.removed { background: #fce7f3; color: #9d174d; }
+.status-pill.deduped { background: #f3e8ff; color: #6b21a8; }
+
+@media (prefers-color-scheme: dark) {
+  .status-pill.fixed    { background: #052e16; color: #86efac; }
+  .status-pill.resolved { background: #1e3a5f; color: #93c5fd; }
+  .status-pill.removed  { background: #4c0519; color: #f9a8d4; }
+  .status-pill.deduped  { background: #3b0764; color: #d8b4fe; }
+}
+
+.copy-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  white-space: nowrap;
+}
+
+.copy-btn:hover { background: var(--paper-tint); color: var(--ink); border-color: var(--muted); }
+.copy-btn.copied { background: #dcfce7; color: #166534; border-color: #6ee7b7; }
+
+@media (prefers-color-scheme: dark) {
+  .copy-btn.copied { background: #052e16; color: #86efac; border-color: #166534; }
+}
+
+/* ── Summary footer ── */
+.summary-section {
+  margin: 36px 0 12px;
+  padding: 20px 22px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper-card);
+}
+
+.summary-section h2 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.summary-stat .s-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.summary-stat .s-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-stat .s-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.verdict {
+  padding: 10px 14px;
+  border-radius: 5px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: dark) {
+  .verdict { background: #052e16; color: #86efac; }
+}
+
+/* ── Page footer ── */
+.page-footer {
+  margin-top: 48px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* ── Copy fallback textarea ── */
+.copy-fallback {
+  display: none;
+  width: 100%;
+  height: 60px;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 6px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper-tint);
+  color: var(--ink);
+  resize: none;
+}
+
+.copy-fallback.visible { display: block; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .shell { flex-direction: column; }
+  .rail  { width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--rule); padding: 12px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0; overflow-x: auto; }
+  .rail-head { padding: 0 12px; border-bottom: none; margin: 0; width: auto; align-self: center; flex-shrink: 0; }
+  .rail-file { flex-direction: row; padding: 6px 12px; border-left: none; border-bottom: 3px solid transparent; flex-shrink: 0; }
+  .rail-file.active { border-bottom-color: var(--accent); border-left-color: transparent; }
+  .main  { padding: 20px 16px 40px; }
+}
+
+@media (max-width: 600px) {
+  .meta-strip { flex-direction: column; }
+  .meta-item  { border-right: none; border-bottom: 1px solid var(--rule); }
+  .meta-item:last-child { border-bottom: none; }
+  .findings-bar { flex-wrap: wrap; }
+}
+
+/* ── iOS mobile hardening ── */
+
+/* Diff tables: allow horizontal scroll inside the block — don't clip wide diffs */
+@media (max-width: 768px) {
+  .diff-block { overflow: visible; }
+  .diff-table { width: max-content; min-width: 100%; }
+  .diff-block > .diff-header ~ *,
+  .diff-block table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* Prevent iOS focus-zoom: readonly copy-fallback textarea still benefits */
+@media (max-width: 768px) {
+  input, textarea, select, [contenteditable] { font-size: 16px !important; }
+  .copy-fallback { font-size: 16px !important; }
+}
+
+/* Touch can't hover — always show copy buttons on touch devices */
+@media (hover: none) {
+  .copy-btn { opacity: 1 !important; }
+  .copy-btn:focus-visible { opacity: 1 !important; }
+}
+
+/* Tap targets ≥40px on phones */
+@media (max-width: 768px) {
+  .rail-file {
+    min-height: 40px;
+  }
+  .copy-btn {
+    min-height: 40px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── Left rail: files changed ── -->
+  <nav class="rail" id="files-rail" aria-label="Files changed">
+    <div class="rail-head">Files changed</div>
+    <a class="rail-file" href="#diff-skill" onclick="activateRail(this)">
+      SKILL.md
+      <span class="badge add">+140</span>
+    </a>
+    <a class="rail-file" href="#diff-readme" onclick="activateRail(this)">
+      README.md
+      <span class="badge add">+3</span>
+    </a>
+    <a class="rail-file" href="#diff-index" onclick="activateRail(this)">
+      index.html
+      <span class="badge mix">+404 −95</span>
+    </a>
+  </nav>
+
+  <!-- ── Main content ── -->
+  <main class="main">
+
+    <!-- PR title -->
+    <h1 class="pr-title">
+      PR: Editorial shape + one-truth design system (render-as-html)
+      <span class="pr-num">#42</span>
+    </h1>
+
+    <!-- Metadata strip -->
+    <div class="meta-strip">
+      <div class="meta-item">
+        <span class="meta-label">Branch</span>
+        <span class="meta-value">editorial-shape-one-truth<span class="branch-arrow">→</span>main</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Commits</span>
+        <span class="meta-value">15</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Files</span>
+        <span class="meta-value">3 changed</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Diff size</span>
+        <span class="meta-value">+547 / −95</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Status</span>
+        <span class="meta-value"><span class="pill-merged">merged</span></span>
+      </div>
+    </div>
+
+    <!-- Risk callouts -->
+    <div class="risk-callouts">
+      <div class="risk-head">Risk surface</div>
+      <div class="risk-item">
+        <span class="risk-icon">⚠</span>
+        <span>Touches the <strong>canonical design-system doc</strong> (SKILL.md) — changes here define what every downstream artifact renders against.</span>
+      </div>
+      <div class="risk-item">
+        <span class="risk-icon">⚠</span>
+        <span>Touches the <strong>dogfood gallery</strong> (index.html) — the in-browser component reference used to validate all shape contracts.</span>
+      </div>
+    </div>
+
+    <!-- Findings summary bar -->
+    <div class="findings-bar">
+      <span class="fb-label">Findings:</span>
+      <div class="sev-count">
+        <span class="sev-pill critical">Critical</span> 1
+      </div>
+      <div class="sev-count">
+        <span class="sev-pill warning">Warning</span> 2
+      </div>
+      <div class="sev-count">
+        <span class="sev-pill nit">Nit</span> 2
+      </div>
+      <span style="margin-left:auto; font-size:12px; color:var(--ok); font-weight:600;">All resolved before merge</span>
+    </div>
+
+    <!-- ════════════════════════════════════════════
+         Diff 1 — SKILL.md Color subsection
+    ═══════════════════════════════════════════════ -->
+    <div class="section-anchor" id="diff-skill">
+      <h2>SKILL.md</h2>
+      <span class="file-label">Color subsection — palette migration</span>
+    </div>
+
+    <div class="diff-block">
+      <div class="diff-header">
+        <span class="hunk-range">@@ -312,12 +312,20 @@</span>
+        <span>### Color</span>
+      </div>
+      <table class="diff-table" aria-label="Diff for SKILL.md color section">
+        <tbody>
+          <tr class="ctx"><td class="ln">312</td><td class="ln">312</td><td class="code-cell"><span class="diff-sign"> </span><span class="kw">```</span></td></tr>
+          <tr class="ctx"><td class="ln">313</td><td class="ln">313</td><td class="code-cell"><span class="diff-sign"> </span>Light:</td></tr>
+          <tr class="del"><td class="ln">314</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span><span class="var">--accent</span>      <span class="hex">#c74438</span>   <span class="cm">coral — THE single accent</span></td></tr>
+          <tr class="del"><td class="ln">315</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span><span class="var">--paper</span>       <span class="hex">#fafaf7</span>   <span class="cm">cool white — page background</span></td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">314</td><td class="code-cell"><span class="diff-sign">+</span><span class="var">--paper</span>       <span class="hex">#faf6ef</span>   <span class="cm">warm cream — page background</span></td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">315</td><td class="code-cell"><span class="diff-sign">+</span><span class="var">--paper-tint</span>  <span class="hex">#f3ede1</span>   <span class="cm">recessed surfaces, hover fills</span></td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">316</td><td class="code-cell"><span class="diff-sign">+</span><span class="var">--paper-card</span>  <span class="hex">#fbf7f0</span>   <span class="cm">raised cards</span></td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">317</td><td class="code-cell"><span class="diff-sign">+</span><span class="var">--accent</span>      <span class="hex">#8a3a1a</span>   <span class="cm">terracotta — THE single accent (links, active state, emphasis)</span></td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">318</td><td class="code-cell"><span class="diff-sign">+</span><span class="var">--accent-2</span>    <span class="hex">#c2901a</span>   <span class="cm">ochre/gold — affirmative actions only (primary button, star/select on)</span></td></tr>
+          <tr class="ctx"><td class="ln">316</td><td class="ln">319</td><td class="code-cell"><span class="diff-sign"> </span><span class="var">--ok</span>          <span class="hex">#2f7d44</span></td></tr>
+          <tr class="ctx"><td class="ln">317</td><td class="ln">320</td><td class="code-cell"><span class="diff-sign"> </span><span class="var">--warn</span>        <span class="hex">#9b641d</span></td></tr>
+          <tr class="ctx"><td class="ln">318</td><td class="ln">321</td><td class="code-cell"><span class="diff-sign"> </span><span class="kw">```</span></td></tr>
+        </tbody>
+      </table>
+      <div class="annotation-bubble warning">
+        <span class="sev-pill warning" style="flex-shrink:0;">Warning</span>
+        <span>Coral <code>#c74438</code> removed; terracotta <code>#8a3a1a</code> + ochre <code>#c2901a</code> take over. Cool white paper also replaced by warm cream. All existing artifacts using the old hex values will render out-of-palette until regenerated.</span>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════
+         Diff 2 — index.html :root value swap
+    ═══════════════════════════════════════════════ -->
+    <div class="section-anchor" id="diff-index">
+      <h2>index.html</h2>
+      <span class="file-label">:root — value swap, variable names preserved (no-rename constraint)</span>
+    </div>
+
+    <div class="diff-block">
+      <div class="diff-header">
+        <span class="hunk-range">@@ -14,16 +14,16 @@</span>
+        <span>:root block</span>
+      </div>
+      <table class="diff-table" aria-label="Diff for index.html :root block">
+        <tbody>
+          <tr class="ctx"><td class="ln">14</td><td class="ln">14</td><td class="code-cell"><span class="diff-sign"> </span><span class="cls">:root</span> {</td></tr>
+          <tr class="del"><td class="ln">15</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span>  <span class="var">--paper</span><span class="op">:</span>      <span class="hex">#fafaf7</span><span class="op">;</span>   <span class="cm">/* cool white */</span></td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">15</td><td class="code-cell"><span class="diff-sign">+</span>  <span class="var">--paper</span><span class="op">:</span>      <span class="hex">#faf6ef</span><span class="op">;</span>   <span class="cm">/* warm cream */</span></td></tr>
+          <tr class="del"><td class="ln">16</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span>  <span class="var">--paper-tint</span><span class="op">:</span> <span class="hex">#f5f5f2</span><span class="op">;</span></td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">16</td><td class="code-cell"><span class="diff-sign">+</span>  <span class="var">--paper-tint</span><span class="op">:</span> <span class="hex">#f3ede1</span><span class="op">;</span></td></tr>
+          <tr class="del"><td class="ln">17</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span>  <span class="var">--accent</span><span class="op">:</span>     <span class="hex">#c74438</span><span class="op">;</span>   <span class="cm">/* coral */</span></td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">17</td><td class="code-cell"><span class="diff-sign">+</span>  <span class="var">--accent</span><span class="op">:</span>     <span class="hex">#8a3a1a</span><span class="op">;</span>   <span class="cm">/* terracotta */</span></td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">18</td><td class="code-cell"><span class="diff-sign">+</span>  <span class="var">--accent-2</span><span class="op">:</span>   <span class="hex">#c2901a</span><span class="op">;</span>   <span class="cm">/* ochre */</span></td></tr>
+          <tr class="ctx"><td class="ln">18</td><td class="ln">19</td><td class="code-cell"><span class="diff-sign"> </span>  <span class="var">--ink</span><span class="op">:</span>        <span class="hex">#1a1815</span><span class="op">;</span></td></tr>
+          <tr class="ctx"><td class="ln">19</td><td class="ln">20</td><td class="code-cell"><span class="diff-sign"> </span>  <span class="var">--ink-soft</span><span class="op">:</span>   <span class="hex">#4a443c</span><span class="op">;</span></td></tr>
+          <tr class="ctx"><td class="ln">20</td><td class="ln">21</td><td class="code-cell"><span class="diff-sign"> </span>  <span class="var">--muted</span><span class="op">:</span>      <span class="hex">#8a8378</span><span class="op">;</span></td></tr>
+          <tr class="ctx"><td class="ln">21</td><td class="ln">22</td><td class="code-cell"><span class="diff-sign"> </span>}</td></tr>
+        </tbody>
+      </table>
+      <div class="annotation-bubble nit">
+        <span class="sev-pill nit" style="flex-shrink:0;">Nit</span>
+        <span>Variable names kept stable (per the no-rename constraint) — only hex values changed. The plan's literal diff-gate check would have failed once additive markup arrived; see Warning finding #2 below.</span>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════
+         Diff 3 — index.html regex bug + fix
+    ═══════════════════════════════════════════════ -->
+    <div class="section-anchor">
+      <h2>index.html</h2>
+      <span class="file-label">In-text search — stateful regex bug &amp; fix (Critical)</span>
+    </div>
+
+    <div class="diff-block">
+      <div class="diff-header">
+        <span class="hunk-range">@@ -412,22 +412,20 @@</span>
+        <span>highlightMatches() — in-text search implementation</span>
+      </div>
+      <table class="diff-table" aria-label="Diff for index.html regex bug fix">
+        <tbody>
+          <tr class="ctx"><td class="ln">412</td><td class="ln">412</td><td class="code-cell"><span class="diff-sign"> </span><span class="kw">function</span> <span class="fn">highlightMatches</span>(q) {</td></tr>
+          <tr class="ctx"><td class="ln">413</td><td class="ln">413</td><td class="code-cell"><span class="diff-sign"> </span>  <span class="kw">const</span> esc <span class="op">=</span> s <span class="op">=&gt;</span> s.<span class="prop">replace</span>(<span class="rx">/[.*+?^${}()|[\]\\]/g</span>, <span class="str">'\\$&amp;'</span>);</td></tr>
+          <tr class="del"><td class="ln">414</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span>  <span class="kw">const</span> rx <span class="op">=</span> <span class="kw">new</span> <span class="fn">RegExp</span>(<span class="fn">esc</span>(q), <span class="str">'gi'</span>);</td></tr>
+          <tr class="ctx"><td class="ln">415</td><td class="ln">414</td><td class="code-cell"><span class="diff-sign"> </span>  nodes.<span class="prop">forEach</span>(el <span class="op">=&gt;</span> {</td></tr>
+          <tr class="del"><td class="ln">416</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span>    <span class="kw">if</span> (rx.<span class="prop">test</span>(el.dataset.<span class="prop">original</span>)) {</td></tr>
+          <tr class="del"><td class="ln">417</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span>      el.<span class="prop">innerHTML</span> <span class="op">=</span> el.dataset.<span class="prop">original</span>.<span class="prop">replace</span>(rx, m <span class="op">=&gt;</span></td></tr>
+          <tr class="del"><td class="ln">418</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span>        <span class="str">`&lt;mark&gt;${m}&lt;/mark&gt;`</span>);</td></tr>
+          <tr class="del"><td class="ln">419</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span>    }</td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">415</td><td class="code-cell"><span class="diff-sign">+</span>    <span class="kw">const</span> rx <span class="op">=</span> <span class="kw">new</span> <span class="fn">RegExp</span>(<span class="fn">esc</span>(q), <span class="str">'gi'</span>);  <span class="cm">// fresh per node — no lastIndex drift</span></td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">416</td><td class="code-cell"><span class="diff-sign">+</span>    el.<span class="prop">innerHTML</span> <span class="op">=</span> el.dataset.<span class="prop">original</span>.<span class="prop">replace</span>(rx, m <span class="op">=&gt;</span></td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">417</td><td class="code-cell"><span class="diff-sign">+</span>      <span class="str">`&lt;mark&gt;${m}&lt;/mark&gt;`</span>);</td></tr>
+          <tr class="ctx"><td class="ln">420</td><td class="ln">418</td><td class="code-cell"><span class="diff-sign"> </span>  });</td></tr>
+          <tr class="ctx"><td class="ln">421</td><td class="ln">419</td><td class="code-cell"><span class="diff-sign"> </span>}</td></tr>
+        </tbody>
+      </table>
+      <div class="annotation-bubble critical">
+        <span class="sev-pill critical" style="flex-shrink:0;">Critical</span>
+        <span>A single <code>RegExp</code> with the <code>g</code> flag, called via <code>.test()</code> then <code>.replace()</code> across multiple DOM nodes, advances <code>lastIndex</code> on each <code>test()</code>. After a match, the next <code>test()</code> starts mid-string and may skip a valid match. Fix: construct a fresh <code>RegExp</code> inside the <code>forEach</code> loop, eliminating shared stateful state. The <code>if (rx.test(…))</code> guard is also dropped — <code>replace</code> is a no-op on zero matches and the guard was only there to avoid replacing on non-matching nodes, which the stateful regex was causing.</span>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════
+         Diff 4 — dead data-sec + .cl-export dupe
+    ═══════════════════════════════════════════════ -->
+    <div class="section-anchor">
+      <h2>index.html</h2>
+      <span class="file-label">Cleanup — dead data-sec attributes + deduped .cl-export</span>
+    </div>
+
+    <div class="diff-block">
+      <div class="diff-header">
+        <span class="hunk-range">@@ -198,8 +198,5 @@</span>
+        <span>Stale data-sec attrs removed</span>
+      </div>
+      <table class="diff-table" aria-label="Diff for dead data-sec removal">
+        <tbody>
+          <tr class="del"><td class="ln">198</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span>&lt;<span class="kw">section</span> <span class="prop">data-sec</span>=<span class="str">"color"</span> <span class="prop">id</span>=<span class="str">"sec-color"</span>&gt;</td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">198</td><td class="code-cell"><span class="diff-sign">+</span>&lt;<span class="kw">section</span> <span class="prop">id</span>=<span class="str">"sec-color"</span>&gt;</td></tr>
+          <tr class="del"><td class="ln">199</td><td class="ln"></td><td class="code-cell"><span class="diff-sign">−</span>&lt;<span class="kw">section</span> <span class="prop">data-sec</span>=<span class="str">"type"</span> <span class="prop">id</span>=<span class="str">"sec-type"</span>&gt;</td></tr>
+          <tr class="add"><td class="ln"></td><td class="ln">199</td><td class="code-cell"><span class="diff-sign">+</span>&lt;<span class="kw">section</span> <span class="prop">id</span>=<span class="str">"sec-type"</span>&gt;</td></tr>
+          <tr class="ctx"><td class="ln">200</td><td class="ln">200</td><td class="code-cell"><span class="diff-sign"> </span>&lt;<span class="kw">section</span> <span class="prop">id</span>=<span class="str">"sec-layout"</span>&gt;</td></tr>
+        </tbody>
+      </table>
+      <div class="annotation-bubble nit">
+        <span class="sev-pill nit" style="flex-shrink:0;">Nit</span>
+        <span><code>data-sec</code> was referenced by an old JS section-filter that was replaced — attributes are now dead weight. Removed across all 14 section elements. No behavior change.</span>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════
+         Findings cards
+    ═══════════════════════════════════════════════ -->
+    <div class="findings-section">
+      <div class="section-anchor" style="margin-top:36px;">
+        <h2>All findings</h2>
+      </div>
+      <div class="findings-grid" id="findings-list">
+
+        <!-- CRITICAL -->
+        <div class="finding-card critical" id="finding-1">
+          <div class="finding-head">
+            <span class="sev-pill critical">Critical</span>
+            <span class="finding-title">Stateful global regex skips matches across nodes</span>
+            <span class="finding-loc">index.html:414–419</span>
+          </div>
+          <div class="finding-body">
+            <p>A single <code>RegExp(esc(q), 'gi')</code> was constructed outside the <code>forEach</code> loop. Because <code>g</code>-flag regexes track <code>lastIndex</code>, calling <code>rx.test(el.dataset.original)</code> advances the cursor. The subsequent <code>rx.replace(…)</code> call then starts mid-string on the next node — silently skipping any match that falls before the advanced offset.</p>
+            <div class="finding-why"><strong>Why it matters:</strong> Search appeared to work on small documents but silently missed every other match on long pages with many nodes sharing the same search term. Impossible to debug by inspection; only caught via systematic diff review.</div>
+          </div>
+          <div class="finding-foot">
+            <span class="status-pill fixed">&#10003; fixed</span>
+            <button class="copy-btn" onclick="copyFinding(this, 1)" title="Copy finding to clipboard" aria-label="Copy finding 1: Stateful global regex">
+              &#x2398; copy finding
+            </button>
+          </div>
+          <textarea class="copy-fallback" id="copy-fallback-1" readonly aria-label="Finding 1 text — select all and copy">CRITICAL — index.html:414–419
+Stateful global regex skips matches across nodes.
+A RegExp('gi') constructed outside forEach advances lastIndex via .test(), causing subsequent .replace() to skip matches. Fix: construct fresh RegExp inside the loop, drop the .test() guard.</textarea>
+        </div>
+
+        <!-- WARNING 1 -->
+        <div class="finding-card warning" id="finding-2">
+          <div class="finding-head">
+            <span class="sev-pill warning">Warning</span>
+            <span class="finding-title">Plan's no-rename diff gate was unsatisfiable once additive markup landed</span>
+            <span class="finding-loc">SKILL.md — plan gate</span>
+          </div>
+          <div class="finding-body">
+            <p>The plan specified a literal diff gate: "variable names must not change." Once the PR added <code>--accent-2</code> and <code>--paper-card</code> (both new, not renamed), the gate tripped on every CI pass even though the constraint was satisfied — no existing variable was renamed.</p>
+            <div class="finding-why"><strong>Why it matters:</strong> Binary diff-text gates break on additive changes. The correct invariant is set-membership: "every variable name present in the old :root must appear in the new :root." Resolved by updating the gate logic to check the variable-name set rather than the raw line diff.</div>
+          </div>
+          <div class="finding-foot">
+            <span class="status-pill resolved">&#10003; resolved</span>
+            <button class="copy-btn" onclick="copyFinding(this, 2)" title="Copy finding to clipboard" aria-label="Copy finding 2: Plan diff gate unsatisfiable">
+              &#x2398; copy finding
+            </button>
+          </div>
+          <textarea class="copy-fallback" id="copy-fallback-2" readonly aria-label="Finding 2 text — select all and copy">WARNING — SKILL.md (plan gate)
+Plan's no-rename diff gate unsatisfiable after additive markup landed.
+New variables (--accent-2, --paper-card) triggered the gate even though no variable was renamed. Fix: check variable-name set membership, not raw line diff.</textarea>
+        </div>
+
+        <!-- WARNING 2 -->
+        <div class="finding-card warning" id="finding-3">
+          <div class="finding-head">
+            <span class="sev-pill warning">Warning</span>
+            <span class="finding-title">Design-system intro contradicted the new two-register truth</span>
+            <span class="finding-loc">SKILL.md:276–280</span>
+          </div>
+          <div class="finding-body">
+            <p>After the register table was added (Reading vs Instrument), the introductory paragraph in the Design system section still described a single-palette approach without acknowledging the two registers. A reader skimming the intro would miss that the palette is applied differently by shape.</p>
+            <div class="finding-why"><strong>Why it matters:</strong> SKILL.md is the canonical doc read by every downstream render agent. Contradictory framing at the intro guarantees that fast readers get the wrong mental model and have to reconcile it from context later. Fixed by rewriting the intro sentence to lead with the two-register split.</div>
+          </div>
+          <div class="finding-foot">
+            <span class="status-pill fixed">&#10003; fixed</span>
+            <button class="copy-btn" onclick="copyFinding(this, 3)" title="Copy finding to clipboard" aria-label="Copy finding 3: Design-system intro contradicted two-register model">
+              &#x2398; copy finding
+            </button>
+          </div>
+          <textarea class="copy-fallback" id="copy-fallback-3" readonly aria-label="Finding 3 text — select all and copy">WARNING — SKILL.md:276–280
+Design-system intro contradicted the two-register model.
+Intro paragraph still implied a single-palette approach after the Reading/Instrument register split was added. Fixed by rewriting the intro to lead with the register distinction.</textarea>
+        </div>
+
+        <!-- NIT 1 -->
+        <div class="finding-card nit" id="finding-4">
+          <div class="finding-head">
+            <span class="sev-pill nit">Nit</span>
+            <span class="finding-title">Dead data-sec attributes on all section elements</span>
+            <span class="finding-loc">index.html:198–340 (14 elements)</span>
+          </div>
+          <div class="finding-body">
+            <p><code>data-sec="…"</code> was used by an old JS section-filter that was replaced in a prior commit. The attributes remained on all 14 <code>&lt;section&gt;</code> elements — harmless but misleading noise in the DOM.</p>
+            <div class="finding-why"><strong>Why it matters:</strong> Dead attributes invite copy-paste into new sections, accumulating forever. Removed across all 14 elements.</div>
+          </div>
+          <div class="finding-foot">
+            <span class="status-pill removed">&#10003; removed</span>
+            <button class="copy-btn" onclick="copyFinding(this, 4)" title="Copy finding to clipboard" aria-label="Copy finding 4: Dead data-sec attributes">
+              &#x2398; copy finding
+            </button>
+          </div>
+          <textarea class="copy-fallback" id="copy-fallback-4" readonly aria-label="Finding 4 text — select all and copy">NIT — index.html:198–340
+Dead data-sec attributes on 14 section elements.
+Referenced by old JS section-filter that was replaced. Removed from all 14 elements — no behavior change.</textarea>
+        </div>
+
+        <!-- NIT 2 -->
+        <div class="finding-card nit" id="finding-5">
+          <div class="finding-head">
+            <span class="sev-pill nit">Nit</span>
+            <span class="finding-title">.cl-export byte-identical to .cap-output</span>
+            <span class="finding-loc">index.html:~520 (CSS)</span>
+          </div>
+          <div class="finding-body">
+            <p><code>.cl-export</code> was added to style the copy-prompt textarea, but its declaration block was byte-for-byte identical to the pre-existing <code>.cap-output</code> class. Both set the same font, size, padding, border, background, and resize values.</p>
+            <div class="finding-why"><strong>Why it matters:</strong> Two names for one visual thing means future tweaks happen to one and not the other. Deduped to a single selector with a comma rule: <code>.cap-output, .cl-export { … }</code>.</div>
+          </div>
+          <div class="finding-foot">
+            <span class="status-pill deduped">&#10003; deduped</span>
+            <button class="copy-btn" onclick="copyFinding(this, 5)" title="Copy finding to clipboard" aria-label="Copy finding 5: .cl-export CSS duplicate">
+              &#x2398; copy finding
+            </button>
+          </div>
+          <textarea class="copy-fallback" id="copy-fallback-5" readonly aria-label="Finding 5 text — select all and copy">NIT — index.html:~520 (CSS)
+.cl-export byte-identical to .cap-output.
+Both classes had the same exact declaration block. Deduped to a comma selector: .cap-output, .cl-export { … }</textarea>
+        </div>
+
+      </div><!-- /findings-grid -->
+    </div><!-- /findings-section -->
+
+    <!-- ════════════════════════════════════════════
+         Summary footer
+    ═══════════════════════════════════════════════ -->
+    <div class="summary-section">
+      <h2>Review summary</h2>
+      <div class="summary-grid">
+        <div class="summary-stat">
+          <span class="s-label">Commits reviewed</span>
+          <span class="s-val">15</span>
+          <span class="s-sub">editorial-shape-one-truth → main</span>
+        </div>
+        <div class="summary-stat">
+          <span class="s-label">Files changed</span>
+          <span class="s-val">3</span>
+          <span class="s-sub">SKILL.md, README.md, index.html</span>
+        </div>
+        <div class="summary-stat">
+          <span class="s-label">Net diff</span>
+          <span class="s-val">+547</span>
+          <span class="s-sub">−95 lines removed</span>
+        </div>
+        <div class="summary-stat">
+          <span class="s-label">Findings</span>
+          <span class="s-val">5</span>
+          <span class="s-sub">1 critical · 2 warning · 2 nit</span>
+        </div>
+      </div>
+      <div class="verdict">All 5 findings resolved before merge. Ship it.</div>
+    </div>
+
+    <!-- Page footer -->
+    <div class="page-footer">
+      <span>examples/developer.html</span>
+      <span>Generated 2026-05-18T00:00:00</span>
+      <span>render-as-html · developer shape</span>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── Rail active state ──
+function activateRail(el) {
+  document.querySelectorAll('.rail-file').forEach(f => f.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Scroll-spy: highlight rail link whose target section is in viewport
+(function() {
+  const targets = [
+    { href: '#diff-skill',  el: document.getElementById('diff-skill') },
+    { href: '#diff-readme', el: document.getElementById('diff-readme') },
+    { href: '#diff-index',  el: document.getElementById('diff-index') },
+  ];
+  const links = {
+    '#diff-skill':  document.querySelector('.rail-file[href="#diff-skill"]'),
+    '#diff-readme': document.querySelector('.rail-file[href="#diff-readme"]'),
+    '#diff-index':  document.querySelector('.rail-file[href="#diff-index"]'),
+  };
+
+  function onScroll() {
+    let active = null;
+    targets.forEach(t => {
+      if (!t.el) return;
+      const rect = t.el.getBoundingClientRect();
+      if (rect.top <= 120) active = t.href;
+    });
+    Object.values(links).forEach(l => { if (l) l.classList.remove('active'); });
+    if (active && links[active]) links[active].classList.add('active');
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+
+// ── Click-to-copy individual findings ──
+function copyFinding(btn, num) {
+  const textarea = document.getElementById('copy-fallback-' + num);
+  const text = textarea ? textarea.value : '';
+
+  // Try navigator.clipboard first
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      flashCopied(btn);
+    }).catch(() => {
+      showFallback(textarea, btn);
+    });
+  } else {
+    showFallback(textarea, btn);
+  }
+}
+
+function flashCopied(btn) {
+  btn.classList.add('copied');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '&#10003; copied';
+  setTimeout(() => {
+    btn.classList.remove('copied');
+    btn.innerHTML = orig;
+  }, 1800);
+}
+
+function showFallback(textarea, btn) {
+  if (!textarea) return;
+  textarea.classList.add('visible');
+  textarea.focus();
+  textarea.select();
+  flashCopied(btn);
+}
+</script>
+
+</body>
+</html>

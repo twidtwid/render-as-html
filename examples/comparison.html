@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Where should the artifact live?</title>
+<style>
+:root {
+  --paper:       #faf6ef;
+  --paper-tint:  #f3ede1;
+  --paper-card:  #fbf7f0;
+  --ink:         #1a1815;
+  --ink-soft:    #4a443c;
+  --muted:       #736d62;
+  --rule:        #d9d1c2;
+  --rule-soft:   #ece5d6;
+  --accent:      #8a3a1a;
+  --accent-2:    #c2901a;
+  --ok:          #2f7d44;
+  --warn:        #9b641d;
+  --note:        #2f6fb3;
+  --score-1: #c0392b;
+  --score-2: #e67e22;
+  --score-3: #d4ac0d;
+  --score-4: #27ae60;
+  --score-5: #1e8449;
+  --winner-bg: #f0faf3;
+  --winner-border: #2f7d44;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-serif: "Charter", "Iowan Old Style", Palatino, Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1a1815; --paper-tint: #221f1a; --paper-card: #211e19;
+    --ink: #f0eee8; --ink-soft: #c9c3b6; --muted: #9a948a;
+    --rule: #38332b; --rule-soft: #2c2820;
+    --accent: #e0794f; --accent-2: #d8a73a;
+    --ok: #5cae6f; --warn: #c79a4a; --note: #6f9fd0;
+    --winner-bg: #1a2e1e; --winner-border: #5cae6f;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* ── Layout ── */
+.page-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+}
+
+/* ── Sticky header strip ── */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  padding: 10px 0 8px;
+}
+.sticky-header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.artifact-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  flex: 1;
+  min-width: 180px;
+}
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-label input[type="checkbox"] { accent-color: var(--accent); }
+.btn {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper-card);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.btn:hover { background: var(--paper-tint); color: var(--ink); }
+.btn-accent { border-color: var(--accent); color: var(--accent); }
+.btn-accent:hover { background: var(--accent); color: #fff; }
+
+/* ── Page header ── */
+.page-header {
+  padding: 28px 0 16px;
+}
+.eyebrow {
+  font-size: 11px;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.tldr {
+  font-size: 13px;
+  color: var(--ink-soft);
+  max-width: 780px;
+  line-height: 1.6;
+  padding: 10px 14px;
+  background: var(--paper-tint);
+  border-radius: 6px;
+  border-top: 2px solid var(--accent);
+}
+
+/* ── Winner banner ── */
+.winner-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ok);
+  padding: 8px 14px;
+  background: var(--winner-bg);
+  border: 1px solid var(--winner-border);
+  border-radius: 6px;
+  margin: 12px 0 16px;
+  transition: opacity 0.2s;
+}
+.winner-banner .winner-name { font-weight: 700; }
+.winner-banner .winner-score { font-family: var(--font-mono); font-size: 12px; }
+
+/* ── Comparison table ── */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  min-width: 640px;
+}
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--paper-card);
+}
+thead tr:first-child th {
+  background: var(--paper-card);
+  border-bottom: 2px solid var(--rule);
+}
+th, td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: middle;
+}
+th { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--paper-tint); }
+
+/* Criterion column (first) */
+.col-criterion {
+  min-width: 180px;
+  max-width: 220px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+}
+.criterion-note {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  display: block;
+  margin-top: 1px;
+}
+
+/* Weight column */
+.col-weight {
+  min-width: 72px;
+  text-align: center;
+}
+.weight-input {
+  width: 52px;
+  padding: 3px 6px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+.weight-input::-webkit-outer-spin-button,
+.weight-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.weight-input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+
+/* Item columns */
+.col-item {
+  min-width: 130px;
+  text-align: center;
+}
+.item-header-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.item-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: center;
+}
+.item-agg {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.sort-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  color: var(--muted);
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: color 0.1s, background 0.1s;
+}
+.sort-btn:hover { color: var(--accent); background: var(--paper-tint); }
+.sort-btn.active { color: var(--accent); }
+
+/* Score cells */
+.score-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.score-num {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+.score-bar-wrap {
+  width: 52px;
+  height: 5px;
+  background: var(--rule);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.score-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+/* Winner cell highlight */
+td.winner-cell {
+  background: var(--winner-bg) !important;
+  position: relative;
+}
+td.winner-cell::after {
+  content: "★";
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  font-size: 9px;
+  color: var(--ok);
+}
+
+/* Eliminated cell (must-have filter) */
+td.eliminated {
+  opacity: 0.35;
+}
+.eliminated-badge {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  display: block;
+}
+
+/* Must-have row highlight */
+tr.must-have-row td { background: #fff8ee; }
+@media (prefers-color-scheme: dark) { tr.must-have-row td { background: #2c2316; } }
+
+/* Aggregate footer row */
+.agg-row td {
+  background: var(--paper-tint) !important;
+  border-top: 2px solid var(--rule);
+  font-weight: 700;
+  font-size: 13px;
+}
+.agg-row .col-criterion {
+  font-size: 11px;
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.agg-score {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  display: block;
+}
+td.agg-winner {
+  background: var(--winner-bg) !important;
+  color: var(--ok);
+}
+
+/* SVG donut */
+.donut-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0 8px;
+  gap: 32px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.donut-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+}
+.donut-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  max-width: 90px;
+}
+.donut-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Copy prompt area */
+.copy-prompt-section {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+}
+.copy-prompt-section h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+#prompt-output {
+  width: 100%;
+  min-height: 80px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 8px;
+  resize: vertical;
+  display: none;
+}
+.copy-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.copy-status {
+  font-size: 11px;
+  color: var(--ok);
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.copy-status.visible { opacity: 1; }
+
+/* Footer */
+.page-footer {
+  margin-top: 40px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  h1 { font-size: 18px; }
+  .sticky-header-inner { gap: 8px; }
+  .controls-row { gap: 6px; }
+  .col-criterion { min-width: 130px; }
+  .col-item { min-width: 100px; }
+  .donut-wrap { gap: 16px; }
+}
+
+/* ── iOS / mobile hardening ─────────────────────────────────────── */
+/* 2. Prevent iOS focus-zoom: keep form controls ≥16px on phones */
+@media (max-width: 768px) {
+  input, textarea, select, .weight-input {
+    font-size: 16px !important;
+  }
+  /* 5. Tap targets: buttons and sort controls */
+  .btn {
+    padding: 10px 14px;
+    min-height: 40px;
+  }
+  .sort-btn {
+    padding: 8px 10px;
+    min-height: 40px;
+  }
+  .toggle-label {
+    min-height: 40px;
+    align-items: center;
+  }
+}
+/* 3. sort-btn is always visible on touch (no hover-gate here, but ensure focus reveals it) */
+.sort-btn:focus-visible {
+  color: var(--accent);
+  background: var(--paper-tint);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+</style>
+</head>
+<body>
+
+<div class="sticky-header">
+  <div class="sticky-header-inner">
+    <span class="artifact-title">Artifact Format Comparison</span>
+    <div class="controls-row">
+      <label class="toggle-label" title="Zeroes any item scoring < 3 on 'Round-trips to LLM'">
+        <input type="checkbox" id="must-have-toggle">
+        Must-have: round-trips to LLM
+      </label>
+      <button class="btn btn-accent" onclick="copyRecommendation()">copy as recommendation</button>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div class="eyebrow">Comparison · 5 formats · 8 criteria</div>
+    <h1>Where should the artifact live?</h1>
+    <p class="tldr">
+      <strong>HTML vs PDF vs Notion vs Google Doc vs Markdown.</strong>
+      Self-contained HTML wins on raw aggregate — it keeps interactivity, round-trips to a prompt,
+      design control, and version-control friendliness in one file. PDF leads only on longevity.
+      Tune weights below to check if that changes for your use case.
+    </p>
+  </div>
+
+  <div class="winner-banner" id="winner-banner">
+    <span>Overall winner:</span>
+    <span class="winner-name" id="winner-name">—</span>
+    <span class="winner-score" id="winner-score"></span>
+  </div>
+
+  <!-- Aggregate donut chart -->
+  <div class="donut-wrap" id="donut-wrap"></div>
+
+  <div class="table-scroll">
+    <table id="comparison-table">
+      <thead>
+        <tr id="header-row">
+          <th class="col-criterion" scope="col">Criterion</th>
+          <th class="col-weight" scope="col">Weight</th>
+          <!-- item headers injected by JS -->
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+      <tfoot>
+        <tr class="agg-row" id="agg-row">
+          <td class="col-criterion">Aggregate score</td>
+          <td class="col-weight"></td>
+          <!-- agg cells injected by JS -->
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="copy-prompt-section">
+    <h3>Copy as recommendation prompt</h3>
+    <div class="copy-row">
+      <button class="btn btn-accent" onclick="copyRecommendation()">copy prompt</button>
+      <span class="copy-status" id="copy-status">Copied!</span>
+    </div>
+    <textarea id="prompt-output" readonly aria-label="Recommendation prompt output"></textarea>
+  </div>
+
+</div>
+
+<div class="page-wrap" style="padding-top:0;">
+  <div class="page-footer">
+    <span id="footer-path">examples/comparison.html</span>
+    <span id="footer-ts"></span>
+  </div>
+</div>
+
+<script>
+const ARTIFACT_PATH = "examples/comparison.html";
+
+// ── Data ─────────────────────────────────────────────────────────────────────
+const ITEMS = [
+  { id: "html",    name: "Self-contained HTML" },
+  { id: "pdf",     name: "PDF"                 },
+  { id: "notion",  name: "Notion page"         },
+  { id: "gdoc",    name: "Google Doc"          },
+  { id: "md",      name: "Markdown file"       },
+];
+
+// criteria: id, label, note, defaultWeight, scores {item-id: 1-5}
+const CRITERIA = [
+  {
+    id: "interactivity",
+    label: "Interactivity",
+    note: "Live filters, sliders, tooltips, JS-driven UI",
+    defaultWeight: 3,
+    scores: { html: 5, pdf: 1, notion: 2, gdoc: 1, md: 1 },
+  },
+  {
+    id: "roundtrips",
+    label: "Round-trips to LLM",
+    note: "Pastes cleanly as a prompt; LLM can read + edit the artifact",
+    defaultWeight: 4,
+    isMustHave: true,
+    scores: { html: 5, pdf: 2, notion: 3, gdoc: 3, md: 4 },
+  },
+  {
+    id: "offline",
+    label: "Offline / no-account",
+    note: "Works without internet or a platform account",
+    defaultWeight: 2,
+    scores: { html: 5, pdf: 5, notion: 1, gdoc: 1, md: 5 },
+  },
+  {
+    id: "longevity",
+    label: "Longevity (10-year)",
+    note: "Readable / renderable without special software in 10 yrs",
+    defaultWeight: 2,
+    scores: { html: 3, pdf: 5, notion: 1, gdoc: 2, md: 5 },
+  },
+  {
+    id: "editfriction",
+    label: "Edit friction",
+    note: "How fast can you make a small fix?",
+    defaultWeight: 2,
+    scores: { html: 3, pdf: 1, notion: 4, gdoc: 5, md: 5 },
+  },
+  {
+    id: "shareability",
+    label: "Shareability",
+    note: "Hand off to a non-technical person — they just open it",
+    defaultWeight: 2,
+    scores: { html: 4, pdf: 5, notion: 4, gdoc: 5, md: 2 },
+  },
+  {
+    id: "diffability",
+    label: "Diff / version control",
+    note: "Works with git; diffs are human-readable",
+    defaultWeight: 2,
+    scores: { html: 4, pdf: 1, notion: 1, gdoc: 1, md: 5 },
+  },
+  {
+    id: "design",
+    label: "Visual / design control",
+    note: "Full typography, color, layout, interactive states",
+    defaultWeight: 2,
+    scores: { html: 5, pdf: 3, notion: 2, gdoc: 2, md: 1 },
+  },
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const weights = {};
+CRITERIA.forEach(c => { weights[c.id] = c.defaultWeight; });
+
+let mustHaveActive = false;
+let sortItemId = null;
+let sortDir = 1; // 1 = desc
+
+// ── Score color ───────────────────────────────────────────────────────────────
+function scoreColor(v) {
+  if (v <= 1) return "var(--score-1)";
+  if (v <= 2) return "var(--score-2)";
+  if (v <= 3) return "var(--score-3)";
+  if (v <= 4) return "var(--score-4)";
+  return "var(--score-5)";
+}
+
+// ── Compute aggregates ────────────────────────────────────────────────────────
+function computeAggregates() {
+  const eliminated = getEliminated();
+  const agg = {};
+  ITEMS.forEach(item => {
+    let total = 0, maxTotal = 0;
+    CRITERIA.forEach(c => {
+      const w = weights[c.id] || 0;
+      const s = c.scores[item.id];
+      if (eliminated.has(item.id)) {
+        // eliminated: contribute 0
+      } else {
+        total += s * w;
+      }
+      maxTotal += 5 * w;
+    });
+    agg[item.id] = { raw: eliminated.has(item.id) ? 0 : total, max: maxTotal };
+  });
+  return agg;
+}
+
+function getEliminated() {
+  const elim = new Set();
+  if (!mustHaveActive) return elim;
+  CRITERIA.filter(c => c.isMustHave).forEach(c => {
+    ITEMS.forEach(item => {
+      if (c.scores[item.id] < 3) elim.add(item.id);
+    });
+  });
+  return elim;
+}
+
+function getOrderedItems() {
+  let items = [...ITEMS];
+  if (sortItemId) {
+    // sort by aggregate desc, put sorted item first
+    const agg = computeAggregates();
+    items.sort((a, b) => (agg[b.id].raw - agg[a.id].raw) * sortDir);
+  }
+  return items;
+}
+
+// ── Render header ─────────────────────────────────────────────────────────────
+function renderHeader() {
+  const agg = computeAggregates();
+  const orderedItems = getOrderedItems();
+  const headerRow = document.getElementById("header-row");
+  // Clear item headers (keep first 2 th)
+  while (headerRow.children.length > 2) headerRow.removeChild(headerRow.lastChild);
+  orderedItems.forEach(item => {
+    const th = document.createElement("th");
+    th.className = "col-item";
+    th.scope = "col";
+    th.dataset.itemId = item.id;
+    const aggVal = agg[item.id].raw.toFixed(1);
+    th.innerHTML = `
+      <div class="item-header-card">
+        <span class="item-name">${item.name}</span>
+        <span class="item-agg" id="agg-hdr-${item.id}">${aggVal} pts</span>
+        <button class="sort-btn ${sortItemId === item.id ? 'active' : ''}"
+          onclick="toggleSort('${item.id}')" title="Sort by aggregate score">
+          ${sortItemId === item.id ? (sortDir === 1 ? "▼ sorted" : "▲ sorted") : "sort ↕"}
+        </button>
+      </div>`;
+    headerRow.appendChild(th);
+  });
+}
+
+// ── Render body ───────────────────────────────────────────────────────────────
+function renderBody() {
+  const agg = computeAggregates();
+  const eliminated = getEliminated();
+  const orderedItems = getOrderedItems();
+  const tbody = document.getElementById("table-body");
+  tbody.innerHTML = "";
+
+  CRITERIA.forEach(c => {
+    // Find row winner among non-eliminated items
+    let rowWinnerId = null, rowWinnerScore = -1;
+    orderedItems.forEach(item => {
+      if (!eliminated.has(item.id) && c.scores[item.id] > rowWinnerScore) {
+        rowWinnerScore = c.scores[item.id];
+        rowWinnerId = item.id;
+      }
+    });
+
+    const tr = document.createElement("tr");
+    if (c.isMustHave && mustHaveActive) tr.classList.add("must-have-row");
+
+    // Criterion cell
+    const tdCrit = document.createElement("td");
+    tdCrit.className = "col-criterion";
+    tdCrit.innerHTML = `${c.label}${c.isMustHave && mustHaveActive ? ' <span style="font-size:10px;color:var(--accent)">●</span>' : ''}
+      <span class="criterion-note">${c.note}</span>`;
+    tr.appendChild(tdCrit);
+
+    // Weight cell
+    const tdW = document.createElement("td");
+    tdW.className = "col-weight";
+    tdW.innerHTML = `<input class="weight-input" type="number" min="0" max="10" step="0.5"
+      value="${weights[c.id]}" data-crit="${c.id}" oninput="onWeightChange(this)"
+      aria-label="Weight for ${c.label}">`;
+    tr.appendChild(tdW);
+
+    // Score cells
+    orderedItems.forEach(item => {
+      const td = document.createElement("td");
+      td.className = "col-item";
+      const isWinner = item.id === rowWinnerId;
+      const isElim = eliminated.has(item.id);
+      if (isWinner && !isElim) td.classList.add("winner-cell");
+      if (isElim) td.classList.add("eliminated");
+
+      const score = c.scores[item.id];
+      const color = scoreColor(score);
+      const barW = Math.round((score / 5) * 100);
+
+      td.innerHTML = `
+        <div class="score-cell">
+          <span class="score-num" style="color:${color}">${score}</span>
+          <div class="score-bar-wrap">
+            <div class="score-bar" style="width:${barW}%;background:${color}"></div>
+          </div>
+          ${isElim ? '<span class="eliminated-badge">eliminated</span>' : ''}
+        </div>`;
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Render aggregate row ──────────────────────────────────────────────────────
+function renderAggRow() {
+  const agg = computeAggregates();
+  const eliminated = getEliminated();
+  const orderedItems = getOrderedItems();
+  const aggRow = document.getElementById("agg-row");
+  // clear item cells (keep first 2)
+  while (aggRow.children.length > 2) aggRow.removeChild(aggRow.lastChild);
+
+  let maxScore = -1;
+  orderedItems.forEach(item => {
+    if (!eliminated.has(item.id) && agg[item.id].raw > maxScore) maxScore = agg[item.id].raw;
+  });
+
+  orderedItems.forEach(item => {
+    const td = document.createElement("td");
+    td.className = "col-item";
+    const val = agg[item.id].raw;
+    const isWinner = Math.abs(val - maxScore) < 0.001 && !eliminated.has(item.id);
+    if (isWinner) td.classList.add("agg-winner");
+    td.innerHTML = `<span class="agg-score">${val.toFixed(1)}</span>`;
+    aggRow.appendChild(td);
+  });
+}
+
+// ── Render winner banner ──────────────────────────────────────────────────────
+function renderWinner() {
+  const agg = computeAggregates();
+  const eliminated = getEliminated();
+  let winnerId = null, winnerScore = -1;
+  ITEMS.forEach(item => {
+    if (!eliminated.has(item.id) && agg[item.id].raw > winnerScore) {
+      winnerScore = agg[item.id].raw;
+      winnerId = item.id;
+    }
+  });
+  const banner = document.getElementById("winner-banner");
+  const nameEl = document.getElementById("winner-name");
+  const scoreEl = document.getElementById("winner-score");
+  if (winnerId) {
+    const item = ITEMS.find(i => i.id === winnerId);
+    nameEl.textContent = item.name;
+    scoreEl.textContent = `(${winnerScore.toFixed(1)} pts)`;
+    banner.style.opacity = "1";
+  } else {
+    nameEl.textContent = "—";
+    scoreEl.textContent = "";
+  }
+}
+
+// ── Render donut SVG row ──────────────────────────────────────────────────────
+function renderDonuts() {
+  const agg = computeAggregates();
+  const eliminated = getEliminated();
+  const wrap = document.getElementById("donut-wrap");
+  wrap.innerHTML = "";
+  const maxAgg = Math.max(...ITEMS.map(i => agg[i.id].raw)) || 1;
+
+  ITEMS.forEach(item => {
+    const val = agg[item.id].raw;
+    const max = agg[item.id].max || 1;
+    const pct = val / max;
+    const r = 22, cx = 28, cy = 28, stroke = 6;
+    const circumference = 2 * Math.PI * r;
+    const dash = pct * circumference;
+    const isElim = eliminated.has(item.id);
+    const color = isElim ? "var(--rule)" : val === maxAgg ? "var(--ok)" : "var(--note)";
+
+    const div = document.createElement("div");
+    div.className = "donut-item";
+    div.innerHTML = `
+      <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--rule)" stroke-width="${stroke}"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}"
+          stroke-dasharray="${dash.toFixed(2)} ${circumference.toFixed(2)}"
+          stroke-dashoffset="${circumference * 0.25}"
+          stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+        <text x="${cx}" y="${cy+5}" text-anchor="middle"
+          font-family="ui-monospace,monospace" font-size="11" font-weight="700"
+          fill="${isElim ? 'var(--muted)' : color}">${val.toFixed(0)}</text>
+      </svg>
+      <span class="donut-label">${item.name}</span>
+      ${isElim ? '<span style="font-size:10px;color:var(--muted);font-family:monospace">eliminated</span>' : ''}
+    `;
+    wrap.appendChild(div);
+  });
+}
+
+// ── Full re-render ────────────────────────────────────────────────────────────
+function rerender() {
+  renderHeader();
+  renderBody();
+  renderAggRow();
+  renderWinner();
+  renderDonuts();
+}
+
+// ── Weight change handler ─────────────────────────────────────────────────────
+function onWeightChange(input) {
+  const val = parseFloat(input.value);
+  if (!isNaN(val) && val >= 0) {
+    weights[input.dataset.crit] = val;
+    rerender();
+  }
+}
+
+// ── Sort toggle ───────────────────────────────────────────────────────────────
+function toggleSort(itemId) {
+  if (sortItemId === itemId) {
+    if (sortDir === 1) { sortDir = -1; }
+    else { sortItemId = null; sortDir = 1; }
+  } else {
+    sortItemId = itemId;
+    sortDir = 1;
+  }
+  rerender();
+}
+
+// ── Must-have toggle ──────────────────────────────────────────────────────────
+document.getElementById("must-have-toggle").addEventListener("change", function() {
+  mustHaveActive = this.checked;
+  rerender();
+});
+
+// ── Copy as recommendation ────────────────────────────────────────────────────
+function copyRecommendation() {
+  const agg = computeAggregates();
+  const eliminated = getEliminated();
+  let winnerId = null, winnerScore = -1;
+  ITEMS.forEach(item => {
+    if (!eliminated.has(item.id) && agg[item.id].raw > winnerScore) {
+      winnerScore = agg[item.id].raw;
+      winnerId = item.id;
+    }
+  });
+  const winnerItem = ITEMS.find(i => i.id === winnerId);
+  const winnerName = winnerItem ? winnerItem.name : "None (all eliminated)";
+
+  const weightLines = CRITERIA.map(c =>
+    `  ${c.label}: weight=${weights[c.id]}`
+  ).join("\n");
+
+  const allScores = ITEMS.map(item => {
+    const tag = eliminated.has(item.id) ? " [eliminated by must-have]" : "";
+    return `  ${item.name}: ${agg[item.id].raw.toFixed(1)} pts${tag}`;
+  }).join("\n");
+
+  const mustHaveLine = mustHaveActive
+    ? "\n- Must-have filter ACTIVE (Round-trips to LLM ≥3 required)"
+    : "";
+
+  const prompt = `In ${ARTIFACT_PATH}, the current recommendation based on live weights is:
+
+Recommended artifact format: ${winnerName} (${winnerScore.toFixed(1)} pts)${mustHaveLine}
+
+Current weights:
+${weightLines}
+
+Aggregate scores:
+${allScores}
+
+Please update the TL;DR and winner banner in the artifact to reflect this recommendation, and explain in 2–3 sentences why ${winnerName} wins under these weights.`;
+
+  const out = document.getElementById("prompt-output");
+  out.value = prompt;
+  out.style.display = "block";
+
+  const status = document.getElementById("copy-status");
+  navigator.clipboard.writeText(prompt).then(() => {
+    status.classList.add("visible");
+    setTimeout(() => status.classList.remove("visible"), 2200);
+  }).catch(() => {
+    out.focus();
+    out.select();
+  });
+}
+
+// ── Footer timestamp ──────────────────────────────────────────────────────────
+document.getElementById("footer-ts").textContent =
+  "Generated " + new Date().toLocaleString("en-US", {
+    year: "numeric", month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit"
+  });
+
+// ── Initial render ────────────────────────────────────────────────────────────
+rerender();
+</script>
+</body>
+</html>

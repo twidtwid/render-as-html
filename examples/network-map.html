@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The render-as-html concept graph</title>
+<style>
+:root {
+  --paper:      #faf6ef;
+  --paper-tint: #f3ede1;
+  --paper-card: #fbf7f0;
+  --ink:        #1a1815;
+  --ink-soft:   #4a443c;
+  --muted:      #736d62;
+  --rule:       #d9d1c2;
+  --rule-soft:  #ece5d6;
+  --accent:     #8a3a1a;
+  --accent-2:   #c2901a;
+  --ok:         #2f7d44;
+  --warn:       #9b641d;
+  --note:       #2f6fb3;
+
+  --font-sans:  ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* cluster colors — one-truth palette family, kept AA-distinct */
+  --c-shapes:    #8a3a1a;   /* terracotta — the accent family */
+  --c-patterns:  #1f6f8b;   /* teal */
+  --c-principles:#6b3aa0;   /* purple */
+  --c-lineage:   #c2901a;   /* ochre fill — pairs with --ink text, never white */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:      #1a1815;
+    --paper-tint: #221f1a;
+    --paper-card: #211e19;
+    --ink:        #f0eee8;
+    --ink-soft:   #c9c3b6;
+    --muted:      #9a948a;
+    --rule:       #38332b;
+    --rule-soft:  #2c2820;
+    --accent:     #e0794f;
+    --accent-2:   #d8a73a;
+    --ok:         #5cae6f;
+    --warn:       #c79a4a;
+    --note:       #6f9fd0;
+    --c-shapes:    #e0794f;
+    --c-patterns:  #59a9c4;
+    --c-principles:#b388e8;
+    --c-lineage:   #d8a73a;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Header ─────────────────────────────── */
+.site-header {
+  background: var(--paper-card);
+  border-bottom: 1px solid var(--rule);
+  padding: 10px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.site-header h1 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+.search-wrap input {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 5px 28px 5px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  width: 180px;
+  outline: none;
+}
+.search-wrap input:focus { border-color: var(--accent); }
+.search-clear {
+  position: absolute;
+  right: 6px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  display: none;
+  padding: 2px;
+}
+.search-clear.visible { display: block; }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.chip {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  background: var(--paper-tint);
+  color: var(--ink-soft);
+  transition: opacity 0.15s, background 0.15s;
+  user-select: none;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.chip[data-cluster="Shapes"]     { border-color: var(--c-shapes);     }
+.chip[data-cluster="Patterns"]   { border-color: var(--c-patterns);   }
+.chip[data-cluster="Principles"] { border-color: var(--c-principles); }
+.chip[data-cluster="Lineage"]    { border-color: var(--c-lineage);    }
+.chip.active[data-cluster="Shapes"]     { background: var(--c-shapes);     color: #fff; }
+.chip.active[data-cluster="Patterns"]   { background: var(--c-patterns);   color: #fff; }
+.chip.active[data-cluster="Principles"] { background: var(--c-principles); color: #fff; }
+.chip.active[data-cluster="Lineage"]    { background: var(--c-lineage);    color: var(--ink); }
+
+.chip-clear {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 100px;
+  border: 1px solid var(--rule);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  display: none;
+}
+.chip-clear.visible { display: inline-block; }
+
+/* ─── Body layout ─────────────────────────── */
+.layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.graph-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--paper);
+}
+
+#graph-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--muted);
+  pointer-events: none;
+  background: var(--paper-card);
+  padding: 4px 12px;
+  border-radius: 100px;
+  border: 1px solid var(--rule-soft);
+  white-space: nowrap;
+  transition: opacity 0.3s;
+}
+.hint.hidden { opacity: 0; }
+
+/* ─── Right rail ──────────────────────────── */
+.rail {
+  width: 280px;
+  flex: 0 0 280px;
+  border-left: 1px solid var(--rule);
+  background: var(--paper-card);
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rail-empty {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+
+.rail-node-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.rail-cluster-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 100px;
+  color: #fff;
+  margin-top: 4px;
+}
+.rail-note {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  margin-top: 6px;
+}
+
+.rail-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-top: 2px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.edge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.edge-item {
+  font-size: 12px;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 5px;
+  transition: background 0.1s;
+}
+.edge-item:hover { background: var(--paper-tint); }
+.edge-rel {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  flex: 0 0 auto;
+  background: var(--paper-tint);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.edge-target { color: var(--ink); font-weight: 500; }
+
+.copy-prompt-wrap { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--rule-soft); }
+.copy-prompt-btn {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink-soft);
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s;
+}
+.copy-prompt-btn:hover { background: var(--paper-tint); }
+#prompt-output {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 6px 8px;
+  width: 100%;
+  margin-top: 8px;
+  resize: vertical;
+  min-height: 70px;
+  display: none;
+}
+
+/* ─── SVG node/edge styles ────────────────── */
+.node-circle {
+  cursor: pointer;
+  transition: opacity 0.2s;
+  stroke-width: 2;
+}
+.node-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  fill: var(--ink);
+  pointer-events: none;
+  font-weight: 500;
+}
+.edge-path {
+  fill: none;
+  stroke: var(--rule);
+  stroke-width: 1.5;
+  transition: opacity 0.2s, stroke 0.15s, stroke-width 0.15s;
+  cursor: default;
+}
+.edge-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  fill: var(--muted);
+  pointer-events: none;
+}
+.edge-arrow {
+  stroke: var(--rule);
+  stroke-width: 1.5;
+  fill: none;
+}
+
+/* dimmed state */
+.node-group.dimmed .node-circle { opacity: 0.18; }
+.node-group.dimmed .node-label  { opacity: 0.18; }
+.edge-path.dimmed               { opacity: 0.08; }
+.edge-label.dimmed              { opacity: 0; }
+
+/* highlighted edge */
+.edge-path.highlighted {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  opacity: 1 !important;
+}
+.edge-label.highlighted { fill: var(--accent); opacity: 1 !important; }
+
+/* hover edge */
+.edge-path.hover-hl {
+  stroke: var(--accent-2);
+  stroke-width: 2.5;
+}
+
+/* focused node */
+.node-group.focused .node-circle { opacity: 1; }
+
+/* ─── Footer ──────────────────────────────── */
+footer {
+  background: var(--paper-card);
+  border-top: 1px solid var(--rule);
+  padding: 8px 16px;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ─── Mobile ──────────────────────────────── */
+@media (max-width: 700px) {
+  .layout { flex-direction: column; overflow: visible; }
+  .graph-area { height: 60vmax; overflow: auto; }
+  .rail {
+    width: 100%;
+    flex: none;
+    border-left: none;
+    border-top: 1px solid var(--rule);
+  }
+  .site-header h1 { font-size: 13px; }
+  #graph-svg { min-width: 760px; }
+}
+
+/* ── iOS / mobile hardening ─────────────────────────────────────── */
+/* 2. Prevent iOS focus-zoom: keep form controls ≥16px on phones */
+@media (max-width: 768px) {
+  input, textarea, select, .search-wrap input {
+    font-size: 16px !important;
+  }
+  /* 5. Tap targets: filter chips */
+  .chip {
+    padding: 8px 14px;
+    min-height: 40px;
+  }
+  .chip-clear {
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+  .search-clear {
+    min-height: 40px;
+    padding: 8px;
+  }
+  /* copy-prompt button full tap target */
+  .copy-prompt-btn {
+    padding: 10px 12px;
+    min-height: 40px;
+  }
+}
+/* 3. Edge hover-highlight is JS-driven (no CSS opacity:0 gate) — N/A for opacity rule.
+      Ensure node groups are focusable and focus is visible via existing tabindex. */
+.node-group:focus-visible .node-circle {
+  stroke: var(--accent-2) !important;
+  stroke-width: 3 !important;
+}
+</style>
+</head>
+<body>
+
+<!-- ─── Header ─────────────────────────────────────── -->
+<header class="site-header" role="banner">
+  <h1>The render-as-html concept graph</h1>
+
+  <div class="search-wrap">
+    <input type="search" id="search-input" placeholder="Search concepts…" autocomplete="off" aria-label="Search concepts in the graph">
+    <button class="search-clear" id="search-clear" aria-label="Clear search">×</button>
+  </div>
+
+  <div class="chips" role="group" aria-label="Filter by cluster">
+    <button class="chip" data-cluster="Shapes"     aria-pressed="false" aria-label="Toggle Shapes cluster">Shapes</button>
+    <button class="chip" data-cluster="Patterns"   aria-pressed="false" aria-label="Toggle Sub-patterns cluster">Sub-patterns</button>
+    <button class="chip" data-cluster="Principles" aria-pressed="false" aria-label="Toggle Principles cluster">Principles</button>
+    <button class="chip" data-cluster="Lineage"    aria-pressed="false" aria-label="Toggle Lineage cluster">Lineage</button>
+    <button class="chip-clear" id="chip-clear" aria-label="Clear cluster filters">× clear</button>
+  </div>
+</header>
+
+<!-- ─── Layout ─────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Graph canvas -->
+  <main class="graph-area">
+    <svg id="graph-svg" role="img" aria-label="Concept graph of the render-as-html skill: 23 nodes across 4 clusters — page Shapes, Sub-patterns, design Principles, and Lineage. Click a node to focus its connections.">
+      <defs>
+        <marker id="arrow-default" markerWidth="8" markerHeight="8"
+                refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L0,6 L8,3 z" fill="#d9d1c2"/>
+        </marker>
+        <marker id="arrow-highlighted" markerWidth="8" markerHeight="8"
+                refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L0,6 L8,3 z" fill="#8a3a1a"/>
+        </marker>
+        <marker id="arrow-hover" markerWidth="8" markerHeight="8"
+                refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+          <path d="M0,0 L0,6 L8,3 z" fill="#c2901a"/>
+        </marker>
+      </defs>
+      <g id="edges-layer"></g>
+      <g id="edge-labels-layer"></g>
+      <g id="nodes-layer"></g>
+    </svg>
+    <div class="hint" id="graph-hint">Click a node to focus · Hover edges to highlight · Search to find · Chips filter clusters</div>
+  </main>
+
+  <!-- Right rail -->
+  <aside class="rail" id="rail" aria-label="Concept details">
+    <p class="rail-empty" id="rail-empty">Click any node to see what it is, which cluster it belongs to, and how it connects to the rest of the system.</p>
+    <div id="rail-detail" style="display:none">
+      <div class="rail-node-name" id="rail-name"></div>
+      <span class="rail-cluster-badge" id="rail-badge"></span>
+      <p class="rail-note" id="rail-note"></p>
+      <div class="rail-section-label" style="margin-top:10px">Connections</div>
+      <div class="edge-list" id="rail-edges"></div>
+      <div class="copy-prompt-wrap">
+        <button class="copy-prompt-btn" id="copy-btn" aria-label="Copy this concept and its connections as a Claude prompt">copy as prompt</button>
+        <textarea id="prompt-output" readonly aria-label="Generated prompt output"></textarea>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- ─── Footer ─────────────────────────────────────── -->
+<footer aria-label="Artifact metadata">
+  <span id="footer-path">examples/network-map.html</span>
+  <span id="footer-ts"></span>
+  <span>23 concepts · 4 clusters · hand-positioned layout</span>
+</footer>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────
+const ARTIFACT_PATH = 'examples/network-map.html';
+
+const CLUSTER_LABELS = {
+  Shapes:     'Shapes',
+  Patterns:   'Sub-patterns',
+  Principles: 'Principles',
+  Lineage:    'Lineage',
+};
+
+const CLUSTER_COLORS = {
+  Shapes:     'var(--c-shapes)',
+  Patterns:   'var(--c-patterns)',
+  Principles: 'var(--c-principles)',
+  Lineage:    'var(--c-lineage)',
+};
+
+// Nodes: id, label, cluster, size (r ~ centrality), note
+const NODES = [
+  // Shapes — the nine page shapes
+  { id: 's-dashboard',  label: 'dashboard',     cluster: 'Shapes',     r: 16, note: 'Instrument shape for tabular ops data: multi-column grid, filter chips, dense tables, inline charts.' },
+  { id: 's-document',   label: 'document',      cluster: 'Shapes',     r: 17, note: 'Reading shape for prose-heavy specs and plans: single column, sticky TOC, per-section copy.' },
+  { id: 's-timeline',   label: 'timeline',      cluster: 'Shapes',     r: 15, note: 'Reading shape for dated logs and retros: vertical spine, date markers, event cards.' },
+  { id: 's-runbook',    label: 'runbook',       cluster: 'Shapes',     r: 15, note: 'Instrument shape for procedures being executed: sticky progress, step checkboxes, code-copy buttons.' },
+  { id: 's-comparison', label: 'comparison',    cluster: 'Shapes',     r: 15, note: 'Instrument shape for decision matrices: items as columns, criteria as rows, live weight sliders.' },
+  { id: 's-network',    label: 'network-map',   cluster: 'Shapes',     r: 18, note: 'Instrument shape for relationships and dependencies — the shape this very artifact uses. Big SVG canvas, click-to-focus.' },
+  { id: 's-triage',     label: 'triage-board',  cluster: 'Shapes',     r: 15, note: 'Instrument shape for bucketing: 3–5 columns, drag cards between Now/Next/Later/Cut.' },
+  { id: 's-developer',  label: 'developer',     cluster: 'Shapes',     r: 15, note: 'Instrument shape for code review: annotated diffs, severity findings, file navigator.' },
+  { id: 's-editorial',  label: 'editorial',     cluster: 'Shapes',     r: 16, note: 'Reading shape for sustained argument: italic thesis, claim cards, right-rail entity inspector.' },
+
+  // Sub-patterns — interaction patterns that ride inside shapes
+  { id: 'p-checklist',  label: 'checklist',          cluster: 'Patterns', r: 13, note: 'Unordered set of state-bearing items with notes and a sticky batch export. Rides inside other shapes.' },
+  { id: 'p-explore',    label: 'exploration-grid',   cluster: 'Patterns', r: 12, note: 'N generated variants laid out in a CSS grid for side-by-side comparison.' },
+  { id: 'p-tuner',      label: 'prompt-tuner',       cluster: 'Patterns', r: 13, note: 'Prompt on the left with variable slots, live filled samples on the right, token count, copy.' },
+  { id: 'p-annot',      label: 'annotation-overlay', cluster: 'Patterns', r: 12, note: 'Marks layered over a document or transcript with a copy-out-the-annotations action.' },
+
+  // Principles — the design philosophy
+  { id: 'pr-bar',       label: 'the bar (flatten test)',     cluster: 'Principles', r: 22, note: 'Flatten the artifact to static text. What disappears? If only an SVG, it is styled prose, not an artifact. The gate every shape must pass.' },
+  { id: 'pr-copy',      label: 'copy-as-prompt',             cluster: 'Principles', r: 21, note: 'The load-bearing feature: mutate state in the browser, copy a precise instruction back, paste it to edit the .html file. The round-trip that makes HTML the source of truth.' },
+  { id: 'pr-disclose',  label: 'progressive disclosure',     cluster: 'Principles', r: 15, note: 'Surface the thesis first; let detail expand on demand — collapsible appendices, expandable steps, footnotes.' },
+  { id: 'pr-loop',      label: 'the strange loop',           cluster: 'Principles', r: 16, note: 'The artifact edits itself: the HTML is both the thing you read and the surface that emits prompts to change it.' },
+  { id: 'pr-palette',   label: 'one-truth palette',          cluster: 'Principles', r: 15, note: 'A single warm palette, two registers. One accent, one affirmative color, WCAG AA on every text token — no corporate blue, no third accent.' },
+  { id: 'pr-registers', label: 'reading vs instrument',      cluster: 'Principles', r: 16, note: 'Two registers chosen by shape, never ad hoc: serif reading register for prose, dense sans instrument register for tools.' },
+
+  // Lineage — where the ideas came from
+  { id: 'l-article',   label: 'Unreasonable Effectiveness of HTML', cluster: 'Lineage', r: 20, note: 'The @trq212 article: HTML can be the file you keep, not an export. The framing this whole skill implements.' },
+  { id: 'l-anything',  label: 'html-anything',                      cluster: 'Lineage', r: 16, note: 'clockless-org/html-anything: the content-matched-shapes idea. Different content wants different bones.' },
+  { id: 'l-dims',      label: 'the 8 information dimensions',        cluster: 'Lineage', r: 15, note: 'Tables, design, illustrations, code, interaction, workflows, spatial, images. Every artifact should leverage ≥4.' },
+];
+
+// Edges: source, target, rel (short label)
+const EDGES = [
+  // Lineage feeds the system
+  { s: 'l-article',   t: 'pr-copy',      rel: 'inspired→' },
+  { s: 'l-article',   t: 'pr-loop',      rel: 'inspired→' },
+  { s: 'l-article',   t: 'l-dims',       rel: 'frames→' },
+  { s: 'l-anything',  t: 's-document',   rel: 'seeded→' },
+  { s: 'l-anything',  t: 's-dashboard',  rel: 'seeded→' },
+  { s: 'l-dims',      t: 'pr-bar',       rel: 'feeds→' },
+
+  // The bar gates every shape
+  { s: 's-dashboard',  t: 'pr-bar', rel: 'gated-by→' },
+  { s: 's-document',   t: 'pr-bar', rel: 'gated-by→' },
+  { s: 's-timeline',   t: 'pr-bar', rel: 'gated-by→' },
+  { s: 's-runbook',    t: 'pr-bar', rel: 'gated-by→' },
+  { s: 's-comparison', t: 'pr-bar', rel: 'gated-by→' },
+  { s: 's-network',    t: 'pr-bar', rel: 'gated-by→' },
+  { s: 's-triage',     t: 'pr-bar', rel: 'gated-by→' },
+  { s: 's-developer',  t: 'pr-bar', rel: 'gated-by→' },
+  { s: 's-editorial',  t: 'pr-bar', rel: 'gated-by→' },
+
+  // Every shape uses copy-as-prompt
+  { s: 's-dashboard',  t: 'pr-copy', rel: 'uses→' },
+  { s: 's-runbook',    t: 'pr-copy', rel: 'uses→' },
+  { s: 's-triage',     t: 'pr-copy', rel: 'uses→' },
+  { s: 's-editorial',  t: 'pr-copy', rel: 'uses→' },
+  { s: 's-network',    t: 'pr-copy', rel: 'uses→' },
+
+  // Shape relationships
+  { s: 's-editorial',  t: 's-document',  rel: 'sibling-of→' },
+  { s: 's-comparison', t: 's-dashboard', rel: 'axis-flip-of→' },
+  { s: 's-runbook',    t: 's-document',  rel: 'not-just→' },
+
+  // Sub-patterns ride inside shapes
+  { s: 'p-checklist', t: 's-editorial', rel: 'rides-in→' },
+  { s: 'p-checklist', t: 's-timeline',  rel: 'rides-in→' },
+  { s: 'p-tuner',     t: 'pr-copy',     rel: 'extends→' },
+  { s: 'p-annot',     t: 's-developer', rel: 'rides-in→' },
+  { s: 'p-explore',   t: 's-document',  rel: 'rides-in→' },
+
+  // Principles wire together
+  { s: 'pr-loop',      t: 'pr-copy',      rel: 'realized-by→' },
+  { s: 'pr-registers', t: 'pr-palette',  rel: 'pairs-with→' },
+  { s: 'pr-disclose',  t: 's-document',  rel: 'shapes→' },
+  { s: 'pr-palette',   t: 's-network',   rel: 'colors→' },
+  { s: 'pr-registers', t: 's-dashboard', rel: 'assigns→' },
+  { s: 'pr-registers', t: 's-editorial', rel: 'assigns→' },
+];
+
+// ─── LAYOUT (hand-positioned, normalized 0-1) ─────────
+// Lineage top, Principles center, Shapes lower band, Sub-patterns left
+const POS = {
+  // Lineage — top band
+  'l-article':   [0.48, 0.10],
+  'l-anything':  [0.22, 0.13],
+  'l-dims':      [0.70, 0.13],
+
+  // Principles — center band
+  'pr-bar':      [0.56, 0.40],
+  'pr-copy':     [0.40, 0.34],
+  'pr-loop':     [0.28, 0.46],
+  'pr-disclose': [0.16, 0.36],
+  'pr-palette':  [0.72, 0.32],
+  'pr-registers':[0.84, 0.46],
+
+  // Shapes — lower band
+  's-document':   [0.30, 0.66],
+  's-editorial':  [0.20, 0.80],
+  's-dashboard':  [0.46, 0.78],
+  's-comparison': [0.58, 0.66],
+  's-network':    [0.68, 0.80],
+  's-timeline':   [0.38, 0.90],
+  's-runbook':    [0.52, 0.92],
+  's-triage':     [0.78, 0.66],
+  's-developer':  [0.86, 0.82],
+
+  // Sub-patterns — left edge
+  'p-checklist':  [0.07, 0.62],
+  'p-explore':    [0.06, 0.50],
+  'p-tuner':      [0.10, 0.24],
+  'p-annot':      [0.94, 0.68],
+};
+
+// ─── STATE ────────────────────────────────────────────
+let focusedId = null;
+let activeChips = new Set();
+let searchTerm = '';
+let svgW = 0, svgH = 0;
+
+// ─── UTILITIES ───────────────────────────────────────
+const byId = id => document.getElementById(id);
+const svgNS = 'http://www.w3.org/2000/svg';
+
+function makeSvgEl(tag, attrs = {}) {
+  const el = document.createElementNS(svgNS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+function nodePos(id) {
+  const [nx, ny] = POS[id] || [0.5, 0.5];
+  const pad = 56;
+  return [pad + nx * (svgW - pad * 2), pad + ny * (svgH - pad * 2)];
+}
+
+function clusterColor(cluster) {
+  return CLUSTER_COLORS[cluster] || 'var(--muted)';
+}
+
+function clusterLabel(cluster) {
+  return CLUSTER_LABELS[cluster] || cluster;
+}
+
+// ─── RENDER SVG ──────────────────────────────────────
+const svg = byId('graph-svg');
+const edgesLayer = byId('edges-layer');
+const edgeLabelsLayer = byId('edge-labels-layer');
+const nodesLayer = byId('nodes-layer');
+
+const edgeEls = {};    // key → { path, label }
+const nodeEls = {};    // id → { g, circle, text }
+
+function measureSvg() {
+  const rect = svg.getBoundingClientRect();
+  svgW = rect.width  || 960;
+  svgH = rect.height || 620;
+}
+
+function buildGraph() {
+  measureSvg();
+  edgesLayer.innerHTML = '';
+  edgeLabelsLayer.innerHTML = '';
+  nodesLayer.innerHTML = '';
+
+  // Edges
+  EDGES.forEach((e, i) => {
+    const [sx, sy] = nodePos(e.s);
+    const [tx, ty] = nodePos(e.t);
+    const mx = (sx + tx) / 2;
+    const my = (sy + ty) / 2;
+
+    // Offset the midpoint slightly so overlapping edges separate
+    const dx = tx - sx, dy = ty - sy;
+    const len = Math.sqrt(dx*dx + dy*dy) || 1;
+    const ox = -dy / len * 12;
+    const oy =  dx / len * 12;
+
+    const path = makeSvgEl('path', {
+      'd': `M${sx},${sy} Q${mx+ox},${my+oy} ${tx},${ty}`,
+      'class': 'edge-path',
+      'marker-end': 'url(#arrow-default)',
+    });
+
+    const lx = mx + ox * 1.3;
+    const ly = my + oy * 1.3;
+    const label = makeSvgEl('text', {
+      'x': lx,
+      'y': ly,
+      'text-anchor': 'middle',
+      'dominant-baseline': 'middle',
+      'class': 'edge-label',
+    });
+    label.textContent = e.rel;
+
+    const key = `${e.s}→${e.t}→${i}`;
+    edgeEls[key] = { path, label, edge: e };
+
+    edgesLayer.appendChild(path);
+    edgeLabelsLayer.appendChild(label);
+
+    // Hover-edge-highlight
+    path.addEventListener('mouseenter', () => {
+      if (!focusedId) {
+        path.classList.add('hover-hl');
+        path.setAttribute('marker-end', 'url(#arrow-hover)');
+        label.style.fill = 'var(--accent-2)';
+        label.style.opacity = '1';
+      }
+    });
+    path.addEventListener('mouseleave', () => {
+      path.classList.remove('hover-hl');
+      path.setAttribute('marker-end', 'url(#arrow-default)');
+      label.style.fill = '';
+      label.style.opacity = '';
+    });
+    path.style.cursor = 'pointer';
+  });
+
+  // Nodes
+  NODES.forEach(n => {
+    const [x, y] = nodePos(n.id);
+    const g = makeSvgEl('g', {
+      class: 'node-group',
+      tabindex: '0',
+      role: 'button',
+      'aria-label': `${n.label} — ${clusterLabel(n.cluster)} cluster. ${n.note}`,
+    });
+    g.setAttribute('data-id', n.id);
+
+    const circle = makeSvgEl('circle', {
+      cx: x, cy: y, r: n.r,
+      class: 'node-circle',
+      fill: clusterColor(n.cluster),
+      stroke: 'var(--paper)',
+    });
+
+    // Label positioning — above when near the bottom edge, else below
+    const labelY = y > svgH * 0.82 ? y - n.r - 5 : y + n.r + 13;
+    const label = makeSvgEl('text', {
+      x: x, y: labelY,
+      'text-anchor': 'middle',
+      'dominant-baseline': 'middle',
+      class: 'node-label',
+    });
+    // Shorten the one long lineage label for the canvas; full text stays in the rail
+    const shortLabel = n.id === 'l-article'
+      ? 'Unreasonable Effectiveness'
+      : (n.id === 'l-dims' ? '8 information dimensions' : n.label);
+    label.textContent = shortLabel;
+
+    g.appendChild(circle);
+    g.appendChild(label);
+    nodesLayer.appendChild(g);
+    nodeEls[n.id] = { g, circle, label, node: n };
+
+    g.addEventListener('click', () => handleNodeClick(n.id));
+    g.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); handleNodeClick(n.id); } });
+  });
+}
+
+// ─── FOCUS LOGIC ─────────────────────────────────────
+function handleNodeClick(id) {
+  if (focusedId === id) {
+    clearFocus();
+    return;
+  }
+  focusedId = id;
+  byId('graph-hint').classList.add('hidden');
+  applyFocusState();
+  updateRail(id);
+}
+
+function clearFocus() {
+  focusedId = null;
+  Object.values(nodeEls).forEach(({ g }) => {
+    g.classList.remove('dimmed', 'focused');
+  });
+  Object.values(edgeEls).forEach(({ path, label }) => {
+    path.classList.remove('dimmed', 'highlighted');
+    path.setAttribute('marker-end', 'url(#arrow-default)');
+    label.classList.remove('dimmed', 'highlighted');
+  });
+  byId('rail-empty').style.display = '';
+  byId('rail-detail').style.display = 'none';
+}
+
+function applyFocusState() {
+  if (!focusedId) { clearFocus(); return; }
+
+  const connectedEdges = new Set();
+  const connectedNodes = new Set([focusedId]);
+
+  EDGES.forEach((e, i) => {
+    const key = `${e.s}→${e.t}→${i}`;
+    if (e.s === focusedId || e.t === focusedId) {
+      connectedEdges.add(key);
+      connectedNodes.add(e.s);
+      connectedNodes.add(e.t);
+    }
+  });
+
+  Object.entries(nodeEls).forEach(([id, { g }]) => {
+    g.classList.remove('dimmed', 'focused');
+    if (!connectedNodes.has(id)) g.classList.add('dimmed');
+    if (id === focusedId) g.classList.add('focused');
+  });
+
+  Object.entries(edgeEls).forEach(([key, { path, label }]) => {
+    path.classList.remove('dimmed', 'highlighted');
+    label.classList.remove('dimmed', 'highlighted');
+    if (connectedEdges.has(key)) {
+      path.classList.add('highlighted');
+      path.setAttribute('marker-end', 'url(#arrow-highlighted)');
+      label.classList.add('highlighted');
+    } else {
+      path.classList.add('dimmed');
+      path.setAttribute('marker-end', 'url(#arrow-default)');
+      label.classList.add('dimmed');
+    }
+  });
+}
+
+// ─── RAIL UPDATE ─────────────────────────────────────
+function updateRail(id) {
+  const node = NODES.find(n => n.id === id);
+  if (!node) return;
+
+  byId('rail-empty').style.display = 'none';
+  byId('rail-detail').style.display = '';
+
+  byId('rail-name').textContent = node.label;
+  byId('copy-btn').setAttribute('aria-label', 'Copy "' + node.label + '" and its connections as a Claude prompt');
+
+  const badge = byId('rail-badge');
+  badge.textContent = clusterLabel(node.cluster);
+  badge.style.background = clusterColor(node.cluster);
+  // ochre background (Lineage cluster) needs dark text for contrast
+  badge.style.color = node.cluster === 'Lineage' ? 'var(--ink)' : '#fff';
+
+  byId('rail-note').textContent = node.note;
+
+  const edgeList = byId('rail-edges');
+  edgeList.innerHTML = '';
+  const relevant = EDGES.filter(e => e.s === id || e.t === id);
+  if (!relevant.length) {
+    edgeList.innerHTML = '<span style="font-size:12px;color:var(--muted)">No connections.</span>';
+  } else {
+    relevant.forEach(e => {
+      const isOut = e.s === id;
+      const otherId = isOut ? e.t : e.s;
+      const other = NODES.find(n => n.id === otherId);
+      const item = document.createElement('div');
+      item.className = 'edge-item';
+      item.setAttribute('role', 'button');
+      item.setAttribute('tabindex', '0');
+      item.setAttribute('aria-label', (isOut ? 'Outgoing' : 'Incoming') + ' connection to ' + (other ? other.label : otherId));
+      item.innerHTML = `<span class="edge-rel">${isOut ? e.rel : '←' + e.rel.replace('→','')}</span><span class="edge-target">${other ? other.label : otherId}</span>`;
+      item.addEventListener('click', () => handleNodeClick(otherId));
+      item.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); handleNodeClick(otherId); } });
+      edgeList.appendChild(item);
+    });
+  }
+}
+
+// ─── CLUSTER TOGGLE ──────────────────────────────────
+document.querySelectorAll('.chip[data-cluster]').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const cl = chip.dataset.cluster;
+    if (activeChips.has(cl)) {
+      activeChips.delete(cl);
+      chip.classList.remove('active');
+      chip.setAttribute('aria-pressed', 'false');
+    } else {
+      activeChips.add(cl);
+      chip.classList.add('active');
+      chip.setAttribute('aria-pressed', 'true');
+    }
+    byId('chip-clear').classList.toggle('visible', activeChips.size > 0);
+    applyClusterFilter();
+  });
+});
+
+byId('chip-clear').addEventListener('click', () => {
+  activeChips.clear();
+  document.querySelectorAll('.chip[data-cluster]').forEach(c => {
+    c.classList.remove('active');
+    c.setAttribute('aria-pressed', 'false');
+  });
+  byId('chip-clear').classList.remove('visible');
+  applyClusterFilter();
+});
+
+function applyClusterFilter() {
+  clearFocus();
+  Object.entries(nodeEls).forEach(([id, { g, node }]) => {
+    const hide = activeChips.size > 0 && !activeChips.has(node.cluster);
+    g.style.opacity = hide ? '0.1' : '';
+    g.style.pointerEvents = hide ? 'none' : '';
+  });
+  EDGES.forEach((e, i) => {
+    const key = `${e.s}→${e.t}→${i}`;
+    const { path, label } = edgeEls[key] || {};
+    if (!path) return;
+    const srcHidden = activeChips.size > 0 && !activeChips.has(NODES.find(n=>n.id===e.s)?.cluster);
+    const tgtHidden = activeChips.size > 0 && !activeChips.has(NODES.find(n=>n.id===e.t)?.cluster);
+    const hide = srcHidden || tgtHidden;
+    path.style.opacity  = hide ? '0.05' : '';
+    label.style.opacity = hide ? '0' : '';
+  });
+}
+
+// ─── SEARCH ──────────────────────────────────────────
+const searchInput = byId('search-input');
+const searchClear = byId('search-clear');
+
+searchInput.addEventListener('input', () => {
+  searchTerm = searchInput.value.trim().toLowerCase();
+  searchClear.classList.toggle('visible', searchTerm.length > 0);
+  applySearch();
+});
+
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  searchTerm = '';
+  searchClear.classList.remove('visible');
+  applySearch();
+});
+
+function applySearch() {
+  if (!searchTerm) {
+    Object.values(nodeEls).forEach(({ g, circle, node }) => {
+      g.style.opacity = '';
+      g.style.pointerEvents = '';
+      circle.setAttribute('stroke', 'var(--paper)');
+      circle.setAttribute('stroke-width', '2');
+    });
+    return;
+  }
+  clearFocus();
+  let firstMatch = null;
+  Object.entries(nodeEls).forEach(([id, { g, circle, node }]) => {
+    const match = node.label.toLowerCase().includes(searchTerm)
+      || node.note.toLowerCase().includes(searchTerm)
+      || clusterLabel(node.cluster).toLowerCase().includes(searchTerm);
+    if (match) {
+      if (!firstMatch) firstMatch = id;
+      g.style.opacity = '1';
+      g.style.pointerEvents = '';
+      circle.setAttribute('stroke', 'var(--accent-2)');
+      circle.setAttribute('stroke-width', '3');
+    } else {
+      g.style.opacity = '0.12';
+      g.style.pointerEvents = 'none';
+      circle.setAttribute('stroke', 'var(--paper)');
+      circle.setAttribute('stroke-width', '2');
+    }
+  });
+  if (firstMatch) {
+    updateRail(firstMatch);
+    byId('rail-empty').style.display = 'none';
+    byId('rail-detail').style.display = '';
+  }
+}
+
+// ─── COPY AS PROMPT ──────────────────────────────────
+byId('copy-btn').addEventListener('click', () => {
+  const name = byId('rail-name').textContent;
+  const cluster = byId('rail-badge').textContent;
+  const edges = Array.from(byId('rail-edges').querySelectorAll('.edge-item')).map(el => el.textContent.trim()).join('; ');
+  const prompt = `In ${ARTIFACT_PATH}, focusing on the "${name}" node (cluster: ${cluster}):\n- Connections: ${edges || 'none listed'}\n- [describe the change you want to this node, its note, or its edges here]`;
+  const out = byId('prompt-output');
+  out.style.display = 'block';
+  out.value = prompt;
+  navigator.clipboard.writeText(prompt).then(() => {
+    byId('copy-btn').textContent = 'copied!';
+    byId('copy-btn').setAttribute('aria-label', 'Copied prompt for ' + name + ' to clipboard');
+    setTimeout(() => {
+      byId('copy-btn').textContent = 'copy as prompt';
+      byId('copy-btn').setAttribute('aria-label', 'Copy "' + name + '" and its connections as a Claude prompt');
+    }, 1800);
+  }).catch(() => {
+    out.focus();
+    out.select();
+  });
+});
+
+// ─── RESIZE ──────────────────────────────────────────
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    buildGraph();
+    if (focusedId) {
+      applyFocusState();
+      updateRail(focusedId);
+    }
+    applyClusterFilter();
+  }, 120);
+});
+
+// ─── FOOTER TIMESTAMP ────────────────────────────────
+byId('footer-ts').textContent = 'generated ' + new Date().toLocaleString('en-US', {
+  year: 'numeric', month: 'short', day: 'numeric',
+  hour: '2-digit', minute: '2-digit',
+});
+
+// ─── INIT ────────────────────────────────────────────
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    buildGraph();
+  });
+});
+</script>
+</body>
+</html>
