@@ -269,11 +269,39 @@ Slightly warm and non-corporate, but keep public artifacts professional by defau
 
 ### Color
 
-- Light mode: bg `#fafaf7` (warm white), text `#1a1a1a`, muted `#6b6b6b`, border `#e8e5dd`
-- Dark mode (via `prefers-color-scheme`): bg `#1a1a1a`, text `#f0eee8`, muted `#a8a6a0`, border `#2e2e2a`
-- Single accent: warm coral `#c74438` / `#ff7066`. No corporate blue.
-- Semantic text colors: `ok=#2f7d44`, `warn=#9b641d`, `note=#2f6fb3`
-- High contrast — no gray-on-gray. Text-use colors should meet WCAG AA.
+```
+Light:
+--paper       #faf6ef   warm cream — page background
+--paper-tint  #f3ede1   recessed surfaces, hover fills
+--paper-card  #fbf7f0   raised cards
+--ink         #1a1815   warm near-black — body text
+--ink-soft    #4a443c   secondary text
+--muted       #8a8378   metadata, captions
+--rule        #d9d1c2   dividers, borders
+--rule-soft   #ece5d6   hairline dividers inside cards
+--accent      #8a3a1a   terracotta — THE single accent (links, active state, emphasis)
+--accent-2    #c2901a   ochre/gold — affirmative actions only (primary button, star/select on)
+--ok          #2f7d44
+--warn        #9b641d
+--note        #2f6fb3
+
+Dark (via prefers-color-scheme):
+--paper       #1a1815
+--paper-tint  #221f1a
+--paper-card  #211e19
+--ink         #f0eee8
+--ink-soft    #c9c3b6
+--muted       #8a8378
+--rule        #38332b
+--rule-soft   #2c2820
+--accent      #e0794f   terracotta, lifted for dark bg
+--accent-2    #d8a73a
+--ok          #5cae6f  --warn #c79a4a  --note #6f9fd0
+```
+
+- One primary accent. One affirmative-action color. No third accent, no corporate blue.
+- Semantic colors are for text/icon use and must meet WCAG AA on `--paper`.
+- High contrast; no gray-on-gray.
 
 ### Interactivity
 
