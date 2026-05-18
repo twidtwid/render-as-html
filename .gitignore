@@ -2,3 +2,7 @@
 *.swp
 *.swo
 node_modules/
+
+# internal — never ship
+docs/
+assets/
