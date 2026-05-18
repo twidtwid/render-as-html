@@ -279,9 +279,6 @@ tr:last-child td { border-bottom: none; }
 .cl-bar .cl-count { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text); }
 .cl-bar .cl-count b { color: var(--accent-2); }
 .cl-bar .cl-spacer { flex: 1; }
-.cl-export { display: block; width: 100%; margin-top: 12px; background: var(--surface-2); border: 1px solid transparent; border-radius: 6px; padding: 10px 12px; font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.5; color: var(--text); white-space: pre-wrap; word-break: break-word; min-height: 70px; resize: vertical; }
-.cl-export:focus { outline: none; border-color: var(--accent); }
-.cl-status { font-size: 0.76rem; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
 
 /* ─── Footer ─────────────────────────────────────────────────── */
 footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--faint); font-size: 0.76rem; font-family: var(--font-mono); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -854,6 +851,8 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
         <input type="search" id="ed-find" placeholder="find in this essay…" aria-label="Find in the editorial sample">
         <span class="fcount" id="ed-fcount" aria-live="polite"></span>
       </div>
+      <textarea class="cap-output" id="ed-fallback" readonly rows="2" aria-label="Copy-as-prompt fallback" hidden></textarea>
+      <div class="copy-status" id="ed-status" aria-live="polite"></div>
       <div class="ed-studio">
         <aside class="ed-rail">
           <div class="kicker">San Francisco · 14 May 2021</div>
@@ -942,13 +941,13 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
         </li>
       </ul>
       <div class="cl-bar">
-        <span class="cl-count" id="cl-count"><b>0</b> of 4 marked</span>
+        <span class="cl-count" id="cl-count"></span>
         <span class="cl-spacer"></span>
         <button class="copy-btn" id="cl-copy" type="button">copy as prompt</button>
         <button class="copy-btn secondary" id="cl-clear" type="button">clear</button>
       </div>
-      <textarea class="cl-export" id="cl-export" readonly rows="3" aria-label="Generated prompt">Mark items above, then click "copy as prompt" — the instruction naming this file appears here.</textarea>
-      <div class="cl-status" id="cl-status" aria-live="polite"></div>
+      <textarea class="cap-output" id="cl-export" readonly rows="3" aria-label="Generated prompt">Mark items above, then click "copy as prompt" — the instruction naming this file appears here.</textarea>
+      <div class="copy-status" id="cl-status" aria-live="polite"></div>
     </div>
 
     <h2 id="antipatterns">Anti-patterns</h2>
@@ -989,6 +988,7 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
 (() => {
   const $ = (s, c=document) => c.querySelector(s);
   const $$ = (s, c=document) => [...c.querySelectorAll(s)];
+  const ARTIFACT = '~/Reports/private/render-as-html-design-system.html';
 
   // TOC scroll-spy
   const tocLinks = $$('.toc a');
@@ -1039,7 +1039,7 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
     swatch.style.setProperty('--demo-accent', `hsl(${h} ${s}% ${l}%)`);
     swatch.style.borderRadius = r + 'px';
     swatch.style.background = `hsl(${h} ${s}% ${l}%)`;
-    output.value = `In ~/Reports/private/render-as-html-design-system.html, update the accent color to hsl(${h} ${s}% ${l}%) and the default card border-radius to ${r}px.`;
+    output.value = `In ${ARTIFACT}, update the accent color to hsl(${h} ${s}% ${l}%) and the default card border-radius to ${r}px.`;
     copyStatus.textContent = '';
   }
   [hue, sat, lig, rad].forEach(el => el.addEventListener('input', updateDemo));
@@ -1067,25 +1067,22 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
   updateDemo();
 
   // ─── Editorial: in-text <mark> find + scroll-to-match ───────────
-  const ARTIFACT = '~/Reports/private/render-as-html-design-system.html';
   const edProse = $('#ed-prose'), edFind = $('#ed-find'), edFcount = $('#ed-fcount');
   if (edProse && edFind) {
     $$('#ed-prose p, #ed-prose h4, #ed-prose h5, #ed-prose li').forEach(el => {
       if (!el.dataset.original) el.dataset.original = el.innerHTML;
     });
+    const edNodes = $$('#ed-prose [data-original]');
     const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     edFind.addEventListener('input', () => {
       const q = edFind.value.trim();
-      const nodes = $$('#ed-prose [data-original]');
-      nodes.forEach(el => { el.innerHTML = el.dataset.original; });
+      edNodes.forEach(el => { el.innerHTML = el.dataset.original; });
       if (!q) { edFcount.textContent = ''; return; }
       const rx = new RegExp(esc(q), 'gi');
       let hits = 0, first = null;
-      nodes.forEach(el => {
-        if (rx.test(el.dataset.original)) {
-          el.innerHTML = el.dataset.original.replace(rx, m => { hits++; return '<mark>' + m + '</mark>'; });
-          if (!first) first = el.querySelector('mark');
-        }
+      edNodes.forEach(el => {
+        el.innerHTML = el.dataset.original.replace(rx, m => { hits++; return '<mark>' + m + '</mark>'; });
+        if (!first) first = el.querySelector('mark');
       });
       edFcount.textContent = hits ? hits + (hits === 1 ? ' match' : ' matches') : 'no matches';
       if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -1093,18 +1090,20 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
   }
 
   // ─── Editorial: per-section copy-as-prompt ──────────────────────
+  const edFallback = $('#ed-fallback'), edStatus = $('#ed-status');
   $$('.ed-copy').forEach(btn => btn.addEventListener('click', async () => {
     const head = btn.closest('.ed-sec-h').querySelector('h4').textContent.trim();
     const prompt = `In ${ARTIFACT}, revise the editorial section titled "${head}": `;
     try {
       await navigator.clipboard.writeText(prompt);
       const t = btn.textContent; btn.textContent = '✓ copied';
+      edStatus.textContent = '';
       setTimeout(() => { btn.textContent = t; }, 1600);
     } catch {
-      const ta = document.createElement('textarea');
-      ta.value = prompt; ta.style.cssText = 'position:fixed;top:8px;left:8px;width:60vw;height:48px;z-index:9999';
-      document.body.appendChild(ta); ta.focus(); ta.select();
-      setTimeout(() => ta.remove(), 4000);
+      edFallback.value = prompt;
+      edFallback.hidden = false;
+      edFallback.focus(); edFallback.select();
+      edStatus.textContent = 'Clipboard blocked — prompt selected above for manual copy.';
     }
   }));
 
@@ -1112,10 +1111,9 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
   const clList = $('#cl-list'), clCount = $('#cl-count'), clExport = $('#cl-export'), clStatus = $('#cl-status');
   if (clList) {
     const items = $$('.cl-item', clList);
+    const getOn = () => items.filter(i => i.classList.contains('on'));
     function refreshCount() {
-      const on = items.filter(i => i.classList.contains('on'));
-      clCount.innerHTML = `<b>${on.length}</b> of ${items.length} marked`;
-      return on;
+      clCount.innerHTML = `<b>${getOn().length}</b> of ${items.length} marked`;
     }
     items.forEach(li => {
       const star = $('.cl-star', li);
@@ -1126,7 +1124,7 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
       });
     });
     function buildPrompt() {
-      const on = refreshCount();
+      const on = getOn();
       if (!on.length) return `In ${ARTIFACT}, no checklist items are marked.`;
       const lines = on.map(li => {
         const note = $('.cl-note', li).value.trim();
