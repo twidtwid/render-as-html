@@ -6,3 +6,5 @@ node_modules/
 # internal — never ship
 docs/
 assets/
+.claude.local.md
+CLAUDE.md
