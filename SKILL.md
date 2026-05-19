@@ -1,6 +1,6 @@
 ---
 name: render-as-html
-version: 2.0.6
+version: 2.0.7
 description: Create or update a designed, self-contained HTML artifact as the source of truth. Use when the user says "make an HTML artifact", "render this as html", "make me a pretty version", "I want to read this carefully", "make it interactive/readable", "update this HTML", or "/render-as-html". Output is an editable HTML file, not a conversion preview of another canonical document.
 ---
 
@@ -32,6 +32,7 @@ If multiple inputs possible, ask which.
 - Auto-`open` the file at the end when the environment allows it. The browser is where this thing lives.
 - Footer shows the artifact path and generated/updated timestamp.
 - Generated artifacts should be self-contained and make no external network requests by default.
+- **Social card (always, in `<head>`):** emit an Open Graph / Twitter summary card so a hosted artifact unfurls as a titled preview instead of a bare link. Required tags: `<meta name="description">`, `og:title`, `og:description`, `og:type`, `og:site_name`, `twitter:card`. Sourcing: `og:title` = the artifact `<title>`; `og:description` = one plain sentence (≤155 chars) describing *what the artifact is*, derived from the artifact's own subtitle/thesis — not a production count, not "an HTML artifact about X"; `og:type` = `article` for content, `website` for an index/gallery; `twitter:card` = `summary`. **No `og:image`** (would require a hosted image file — breaks self-containment) and **no `og:url`** (final URL is unknown at generation time; scrapers fall back to the request URL). Inert on `file://`, ~6 lines, costs nothing — so it is unconditional, not publish-gated.
 - If metadata mentions supporting context, label it as context/provenance. Do not present another file as canonical.
 - Any copy-as-prompt action must target the current `.html` artifact path, not a notes file, source file, or parallel document.
 
@@ -406,7 +407,7 @@ Dark (via prefers-color-scheme):
    - What features require HTML? Pick at least 3 — write them down before writing HTML.
    - Where does a diagram, chart, or spatial layout add information?
    - Which of the 8 dimensions am I using? (Aim for ≥4)
-4. **Write the HTML** — single self-contained file, all CSS inline, all JS (vanilla, ~100-200 lines) inline, no external fonts or CDN assets by default
+4. **Write the HTML** — single self-contained file, all CSS inline, all JS (vanilla, ~100-200 lines) inline, no external fonts or CDN assets by default; include the Open Graph / Twitter summary card in `<head>` (see Output)
 5. **Validate against the bar:** name the HTML-native features. If <3, redesign before saving. Also scan the rendered HTML for content-discipline anti-patterns — artifact-counting hero stats, left-handle accent bars, category-label section titles, whole-block search highlighting; fix any before saving. This is a self-review instruction, not an automated harness.
 6. **Write to `~/Reports/<YYYY-MM-DD>-<slug>.html`**
 7. **`open` the file** so it pops in browser when the environment allows it
