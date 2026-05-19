@@ -1,6 +1,6 @@
 ---
 name: render-as-html
-version: 2.0.0
+version: 2.0.1
 description: Create or update a designed, self-contained HTML artifact as the source of truth. Use when the user says "make an HTML artifact", "render this as html", "make me a pretty version", "I want to read this carefully", "make it interactive/readable", "update this HTML", or "/render-as-html". Output is an editable HTML file, not a conversion preview of another canonical document.
 ---
 
@@ -186,10 +186,10 @@ Explicit user override always wins.
 
 #### `editorial`
 - **Register:** Reading (serif display + serif body, cream paper, terracotta accent; see Density).
-- **Layout:** studio max-width ~1280px. Three zones:
-  - Left rail ~22rem, sticky: kicker + title hero + a "context/about" card.
-  - Center: prose, measure capped at `46rem` (~70ch) even though chrome is wide; stays anchored left-of-center on wide screens.
-  - Right inspector ~22rem: entity list grouped by category with canonical links, then a "read next" link list.
+- **Layout:** studio max-width ~1320px. Three zones, tuned narrow–wide–narrow so the reading column dominates:
+  - Left rail ~18rem, sticky: kicker + title hero + a "context/about" card.
+  - Center: prose, measure capped at `50rem` (~75ch) even though chrome is wide; stays anchored left-of-center on wide screens.
+  - Right inspector ~18rem: entity list grouped by category with canonical links, then a "read next" link list.
   - Collapse: inspector drops below center under ~1180px; single column under ~820px.
 - **First viewport:** kicker + title + italic thesis/bottom-line + start of body. No stat tiles.
 - **Required primitives:**
