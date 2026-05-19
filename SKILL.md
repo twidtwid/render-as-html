@@ -1,6 +1,6 @@
 ---
 name: render-as-html
-version: 2.0.1
+version: 2.0.2
 description: Create or update a designed, self-contained HTML artifact as the source of truth. Use when the user says "make an HTML artifact", "render this as html", "make me a pretty version", "I want to read this carefully", "make it interactive/readable", "update this HTML", or "/render-as-html". Output is an editable HTML file, not a conversion preview of another canonical document.
 ---
 
@@ -191,6 +191,7 @@ Explicit user override always wins.
   - Center: prose, measure capped at `50rem` (~75ch) even though chrome is wide; stays anchored left-of-center on wide screens.
   - Right inspector ~18rem: entity list grouped by category with canonical links, then a "read next" link list.
   - Collapse: inspector drops below center under ~1180px; single column under ~820px.
+  - **Collapse mechanic (load-bearing — skip it and the rails overlap the prose):** drive the layout with named `grid-template-areas`, not bare column counts. Both rails are `position: sticky` with a viewport-tall `height`/`overflow-y:auto` only while their column exists. At *every* breakpoint where a rail loses its own column it MUST reset to `position: static; height: auto` (and drop the `border`/`overflow` that assumed a tall column). When a rule sets `grid-column` on a rail to place it in a 2-col collapse, the next-narrower single-column rule MUST reset `grid-column: auto` or the browser keeps an implicit second column and the stack breaks. Re-assign every zone's `grid-area` at each breakpoint; never leave a zone on an area name that no longer exists in the template.
 - **First viewport:** kicker + title + italic thesis/bottom-line + start of body. No stat tiles.
 - **Required primitives:**
   - Italic serif thesis/bottom-line pull-quote, left-aligned (never centered). No left-handle bar.
@@ -293,7 +294,8 @@ Slightly warm and non-corporate, but keep public artifacts professional by defau
 - **Multi-column grids** for parallel content, NOT sequential h2 sections
 - **Sticky top nav** with section anchors for docs >5 sections
 - **Filter bar** when content is filterable — vanilla JS, no framework
-- **Mobile is a hard requirement, not an afterthought.** Test by resizing browser to ~375px before saving. Cards stack to single column under ~700px, sticky nav collapses gracefully, touch targets ≥32px, horizontal scroll forbidden on body (tables in scroll containers OK), font sizes adjust down 1-2px.
+- **Mobile is a hard requirement, not an afterthought.** Test by resizing browser to ~375px before saving — and also test the *intermediate* widths (~1100px, ~950px), where multi-zone layouts break worst. Cards stack to single column under ~700px, sticky nav collapses gracefully, touch targets ≥32px, horizontal scroll forbidden on body (tables in scroll containers OK), font sizes adjust down 1-2px.
+- **Sticky-rail collapse invariant (any multi-zone shape — editorial, dashboard, document, network-map):** a `position: sticky` rail with a viewport-tall `height` is only safe while it owns a grid column. The instant it shares or loses that column at a breakpoint, reset it to `position: static; height: auto`. A sticky element keeps its own scroll box and paint layer even after the grid collapses, so a forgotten reset makes the rail render *on top of* the prose. Verify at the breakpoint boundaries, not just at the extremes.
 
 ### Density
 
