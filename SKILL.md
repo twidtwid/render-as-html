@@ -1,6 +1,6 @@
 ---
 name: render-as-html
-version: 2.0.5
+version: 2.0.6
 description: Create or update a designed, self-contained HTML artifact as the source of truth. Use when the user says "make an HTML artifact", "render this as html", "make me a pretty version", "I want to read this carefully", "make it interactive/readable", "update this HTML", or "/render-as-html". Output is an editable HTML file, not a conversion preview of another canonical document.
 ---
 
@@ -198,6 +198,7 @@ Explicit user override always wins.
   - Italic serif thesis/bottom-line pull-quote, left-aligned (never centered). No left-handle bar.
   - Stacked numbered takeaways — single column with mono numerals, never a tile grid.
   - Claim/section cards: arguing headline + 1–3 sentence mechanism body + small `Evidence:` line.
+  - **Evidence lines must hyperlink, not just name, their sources.** Every source token in a claim's `Evidence:` line (and every inline entity mention that has a primary source) must be an `<a href>` to that item's actual URL. When the upstream data is structured (e.g. a research engine's JSON with a `url` per item/candidate), the link target MUST come from that data — never synthesized, inferred, or left as a bare publication name. If an item genuinely has no URL in the source data, render it as plain text and say why (e.g. "primary source not in feed"); do not fabricate a plausible link.
   - Right-rail entity inspector grouped by category (people, companies, orgs, concepts, books, …), each row a colored category dot + name (canonical link if present, `↗` for external) + one-line note. **The inspector is a bounded independent scrollbox** — `height` (or `max-height`) `calc(100dvh - <top>)`, `overflow-y: auto`, `overscroll-behavior: contain` — added in the same wide `@media (min-width:…)` rule that makes it sticky. A sticky rail with no height cap and no internal scroll is the bug: entities past the fold become unreachable and any scroll-to-entity is forced to move the whole document.
   - "Read next" list of source links.
   - Per-section copy-as-prompt button (hover-revealed on each section heading), targeting the current `.html` artifact path.
@@ -206,8 +207,9 @@ Explicit user override always wins.
   - *Prose mention → entity card:* highlight both, then reveal the card by scrolling **the inspector's own scrollbox only** — `card.scrollIntoView({ block: 'nearest' })` (with the inspector as the nearest scroll container) or set `inspector.scrollTop` directly. Never call a scroll that moves the document/prose, and skip the scroll entirely if the card is already within the inspector's visible box. Clicking a prose link must not move the prose.
   - *Entity card → prose mention:* scroll the **document** to the first `<mark>` with `block: 'center'`; make it a no-op if that mention is already in the viewport (no yank).
   - The rule of thumb: a click scrolls *the other panel*, never the panel you clicked in.
+- **Evidence-link verification (self-check before saving):** extract every `href` in the Evidence lines and assert each is a substring of the source data you were given — zero un-traceable evidence links. Every claim section has ≥1 evidence link. This is a hard, checkable gate, not a style suggestion.
 - **External links** open `target="_blank" rel="noopener noreferrer"`; internal anchors stay same-window.
-- **Avoid:** artifact-counting stat tiles; left-handle accent bars; category-label section titles; identical-tile card grids; prose measure wider than ~75ch; dashboard-style multi-column-of-tiles.
+- **Avoid:** artifact-counting stat tiles; left-handle accent bars; category-label section titles; identical-tile card grids; prose measure wider than ~75ch; dashboard-style multi-column-of-tiles; **prose `Evidence:` lines that name sources ("per Bloomberg", "X @HPCwire (score 69)") without linking them** — a plain-text Evidence line when the URLs were available in the source data is a hard miss; it makes the artifact strictly worse than a raw source dump, which links everything for free.
 
 #### `timeline`
 - **Register:** Reading (serif display + serif body; see Density). Mono small-caps for date/kicker lines.
