@@ -4,7 +4,7 @@
 >
 > Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935).
 
-**Version:** 2.0.3 · **Live design system:** https://twidtwid.github.io/render-as-html/
+**Version:** 2.0.4 · **Live design system:** https://twidtwid.github.io/render-as-html/
 
 ---
 
