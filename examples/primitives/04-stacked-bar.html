@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stacked bar — composition over time</title>
+<style>
+  :root {
+    --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+    --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+    --rule:#d9d1c2; --rule-soft:#ece5d6;
+    --accent:#8a3a1a; --accent-2:#c2901a;
+    --ok:#2f7d44; --warn:#9b641d; --note:#2f6fb3;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+      --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+      --rule:#38332b; --rule-soft:#2c2820;
+      --accent:#e0794f; --accent-2:#d8a73a;
+      --ok:#5cae6f; --warn:#c79a4a; --note:#6f9fd0;
+    }
+  }
+  html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); margin:0; }
+  body { padding: 32px; font-size: 14px; line-height: 1.5; }
+  .stage { max-width: 720px; margin: 0 auto; }
+  .tile { background: var(--paper-card); border: 1px solid var(--rule); border-radius: 6px; padding: 20px 22px; }
+  .tile-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--rule-soft); padding-bottom: 10px; margin-bottom: 14px; }
+  .tile-title { font-weight: 700; font-size: 13px; color: var(--ink); letter-spacing: 0.01em; }
+  .tile-meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .legend-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .chip { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 8px; border: 1px solid var(--rule); border-radius: 999px; font-size: 12px; background: var(--paper); color: var(--ink); transition: opacity 0.15s; }
+  .chip:hover { background: var(--paper-tint); }
+  .chip.dim { opacity: 0.4; }
+  .chip .swatch { width: 10px; height: 10px; border-radius: 2px; }
+  .chip .ct { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .chart-wrap { position: relative; margin-top: 4px; }
+  .chart { display: grid; grid-template-columns: 32px 1fr; gap: 8px; align-items: stretch; }
+  .y-axis { display: flex; flex-direction: column; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-align: right; padding-bottom: 18px; }
+  .plot { position: relative; height: 160px; border-bottom: 1px solid var(--rule); }
+  .gridlines { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+  .gridlines div { border-top: 1px dashed var(--rule-soft); height: 0; }
+  .gridlines div:last-child { display: none; }
+  .bars { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; align-items: end; }
+  .bar-col { display: flex; flex-direction: column-reverse; height: 100%; cursor: pointer; position: relative; }
+  .bar-col:hover .seg { filter: brightness(1.05); }
+  .bar-col.focused .seg { outline: 1px solid var(--ink); outline-offset: 0; }
+  .seg { width: 100%; transition: height 0.2s, background-color 0.2s; }
+  .seg.success { background: var(--ok); }
+  .seg.rateLimited { background: var(--accent-2); }
+  .seg.denied { background: var(--accent); }
+  .seg.error { background: var(--note); }
+  .x-axis { display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; margin-top: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--muted); text-align: center; }
+  .x-axis span { font-variant-numeric: tabular-nums; }
+  .tip { position: absolute; background: var(--ink); color: var(--paper); font-family: var(--font-mono); font-size: 11px; padding: 8px 10px; border-radius: 4px; pointer-events: none; opacity: 0; transition: opacity 0.1s; transform: translate(-50%, -100%); margin-top: -8px; min-width: 140px; line-height: 1.5; z-index: 5; font-variant-numeric: tabular-nums; }
+  .tip.show { opacity: 1; }
+  .tip .tip-head { font-weight: 700; margin-bottom: 4px; border-bottom: 1px solid #ffffff22; padding-bottom: 4px; }
+  .tip .tip-row { display: grid; grid-template-columns: 10px 1fr auto; gap: 6px; align-items: center; }
+  .tip .tip-sw { width: 8px; height: 8px; border-radius: 1px; }
+  .tip .tip-total { margin-top: 4px; padding-top: 4px; border-top: 1px solid #ffffff22; display: flex; justify-content: space-between; color: var(--paper-tint); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="tile">
+    <div class="tile-head">
+      <div class="tile-title">Auth events by outcome</div>
+      <div class="tile-meta">last 14 days · 18,420 total</div>
+    </div>
+    <div class="legend-chips" id="chips"></div>
+    <div class="chart-wrap">
+      <div class="chart">
+        <div class="y-axis" id="yAxis"></div>
+        <div>
+          <div class="plot">
+            <div class="gridlines"><div></div><div></div><div></div><div></div><div></div></div>
+            <div class="bars" id="bars"></div>
+            <div class="tip" id="tip"></div>
+          </div>
+          <div class="x-axis" id="xAxis"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const today = new Date('2026-05-20');
+  const days = [];
+  for (let i = 13; i >= 0; i--) { const d = new Date(today); d.setDate(today.getDate() - i); days.push(d); }
+  const data = [
+    { success:980,  rateLimited:45,  denied:22, error:8  },
+    { success:1020, rateLimited:38,  denied:18, error:12 },
+    { success:1110, rateLimited:52,  denied:25, error:14 },
+    { success:1085, rateLimited:64,  denied:31, error:9  },
+    { success:1190, rateLimited:58,  denied:28, error:11 },
+    { success:720,  rateLimited:33,  denied:17, error:6  },
+    { success:640,  rateLimited:29,  denied:14, error:5  },
+    { success:1240, rateLimited:71,  denied:36, error:18 },
+    { success:1310, rateLimited:88,  denied:41, error:22 },
+    { success:1280, rateLimited:95,  denied:47, error:31 },
+    { success:1265, rateLimited:102, denied:53, error:28 },
+    { success:1340, rateLimited:115, denied:58, error:35 },
+    { success:780,  rateLimited:64,  denied:32, error:19 },
+    { success:690,  rateLimited:71,  denied:38, error:24 },
+  ];
+  const categories = [
+    { key:'success',     label:'Success',      color:'var(--ok)' },
+    { key:'rateLimited', label:'Rate-limited', color:'var(--accent-2)' },
+    { key:'denied',      label:'Denied',       color:'var(--accent)' },
+    { key:'error',       label:'Error',        color:'var(--note)' },
+  ];
+  const active = new Set(categories.map(c => c.key));
+  const monthFmt = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function totalsByCategory() { const t={}; categories.forEach(c => { t[c.key]=data.reduce((s,d)=>s+d[c.key],0); }); return t; }
+  function maxStackedTotal() { return Math.max(...data.map(d => categories.reduce((s,c) => s + (active.has(c.key)?d[c.key]:0), 0))); }
+  function niceMax(v) { const mag=Math.pow(10,Math.floor(Math.log10(v))); return Math.ceil(v/(mag/2))*(mag/2); }
+  function renderChips() {
+    const root = document.getElementById('chips');
+    const totals = totalsByCategory();
+    root.innerHTML = '';
+    categories.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'chip' + (active.has(c.key) ? '' : ' dim');
+      btn.innerHTML = `<span class="swatch" style="background:${c.color}"></span><span>${c.label}</span><span class="ct">${totals[c.key].toLocaleString()}</span>`;
+      btn.addEventListener('click', () => { if (active.has(c.key)) { if (active.size>1) active.delete(c.key); } else active.add(c.key); renderAll(); });
+      root.appendChild(btn);
+    });
+  }
+  function renderAxes(max) {
+    const ya = document.getElementById('yAxis'); ya.innerHTML = '';
+    const steps = 5;
+    for (let i=0; i<steps; i++) { const v = max*(1-i/(steps-1)); const s=document.createElement('span'); s.textContent = v>=1000 ? (v/1000).toFixed(1)+'k' : Math.round(v); ya.appendChild(s); }
+    const xa = document.getElementById('xAxis'); xa.innerHTML = '';
+    days.forEach((d,i) => { const s=document.createElement('span'); s.textContent = (i%2===0) ? `${d.getDate()}` : ''; xa.appendChild(s); });
+  }
+  function renderBars(max) {
+    const root = document.getElementById('bars'); root.innerHTML = '';
+    const tip = document.getElementById('tip');
+    data.forEach((d, i) => {
+      const col = document.createElement('div'); col.className = 'bar-col';
+      const stackTotal = categories.reduce((s,c) => s + (active.has(c.key)?d[c.key]:0), 0);
+      const colHeightPct = (stackTotal/max)*100;
+      categories.forEach(c => {
+        if (!active.has(c.key)) return;
+        const seg = document.createElement('div'); seg.className = 'seg ' + c.key;
+        seg.style.height = ((d[c.key]/stackTotal)*colHeightPct) + '%';
+        col.appendChild(seg);
+      });
+      col.addEventListener('mouseenter', () => {
+        document.querySelectorAll('.bar-col').forEach(b => b.classList.remove('focused'));
+        col.classList.add('focused');
+        const dayLabel = `${days[i].toLocaleDateString('en-US',{weekday:'short'})} ${monthFmt[days[i].getMonth()]} ${days[i].getDate()}`;
+        let rows = ''; let total = 0;
+        categories.forEach(c => { if (!active.has(c.key)) return; total += d[c.key]; rows += `<div class="tip-row"><span class="tip-sw" style="background:${c.color}"></span><span>${c.label}</span><span>${d[c.key].toLocaleString()}</span></div>`; });
+        tip.innerHTML = `<div class="tip-head">${dayLabel}</div>${rows}<div class="tip-total"><span>total</span><span>${total.toLocaleString()}</span></div>`;
+        tip.classList.add('show');
+        const rect = col.getBoundingClientRect();
+        const plotRect = col.parentElement.getBoundingClientRect();
+        tip.style.left = (rect.left - plotRect.left + rect.width/2) + 'px';
+        tip.style.top = '0px';
+      });
+      col.addEventListener('mouseleave', () => { col.classList.remove('focused'); tip.classList.remove('show'); });
+      root.appendChild(col);
+    });
+  }
+  function renderAll() { const max = niceMax(maxStackedTotal()); renderChips(); renderAxes(max); renderBars(max); }
+  renderAll();
+</script>
+</body></html>

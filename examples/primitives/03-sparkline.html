@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sparkline — stat-tile cluster</title>
+<style>
+  :root {
+    --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+    --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+    --rule:#d9d1c2; --rule-soft:#ece5d6;
+    --accent:#8a3a1a; --accent-2:#c2901a;
+    --ok:#2f7d44; --warn:#9b641d; --note:#2f6fb3;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+      --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+      --rule:#38332b; --rule-soft:#2c2820;
+      --accent:#e0794f; --accent-2:#d8a73a;
+      --ok:#5cae6f; --warn:#c79a4a; --note:#6f9fd0;
+    }
+  }
+  html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); margin:0; }
+  body { padding: 32px; font-size: 14px; line-height: 1.5; }
+  .stage { max-width: 720px; margin: 0 auto; }
+  .cluster { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; background: var(--paper-card); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+  .stat { padding: 18px 20px 14px; border-right: 1px solid var(--rule-soft); display: flex; flex-direction: column; }
+  .stat:last-child { border-right: 0; }
+  .stat .label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .stat .val-line { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .stat .val { font-family: var(--font-mono); font-size: 28px; font-weight: 700; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
+  .stat .unit { font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-weight: 500; }
+  .stat .delta { font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; margin-bottom: 10px; color: var(--muted); }
+  .stat .delta.good { color: var(--ok); }
+  .stat .delta.bad  { color: var(--accent); }
+  .stat .delta .since { color: var(--muted); margin-left: 4px; }
+  .spark { margin-top: auto; position: relative; height: 44px; }
+  .spark svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .spark .line { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+  .spark .area { fill: var(--accent); opacity: 0.08; }
+  .spark .dot-last { fill: var(--paper-card); stroke: var(--accent); stroke-width: 1.5; }
+  .spark .guide { stroke: var(--ink-soft); stroke-width: 1; stroke-dasharray: 2 2; opacity: 0; }
+  .spark .guide-dot { fill: var(--accent); opacity: 0; }
+  .spark .tip { position: absolute; background: var(--ink); color: var(--paper); font-family: var(--font-mono); font-size: 11px; padding: 3px 6px; border-radius: 3px; white-space: nowrap; pointer-events: none; transform: translate(-50%, -100%); margin-top: -6px; opacity: 0; transition: opacity 0.1s; font-variant-numeric: tabular-nums; }
+  .spark:hover .guide, .spark:hover .guide-dot { opacity: 1; }
+  .spark:hover .tip { opacity: 1; }
+  .axis-labels { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="cluster" id="cluster"></div>
+</div>
+<script>
+  const metrics = [
+    { label: 'Active scans', unit: '', val: 127, delta: +12, deltaUnit: '', deltaDir: 'neutral',
+      hours: [89,92,95,98,101,104,100,95,92,96,102,108,113,118,116,114,119,122,120,123,125,124,126,127], decimals: 0 },
+    { label: 'Latency p95', unit: 'ms', val: 248, delta: -18, deltaUnit: 'ms', deltaDir: 'good',
+      hours: [266,272,280,278,285,281,274,268,265,272,278,282,286,281,275,270,268,264,260,258,255,252,250,248], decimals: 0 },
+    { label: 'Error rate', unit: '%', val: 0.42, delta: +0.04, deltaUnit: 'pp', deltaDir: 'bad',
+      hours: [0.31,0.29,0.30,0.28,0.33,0.35,0.32,0.30,0.34,0.36,0.35,0.33,0.34,0.37,0.36,0.38,0.39,0.37,0.40,0.41,0.39,0.41,0.42,0.42], decimals: 2 },
+  ];
+  function sparkPath(values, w, h, pad = 3) {
+    const min = Math.min(...values), max = Math.max(...values);
+    const range = (max - min) || 1;
+    const stepX = (w - 2 * pad) / (values.length - 1);
+    const pts = values.map((v, i) => {
+      const x = pad + i * stepX;
+      const y = h - pad - ((v - min) / range) * (h - 2 * pad);
+      return [x, y];
+    });
+    const line = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const area = line + ` L${(w - pad).toFixed(1)},${(h - pad).toFixed(1)} L${pad.toFixed(1)},${(h - pad).toFixed(1)} Z`;
+    return { line, area, pts, last: pts[pts.length - 1] };
+  }
+  function render() {
+    const root = document.getElementById('cluster');
+    root.innerHTML = '';
+    metrics.forEach(m => {
+      const w = 220, h = 44;
+      const sp = sparkPath(m.hours, w, h);
+      const arrow = m.delta > 0 ? '▲' : m.delta < 0 ? '▼' : '·';
+      const sign = m.delta > 0 ? '+' : '';
+      const dCls = m.deltaDir === 'good' ? 'good' : m.deltaDir === 'bad' ? 'bad' : '';
+      const valFmt = m.val.toFixed(m.decimals);
+      const deltaFmt = (m.deltaDir === 'neutral' && m.delta === 0) ? '·' : `${arrow} ${sign}${m.delta}${m.deltaUnit}`;
+      const tile = document.createElement('div');
+      tile.className = 'stat';
+      tile.innerHTML = `
+        <div class="label">${m.label}</div>
+        <div class="val-line"><span class="val">${valFmt}</span>${m.unit ? `<span class="unit">${m.unit}</span>` : ''}</div>
+        <div class="delta ${dCls}">${deltaFmt}<span class="since">vs 24h ago</span></div>
+        <div class="spark">
+          <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+            <path class="area" d="${sp.area}"/>
+            <path class="line" d="${sp.line}"/>
+            <line class="guide" x1="0" y1="0" x2="0" y2="${h}"/>
+            <circle class="guide-dot" r="3" cx="0" cy="0"/>
+            <circle class="dot-last" r="2.5" cx="${sp.last[0]}" cy="${sp.last[1]}"/>
+          </svg>
+          <div class="tip"></div>
+        </div>
+        <div class="axis-labels"><span>−24h</span><span>now</span></div>`;
+      root.appendChild(tile);
+      const sparkEl = tile.querySelector('.spark');
+      const guide = sparkEl.querySelector('.guide');
+      const gdot = sparkEl.querySelector('.guide-dot');
+      const tip = sparkEl.querySelector('.tip');
+      sparkEl.addEventListener('mousemove', e => {
+        const rect = sparkEl.getBoundingClientRect();
+        const xFrac = (e.clientX - rect.left) / rect.width;
+        const idx = Math.max(0, Math.min(m.hours.length - 1, Math.round(xFrac * (m.hours.length - 1))));
+        const [px, py] = sp.pts[idx];
+        guide.setAttribute('x1', px); guide.setAttribute('x2', px);
+        gdot.setAttribute('cx', px); gdot.setAttribute('cy', py);
+        tip.style.left = (px / w) * rect.width + 'px';
+        tip.style.top = (py / h) * rect.height + 'px';
+        const hoursAgo = (m.hours.length - 1 - idx);
+        const when = hoursAgo === 0 ? 'now' : `−${hoursAgo}h`;
+        tip.textContent = `${m.hours[idx].toFixed(m.decimals)}${m.unit} · ${when}`;
+      });
+    });
+  }
+  render();
+</script>
+</body></html>

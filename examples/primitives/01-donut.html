@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Donut — categorical status mix</title>
+<style>
+  :root {
+    --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+    --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+    --rule:#d9d1c2; --rule-soft:#ece5d6;
+    --accent:#8a3a1a; --accent-2:#c2901a;
+    --ok:#2f7d44; --warn:#9b641d; --note:#2f6fb3;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+      --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+      --rule:#38332b; --rule-soft:#2c2820;
+      --accent:#e0794f; --accent-2:#d8a73a;
+      --ok:#5cae6f; --warn:#c79a4a; --note:#6f9fd0;
+    }
+  }
+  html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); margin:0; }
+  body { padding: 32px; font-size: 14px; line-height: 1.5; }
+  .stage { max-width: 720px; margin: 0 auto; }
+  .tile {
+    background: var(--paper-card);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 20px 22px;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+    align-items: center;
+  }
+  .tile-head {
+    grid-column: 1 / -1;
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--rule-soft);
+    padding-bottom: 10px; margin-bottom: 6px;
+  }
+  .tile-title { font-weight: 700; font-size: 13px; color: var(--ink); letter-spacing: 0.01em; }
+  .tile-meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .donut-wrap { position: relative; width: 200px; height: 200px; }
+  .donut svg { display: block; }
+  .donut-center {
+    position: absolute; inset: 0; display: flex;
+    flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .donut-center .big {
+    font-family: var(--font-mono); font-size: 34px; font-weight: 700;
+    color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .donut-center .lbl { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .seg { transition: opacity 0.15s; cursor: pointer; }
+  .seg.dim { opacity: 0.18; }
+  .legend {
+    display: grid;
+    grid-template-columns: 14px auto auto auto;
+    column-gap: 14px;
+    row-gap: 2px;
+    justify-content: start;
+  }
+  .legend button {
+    all: unset;
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font: inherit;
+  }
+  .legend button:hover { background: var(--paper-tint); }
+  .legend button.dim { opacity: 0.4; }
+  .legend .swatch { width: 12px; height: 12px; border-radius: 2px; align-self: center; }
+  .legend .name { color: var(--ink); font-weight: 500; }
+  .legend .count { font-family: var(--font-mono); color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; }
+  .legend .pct { font-family: var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; text-align: right; }
+  .clear-bar { display: none; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--rule-soft); font-size: 12px; color: var(--muted); }
+  .clear-bar.show { display: flex; justify-content: space-between; align-items: center; }
+  .clear-bar button { all: unset; cursor: pointer; color: var(--accent); font-size: 12px; border-bottom: 1px solid currentColor; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="tile">
+    <div class="tile-head">
+      <div class="tile-title">Service health</div>
+      <div class="tile-meta">27 scanned · last 5m</div>
+    </div>
+    <div class="donut-wrap">
+      <div class="donut">
+        <svg viewBox="0 0 200 200" width="200" height="200" aria-label="27 services by status">
+          <circle cx="100" cy="100" r="68" fill="none" stroke="var(--rule-soft)" stroke-width="22"/>
+          <g transform="rotate(-90 100 100)">
+            <circle class="seg" data-key="ok"      cx="100" cy="100" r="68" fill="none" stroke="var(--ok)"       stroke-width="22" pathLength="100" stroke-dasharray="66.7 33.3" stroke-dashoffset="0"/>
+            <circle class="seg" data-key="warn"    cx="100" cy="100" r="68" fill="none" stroke="var(--accent-2)" stroke-width="22" pathLength="100" stroke-dasharray="18.5 81.5" stroke-dashoffset="-66.7"/>
+            <circle class="seg" data-key="down"    cx="100" cy="100" r="68" fill="none" stroke="var(--accent)"   stroke-width="22" pathLength="100" stroke-dasharray="11.1 88.9" stroke-dashoffset="-85.2"/>
+            <circle class="seg" data-key="unknown" cx="100" cy="100" r="68" fill="none" stroke="var(--muted)"    stroke-width="22" pathLength="100" stroke-dasharray="3.7 96.3"  stroke-dashoffset="-96.3"/>
+          </g>
+        </svg>
+      </div>
+      <div class="donut-center"><div class="big">27</div><div class="lbl">services</div></div>
+    </div>
+    <div>
+      <div class="legend" role="list">
+        <button data-key="ok" role="listitem"><span class="swatch" style="background:var(--ok)"></span><span class="name">Healthy</span><span class="count">18</span><span class="pct">66.7%</span></button>
+        <button data-key="warn" role="listitem"><span class="swatch" style="background:var(--accent-2)"></span><span class="name">Degraded</span><span class="count">5</span><span class="pct">18.5%</span></button>
+        <button data-key="down" role="listitem"><span class="swatch" style="background:var(--accent)"></span><span class="name">Down</span><span class="count">3</span><span class="pct">11.1%</span></button>
+        <button data-key="unknown" role="listitem"><span class="swatch" style="background:var(--muted)"></span><span class="name">Unknown</span><span class="count">1</span><span class="pct">&nbsp;3.7%</span></button>
+      </div>
+      <div class="clear-bar" id="clearBar"><span id="filterMsg"></span><button id="clearBtn">× clear</button></div>
+    </div>
+  </div>
+</div>
+<script>
+  const segs = document.querySelectorAll('.seg');
+  const btns = document.querySelectorAll('.legend button');
+  const clearBar = document.getElementById('clearBar');
+  const filterMsg = document.getElementById('filterMsg');
+  let active = null;
+  function apply() {
+    segs.forEach(s => s.classList.toggle('dim', active && s.dataset.key !== active));
+    btns.forEach(b => b.classList.toggle('dim', active && b.dataset.key !== active));
+    if (active) {
+      const row = document.querySelector(`.legend button[data-key="${active}"]`);
+      filterMsg.textContent = 'Filtered to ' + row.querySelector('.name').textContent.toLowerCase() + ' · ' + row.querySelector('.count').textContent + ' of 27';
+      clearBar.classList.add('show');
+    } else { clearBar.classList.remove('show'); }
+  }
+  btns.forEach(b => b.addEventListener('click', () => { active = active === b.dataset.key ? null : b.dataset.key; apply(); }));
+  document.getElementById('clearBtn').addEventListener('click', () => { active = null; apply(); });
+</script>
+</body></html>

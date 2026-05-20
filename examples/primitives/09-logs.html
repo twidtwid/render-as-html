@@ -1,0 +1,420 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8">
+<title>9 / table — log stream</title>
+<style>
+  :root {
+    --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+    --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+    --rule:#d9d1c2; --rule-soft:#ece5d6;
+    --accent:#8a3a1a; --accent-2:#c2901a;
+    --ok:#2f7d44; --warn:#9b641d; --note:#2f6fb3;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+      --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+      --rule:#38332b; --rule-soft:#2c2820;
+      --accent:#e0794f; --accent-2:#d8a73a;
+      --ok:#5cae6f; --warn:#c79a4a; --note:#6f9fd0;
+    }
+  }
+  html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); margin:0; }
+  body { padding: 48px; font-size: 14px; line-height: 1.5; }
+  .stage { max-width: 780px; }
+  .kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+  h1 { font-family: var(--font-sans); font-weight: 700; font-size: 22px; letter-spacing: -0.01em; line-height: 1.2; margin: 0 0 4px; color: var(--ink); }
+  .sub { color: var(--ink-soft); margin: 0 0 32px; font-size: 14px; }
+
+  .tile {
+    background: var(--paper-card);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .tile-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-tint);
+  }
+  .tile-title { font-weight: 700; font-size: 13px; color: var(--ink); letter-spacing: 0.01em; }
+  .tile-source {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--ink-soft);
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--paper);
+    border: 1px solid var(--rule-soft);
+  }
+  .live-dot {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    margin-right: 6px;
+    vertical-align: middle;
+    box-shadow: 0 0 8px var(--ok);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  .live-dot.paused {
+    background: var(--muted); box-shadow: none; animation: none;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  .live-label {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--ink-soft); letter-spacing: 0.04em;
+  }
+  .tile-meta {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+
+  .toolbar {
+    display: flex; gap: 6px; align-items: center;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+  .toolbar .search {
+    font: inherit; font-size: 12px;
+    background: var(--paper); color: var(--ink);
+    border: 1px solid var(--rule); border-radius: 3px;
+    padding: 4px 8px; width: 180px;
+  }
+  .toolbar .search::placeholder { color: var(--muted); }
+  .level-chip {
+    all: unset; cursor: pointer;
+    font-family: var(--font-mono); font-size: 11px;
+    padding: 3px 8px; border-radius: 3px;
+    border: 1px solid currentColor;
+    background: transparent;
+    letter-spacing: 0.02em;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .level-chip .ct { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .level-chip.off { opacity: 0.32; }
+  .level-chip:hover { background: var(--paper-tint); }
+  .level-chip.info  { color: var(--note); }
+  .level-chip.warn  { color: var(--warn); }
+  .level-chip.error { color: var(--accent); }
+  .level-chip.debug { color: var(--muted); }
+  .level-chip.fatal { color: var(--paper); background: var(--accent); border-color: var(--accent); }
+  .level-chip.fatal.off { color: var(--accent); background: transparent; }
+
+  .toolbar .right { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .tail-btn {
+    all: unset; cursor: pointer;
+    font-family: var(--font-mono); font-size: 11px;
+    padding: 4px 10px; border-radius: 3px;
+    border: 1px solid var(--rule); color: var(--ink-soft);
+    background: var(--paper);
+    letter-spacing: 0.02em;
+  }
+  .tail-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .tail-btn.paused { background: var(--paper-tint); }
+
+  .log {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    height: 360px;
+    overflow-y: auto;
+    background: var(--paper-card);
+  }
+  .log-row {
+    display: grid;
+    grid-template-columns: 100px 64px 1fr 16px;
+    column-gap: 12px;
+    padding: 3px 14px;
+    border-bottom: 1px solid var(--rule-soft);
+    cursor: pointer;
+    transition: background 0.1s;
+    align-items: start;
+  }
+  .log-row:hover { background: var(--paper-tint); }
+  .log-row.expanded { background: var(--paper-tint); }
+  .log-row.hidden { display: none; }
+  .log-row.new { animation: rowflash 1.2s ease-out; }
+  @keyframes rowflash {
+    0% { background: color-mix(in srgb, var(--accent-2) 30%, transparent); }
+    100% { background: transparent; }
+  }
+  .log-row .ts {
+    color: var(--muted); font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .log-row .lvl {
+    text-align: center;
+    border-radius: 2px;
+    font-size: 10px; font-weight: 700;
+    padding: 1px 0;
+    letter-spacing: 0.04em;
+  }
+  .log-row .lvl.info  { color: var(--note);   border: 1px solid var(--note); }
+  .log-row .lvl.warn  { color: var(--warn);   border: 1px solid var(--warn); }
+  .log-row .lvl.error { color: var(--accent); border: 1px solid var(--accent); }
+  .log-row .lvl.debug { color: var(--muted);  border: 1px solid var(--rule); }
+  .log-row .lvl.fatal { color: var(--paper);  background: var(--accent); border: 1px solid var(--accent); }
+  .log-row .msg {
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .log-row.expanded .msg { white-space: pre-wrap; overflow: visible; }
+  .log-row .chev {
+    color: var(--muted);
+    font-size: 10px;
+    text-align: center;
+    transition: transform 0.1s;
+  }
+  .log-row.expanded .chev { transform: rotate(90deg); color: var(--accent); }
+
+  .log-row .payload {
+    grid-column: 3 / 5;
+    margin-top: 6px;
+    padding: 8px 10px;
+    background: var(--paper);
+    border: 1px solid var(--rule-soft);
+    border-radius: 3px;
+    color: var(--ink-soft);
+    font-size: 11.5px;
+    white-space: pre;
+    overflow-x: auto;
+    display: none;
+  }
+  .log-row.expanded .payload { display: block; }
+  .log-row .payload .k { color: var(--accent); }
+  .log-row .payload .s { color: var(--accent-2); }
+  .log-row .payload .n { color: var(--note); }
+
+  .empty-log {
+    padding: 28px 14px;
+    text-align: center;
+    color: var(--muted);
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  .note {
+    margin-top: 28px; font-size: 12px; color: var(--muted); line-height: 1.6;
+    border-top: 1px dashed var(--rule);
+    padding-top: 16px;
+  }
+  .note code {
+    font-family: var(--font-mono); color: var(--ink-soft);
+    background: var(--paper-tint); padding: 1px 5px; border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <p class="kicker">Primitive 9 of 9 · table</p>
+  <h1>Log stream — chronological event table</h1>
+  <p class="sub">When you're watching events arrive in real time, not auditing a static set. Different from the ops table: rows are chronological, levels carry urgency, expand-on-click reveals the full payload, and the table itself is a scrollable container with a live-tail indicator.</p>
+
+  <div class="tile">
+    <div class="tile-head">
+      <div class="tile-title">Application logs</div>
+      <span class="tile-source">prod-web-01</span>
+      <span><span class="live-dot" id="liveDot"></span><span class="live-label" id="liveLabel">LIVE</span></span>
+      <div class="tile-meta" id="meta">14 events</div>
+    </div>
+
+    <div class="toolbar">
+      <input class="search" id="search" type="search" placeholder="search messages…">
+      <button class="level-chip info"  data-lvl="info">INFO  <span class="ct" id="ctInfo">0</span></button>
+      <button class="level-chip warn"  data-lvl="warn">WARN  <span class="ct" id="ctWarn">0</span></button>
+      <button class="level-chip error" data-lvl="error">ERROR <span class="ct" id="ctErr">0</span></button>
+      <button class="level-chip debug" data-lvl="debug">DEBUG <span class="ct" id="ctDbg">0</span></button>
+      <button class="level-chip fatal" data-lvl="fatal">FATAL <span class="ct" id="ctFtl">0</span></button>
+      <div class="right">
+        <button class="tail-btn" id="tailBtn">⏸ pause tail</button>
+      </div>
+    </div>
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <p class="note">
+    New rows flash ochre for 1.2s as they arrive (so a glance at a screen during an incident catches what just landed). Level pills carry an outline + label color; FATAL also fills its background so it can't get lost. Click any row to expand the structured payload — JSON keys are terracotta, strings ochre, numbers note-blue, mirroring the diff primitive's syntax tokens. <code>⏸ pause tail</code> stops new lines and locks scroll where you put it; flip back to live and tailing resumes.
+  </p>
+</div>
+
+<script>
+  const seed = [
+    { lvl: 'info',  msg: 'GET /api/v2/scans 200 in 47ms',
+      payload: { method: 'GET', path: '/api/v2/scans', status: 200, dur_ms: 47, user_id: 'u_8341' } },
+    { lvl: 'debug', msg: 'cache hit key=session:u_8341 ttl=842',
+      payload: { key: 'session:u_8341', ttl_remaining: 842, store: 'redis-0' } },
+    { lvl: 'info',  msg: 'POST /api/v2/scans 201 in 124ms',
+      payload: { method: 'POST', path: '/api/v2/scans', status: 201, dur_ms: 124, user_id: 'u_8341' } },
+    { lvl: 'warn',  msg: 'slow query on sessions (1.2s) — missing index?',
+      payload: { query: 'SELECT * FROM sessions WHERE expires_at < $1 AND scope = $2', dur_ms: 1247, table: 'sessions', plan_hash: 'a9c2…' } },
+    { lvl: 'info',  msg: 'GET /api/v2/scans/9341 200 in 22ms',
+      payload: { method: 'GET', path: '/api/v2/scans/9341', status: 200, dur_ms: 22 } },
+    { lvl: 'error', msg: 'upstream timeout calling auth0 (5000ms)',
+      payload: { upstream: 'auth0', endpoint: '/oauth/token', dur_ms: 5000, retry_after: 200, attempt: 2 } },
+    { lvl: 'info',  msg: 'retrying auth0 token request (attempt 3)',
+      payload: { upstream: 'auth0', attempt: 3, backoff_ms: 400 } },
+    { lvl: 'info',  msg: 'auth0 token acquired in 384ms',
+      payload: { upstream: 'auth0', dur_ms: 384, attempt: 3 } },
+    { lvl: 'warn',  msg: 'rate limit headers approaching (rem=12, win=60s)',
+      payload: { upstream: 'github', limit_remaining: 12, window_s: 60 } },
+    { lvl: 'debug', msg: 'worker queue depth = 4',
+      payload: { queue: 'jobs:default', depth: 4, oldest_age_s: 18 } },
+    { lvl: 'error', msg: 'unhandled rejection in worker: timeout',
+      payload: { worker: 'scan-runner', job_id: 'j_22f1', error: 'TimeoutError', stack: 'at runScan (/app/workers/scan.js:84:11)\nat ProcessJobs (/app/workers/index.js:42:7)' } },
+    { lvl: 'fatal', msg: 'database connection pool exhausted',
+      payload: { pool: 'pg-primary', size: 20, in_use: 20, waiting: 14, oldest_wait_ms: 4221 } },
+    { lvl: 'info',  msg: 'circuit-breaker opened for pg-primary',
+      payload: { breaker: 'pg-primary', state: 'open', cool_down_s: 30 } },
+    { lvl: 'warn',  msg: 'serving stale data from cache (breaker open)',
+      payload: { breaker: 'pg-primary', cache_age_s: 47, route: '/api/v2/scans' } },
+  ];
+
+  // pool of new events for the tail simulator
+  const tailPool = [
+    { lvl: 'info',  msg: 'GET /healthz 200 in 4ms', payload: { path: '/healthz', dur_ms: 4 } },
+    { lvl: 'debug', msg: 'gc minor 14ms heap=312MB', payload: { kind: 'minor', dur_ms: 14, heap_mb: 312 } },
+    { lvl: 'info',  msg: 'request fanout 3/3 succeeded', payload: { fanout: 3, succeeded: 3, dur_ms: 88 } },
+    { lvl: 'warn',  msg: 'cache miss rate elevated (32%)', payload: { window_s: 60, miss_rate: 0.32 } },
+    { lvl: 'info',  msg: 'circuit-breaker half-open probe', payload: { breaker: 'pg-primary', state: 'half-open' } },
+    { lvl: 'info',  msg: 'circuit-breaker closed', payload: { breaker: 'pg-primary', state: 'closed' } },
+    { lvl: 'error', msg: 'session token rejected (bad signature)', payload: { user_id: null, reason: 'sig_mismatch', source_ip: '10.0.0.48' } },
+  ];
+
+  const activeLevels = new Set(['info', 'warn', 'error', 'debug', 'fatal']);
+  let query = '';
+  let events = []; // newest-first
+  let nextId = 0;
+  let tailRunning = true;
+  let tailTimer = null;
+
+  function tsFromOffset(secondsAgo) {
+    const d = new Date(Date.now() - secondsAgo * 1000);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const ss = String(d.getSeconds()).padStart(2, '0');
+    const ms = String(d.getMilliseconds()).padStart(3, '0');
+    return `${hh}:${mm}:${ss}.${ms}`;
+  }
+
+  function syntaxJSON(obj) {
+    const json = JSON.stringify(obj, null, 2);
+    return json
+      .replace(/("(?:[^"\\]|\\.)*")(\s*:)/g, '<span class="k">$1</span>$2')
+      .replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="s">$1</span>')
+      .replace(/:\s*(-?\d+(?:\.\d+)?)/g, ': <span class="n">$1</span>');
+  }
+
+  // seed: assign descending timestamps so newest-first feels chronological
+  seed.slice().reverse().forEach((e, i) => {
+    events.unshift({ ...e, id: nextId++, ts: tsFromOffset((seed.length - 1 - i) * 4 + 2) });
+  });
+
+  function render() {
+    const root = document.getElementById('log');
+    root.innerHTML = '';
+    let shown = 0;
+    events.forEach((e, idx) => {
+      const matches =
+        activeLevels.has(e.lvl) &&
+        (!query || e.msg.toLowerCase().includes(query));
+      if (!matches) return;
+      shown++;
+      const row = document.createElement('div');
+      row.className = 'log-row' + (idx === 0 && e.isNew ? ' new' : '');
+      row.dataset.id = e.id;
+      row.innerHTML = `
+        <div class="ts">${e.ts}</div>
+        <div class="lvl ${e.lvl}">${e.lvl.toUpperCase()}</div>
+        <div class="msg">${e.msg}</div>
+        <div class="chev">▸</div>
+        <div class="payload">${syntaxJSON(e.payload)}</div>
+      `;
+      row.addEventListener('click', () => row.classList.toggle('expanded'));
+      root.appendChild(row);
+    });
+    if (shown === 0) {
+      root.innerHTML = `<div class="empty-log">No events match the current filter.</div>`;
+    }
+
+    // counts (against the full event set, not the filtered view)
+    const counts = { info: 0, warn: 0, error: 0, debug: 0, fatal: 0 };
+    events.forEach(e => counts[e.lvl]++);
+    document.getElementById('ctInfo').textContent = counts.info;
+    document.getElementById('ctWarn').textContent = counts.warn;
+    document.getElementById('ctErr').textContent  = counts.error;
+    document.getElementById('ctDbg').textContent  = counts.debug;
+    document.getElementById('ctFtl').textContent  = counts.fatal;
+    document.querySelectorAll('.level-chip').forEach(c => {
+      c.classList.toggle('off', !activeLevels.has(c.dataset.lvl));
+    });
+
+    document.getElementById('meta').textContent = `${shown} of ${events.length} events`;
+
+    // clear isNew flags after one render cycle
+    events.forEach(e => { e.isNew = false; });
+  }
+
+  function pushTail() {
+    const pick = tailPool[Math.floor(Math.random() * tailPool.length)];
+    events.unshift({ ...pick, id: nextId++, ts: tsFromOffset(0), isNew: true });
+    if (events.length > 60) events.pop();
+    render();
+  }
+
+  function startTail() {
+    if (tailTimer) return;
+    tailTimer = setInterval(pushTail, 2800);
+  }
+  function stopTail() {
+    if (tailTimer) { clearInterval(tailTimer); tailTimer = null; }
+  }
+
+  document.getElementById('search').addEventListener('input', e => {
+    query = e.target.value.trim().toLowerCase();
+    render();
+  });
+
+  document.querySelectorAll('.level-chip').forEach(c => {
+    c.addEventListener('click', () => {
+      const lvl = c.dataset.lvl;
+      if (activeLevels.has(lvl)) {
+        if (activeLevels.size > 1) activeLevels.delete(lvl);
+      } else activeLevels.add(lvl);
+      render();
+    });
+  });
+
+  const tailBtn = document.getElementById('tailBtn');
+  const liveDot = document.getElementById('liveDot');
+  const liveLabel = document.getElementById('liveLabel');
+  tailBtn.addEventListener('click', () => {
+    tailRunning = !tailRunning;
+    if (tailRunning) {
+      startTail();
+      tailBtn.textContent = '⏸ pause tail';
+      tailBtn.classList.remove('paused');
+      liveDot.classList.remove('paused');
+      liveLabel.textContent = 'LIVE';
+    } else {
+      stopTail();
+      tailBtn.textContent = '▶ resume tail';
+      tailBtn.classList.add('paused');
+      liveDot.classList.add('paused');
+      liveLabel.textContent = 'PAUSED';
+    }
+  });
+
+  render();
+  startTail();
+</script>
+</body></html>

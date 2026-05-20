@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Topology — inline service graph</title>
+<style>
+  :root {
+    --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+    --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+    --rule:#d9d1c2; --rule-soft:#ece5d6;
+    --accent:#8a3a1a; --accent-2:#c2901a;
+    --ok:#2f7d44; --warn:#9b641d; --note:#2f6fb3;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+      --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+      --rule:#38332b; --rule-soft:#2c2820;
+      --accent:#e0794f; --accent-2:#d8a73a;
+      --ok:#5cae6f; --warn:#c79a4a; --note:#6f9fd0;
+    }
+  }
+  html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); margin:0; }
+  body { padding: 32px; font-size: 14px; line-height: 1.5; }
+  .stage { max-width: 720px; margin: 0 auto; }
+  .tile { background: var(--paper-card); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 20px; }
+  .tile-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--rule-soft); padding-bottom: 10px; margin-bottom: 12px; gap: 12px; }
+  .tile-title { font-weight: 700; font-size: 13px; color: var(--ink); letter-spacing: 0.01em; }
+  .tile-meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tile-head .search { margin-left: auto; font: inherit; font-size: 12px; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 3px 8px; width: 140px; }
+  .tile-head .search::placeholder { color: var(--muted); }
+  .legend-row { display: flex; gap: 14px; align-items: center; font-size: 11px; color: var(--muted); margin-bottom: 10px; font-family: var(--font-mono); letter-spacing: 0.04em; }
+  .legend-row .item { display: inline-flex; align-items: center; gap: 5px; }
+  .legend-row .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .graph-shell { display: grid; grid-template-columns: 1fr 200px; gap: 14px; }
+  .graph { background: var(--paper-tint); border: 1px solid var(--rule-soft); border-radius: 4px; overflow: hidden; }
+  .graph svg { display: block; width: 100%; height: 360px; }
+  .edge { stroke: var(--rule); stroke-width: 1.2; fill: none; transition: stroke 0.15s, opacity 0.15s; }
+  .edge.dim { opacity: 0.15; }
+  .edge.lit { stroke: var(--accent); stroke-width: 1.8; opacity: 1; }
+  .node { cursor: pointer; transition: opacity 0.15s; }
+  .node rect { fill: var(--paper-card); stroke: var(--rule); stroke-width: 1; transition: stroke 0.15s, stroke-width 0.15s; }
+  .node text { font-family: var(--font-mono); font-size: 13px; font-weight: 600; fill: var(--ink); letter-spacing: 0.04em; text-transform: uppercase; pointer-events: none; }
+  .node.dim { opacity: 0.22; }
+  .node.lit rect { stroke: var(--accent); stroke-width: 1.8; }
+  .node.match rect { stroke: var(--accent-2); stroke-width: 1.8; }
+  .node.focused rect { stroke: var(--ink); stroke-width: 2; }
+  .inspector { background: var(--paper); border: 1px solid var(--rule-soft); border-radius: 4px; padding: 12px 14px; font-size: 12px; min-height: 360px; }
+  .inspector .ihead { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; border-bottom: 1px solid var(--rule-soft); padding-bottom: 6px; }
+  .inspector .iname { font-weight: 700; font-size: 14px; color: var(--ink); margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+  .inspector .icluster { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .inspector .ilabel { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-top: 10px; margin-bottom: 3px; }
+  .inspector ul { list-style: none; padding: 0; margin: 0; }
+  .inspector li { font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft); padding: 1px 0; }
+  .inspector .empty { color: var(--muted); font-style: italic; }
+  .inspector .clearlink { display: inline-block; margin-top: 12px; color: var(--accent); cursor: pointer; border-bottom: 1px solid currentColor; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="tile">
+    <div class="tile-head">
+      <div class="tile-title">Service dependency map</div>
+      <input class="search" id="search" type="search" placeholder="find a service…">
+      <div class="tile-meta">10 services · 14 edges</div>
+    </div>
+    <div class="legend-row">
+      <span class="item"><span class="dot" style="background:var(--note)"></span>edge</span>
+      <span class="item"><span class="dot" style="background:var(--accent)"></span>gateway</span>
+      <span class="item"><span class="dot" style="background:var(--accent-2)"></span>service</span>
+      <span class="item"><span class="dot" style="background:var(--muted)"></span>data</span>
+    </div>
+    <div class="graph-shell">
+      <div class="graph">
+        <svg id="svg" viewBox="-10 0 780 360">
+          <g id="edges"></g>
+          <g id="nodes"></g>
+        </svg>
+      </div>
+      <div class="inspector" id="inspector">
+        <div class="ihead">inspector</div>
+        <div class="empty">Click a node to focus its neighborhood.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const cluster = {
+    edge:{color:'var(--note)',label:'edge'},
+    gateway:{color:'var(--accent)',label:'gateway'},
+    service:{color:'var(--accent-2)',label:'service'},
+    data:{color:'var(--muted)',label:'data'},
+  };
+  const nodes = [
+    { id:'web',        label:'web',         c:'edge',    x:60,  y:180 },
+    { id:'api',        label:'api gateway', c:'gateway', x:200, y:180 },
+    { id:'auth',       label:'auth',        c:'service', x:360, y:80  },
+    { id:'search',     label:'search',      c:'service', x:360, y:180 },
+    { id:'cache',      label:'cache',       c:'data',    x:360, y:280 },
+    { id:'queue',      label:'queue',       c:'data',    x:200, y:320 },
+    { id:'worker',     label:'worker',      c:'service', x:520, y:320 },
+    { id:'db-primary', label:'db-primary',  c:'data',    x:560, y:180 },
+    { id:'db-replica', label:'db-replica',  c:'data',    x:700, y:180 },
+    { id:'mailer',     label:'mailer',      c:'service', x:700, y:80  },
+  ];
+  const edges = [
+    ['web','api'],['api','auth'],['api','search'],['api','cache'],['api','queue'],['api','db-primary'],
+    ['auth','db-primary'],['auth','cache'],['search','db-primary'],['db-primary','db-replica'],
+    ['queue','worker'],['worker','db-primary'],['worker','mailer'],['worker','search'],
+  ];
+  const NODE_W = 128, NODE_H = 36;
+  const byId = Object.fromEntries(nodes.map(n=>[n.id,n]));
+  const out={}, inc={};
+  nodes.forEach(n => { out[n.id]=[]; inc[n.id]=[]; });
+  edges.forEach(([a,b]) => { out[a].push(b); inc[b].push(a); });
+  function endpoint(from,to) {
+    const dx=to.x-from.x, dy=to.y-from.y;
+    const adx=Math.abs(dx), ady=Math.abs(dy);
+    const hx=NODE_W/2, hy=NODE_H/2;
+    let t = (adx*hy > ady*hx) ? hx/adx : hy/ady;
+    return { x:from.x+dx*t, y:from.y+dy*t };
+  }
+  const eg = document.getElementById('edges');
+  edges.forEach(([a,b]) => {
+    const A=byId[a], B=byId[b];
+    const p1=endpoint(A,B), p2=endpoint(B,A);
+    const ln = document.createElementNS('http://www.w3.org/2000/svg','line');
+    ln.setAttribute('class','edge'); ln.setAttribute('data-a',a); ln.setAttribute('data-b',b);
+    ln.setAttribute('x1',p1.x); ln.setAttribute('y1',p1.y);
+    ln.setAttribute('x2',p2.x); ln.setAttribute('y2',p2.y);
+    eg.appendChild(ln);
+  });
+  const ng = document.getElementById('nodes');
+  nodes.forEach(n => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','node'); g.setAttribute('data-id',n.id);
+    g.setAttribute('transform',`translate(${n.x - NODE_W/2}, ${n.y - NODE_H/2})`);
+    g.innerHTML = `
+      <rect width="${NODE_W}" height="${NODE_H}" rx="3" ry="3"/>
+      <circle class="nodedot" cx="10" cy="${NODE_H/2}" r="4" fill="${cluster[n.c].color}"/>
+      <text x="22" y="${NODE_H/2 + 5}">${n.label}</text>`;
+    g.addEventListener('click', () => focus(n.id));
+    ng.appendChild(g);
+  });
+  let focused = null;
+  function focus(id) { focused = focused===id ? null : id; render(); }
+  function render() {
+    const nodeEls = document.querySelectorAll('.node');
+    const edgeEls = document.querySelectorAll('.edge');
+    nodeEls.forEach(el => el.classList.remove('dim','lit','focused'));
+    edgeEls.forEach(el => el.classList.remove('dim','lit'));
+    const insp = document.getElementById('inspector');
+    if (!focused) {
+      insp.innerHTML = `<div class="ihead">inspector</div><div class="empty">Click a node to focus its neighborhood.</div>`;
+      applySearch(); return;
+    }
+    const neighbors = new Set([focused, ...out[focused], ...inc[focused]]);
+    nodeEls.forEach(el => {
+      const id = el.dataset.id;
+      if (id === focused) el.classList.add('focused');
+      else if (neighbors.has(id)) el.classList.add('lit');
+      else el.classList.add('dim');
+    });
+    edgeEls.forEach(el => {
+      if (el.dataset.a === focused || el.dataset.b === focused) el.classList.add('lit');
+      else el.classList.add('dim');
+    });
+    const n = byId[focused];
+    const calls = out[focused].map(id => `<li>→ ${byId[id].label}</li>`).join('') || '<li class="empty">(none)</li>';
+    const callers = inc[focused].map(id => `<li>← ${byId[id].label}</li>`).join('') || '<li class="empty">(none)</li>';
+    insp.innerHTML = `
+      <div class="ihead">inspector</div>
+      <div class="iname"><span style="width:8px;height:8px;border-radius:50%;background:${cluster[n.c].color};display:inline-block"></span>${n.label}</div>
+      <div class="icluster">${cluster[n.c].label}</div>
+      <div class="ilabel">calls (${out[focused].length})</div>
+      <ul>${calls}</ul>
+      <div class="ilabel">called by (${inc[focused].length})</div>
+      <ul>${callers}</ul>
+      <span class="clearlink" id="clearFocus">× clear focus</span>`;
+    document.getElementById('clearFocus').addEventListener('click', () => { focused = null; render(); });
+    applySearch();
+  }
+  const searchEl = document.getElementById('search');
+  function applySearch() {
+    const q = searchEl.value.trim().toLowerCase();
+    document.querySelectorAll('.node').forEach(el => {
+      el.classList.remove('match');
+      if (!q) return;
+      const id = el.dataset.id;
+      if (byId[id].label.toLowerCase().includes(q) || id.includes(q)) el.classList.add('match');
+    });
+  }
+  searchEl.addEventListener('input', applySearch);
+  render();
+</script>
+</body></html>

@@ -1,6 +1,6 @@
 ---
 name: render-as-html
-version: 2.0.7
+version: 2.1.0
 description: Create or update a designed, self-contained HTML artifact as the source of truth. Use when the user says "make an HTML artifact", "render this as html", "make me a pretty version", "I want to read this carefully", "make it interactive/readable", "update this HTML", or "/render-as-html". Output is an editable HTML file, not a conversion preview of another canonical document.
 ---
 
@@ -280,6 +280,78 @@ Interaction patterns that show up across multiple shapes — use where they fit:
   - *Primitives:* item rows (title + mono metadata line + state control (checkbox, star, or small rating) + note `<textarea>`); sticky footer bar (live count + batch copy-as-prompt with visible textarea fallback); per-item state persists in the DOM and is read by the batch exporter.
   - *Round-trip:* batch action emits a prompt naming the current `.html` artifact and the per-item state/notes as explicit instructions — same copy-as-prompt contract described above.
   - *Register:* inherits the host shape's register. Reads well in the Reading register but is layout-agnostic; usable inside `editorial`, `timeline`, or standalone.
+
+## Canonical primitives (charts and tables)
+
+Nine primitives that show up across the page shapes. Same one-truth palette as every shape, with locked interaction contracts so a `dashboard` donut, a `comparison` matrix, and a `developer` diff all feel like one system. The reference implementations live at [`examples/primitives.html`](examples/primitives.html) (one file per primitive under `examples/primitives/`); the gallery itself is also a render-as-html artifact (`document` shape).
+
+These are primitives, not shapes. They compose **inside** a shape's contract; pick the shape first, then reach for the primitives the content calls for.
+
+### Charts
+
+#### Donut — categorical status mix
+- **Pick when:** 2–5 mutually-exclusive categories where the proportion is more useful at a glance than the absolute counts.
+- **Required:** subject-count in the center (never a category count, never an artifact count); ring track in `--rule-soft` so partial fills don't read as missing data; legend in CSS subgrid so counts and percents align in columns across rows.
+- **Interaction:** click a legend row to isolate that segment (others dim); visible `× clear` appears while a filter is active.
+- **Avoid:** 6+ slivers (use a stacked bar instead); donut-on-its-own as a hero — pair it with the data beneath.
+
+#### Bar — ranked top-N
+- **Pick when:** ≤12 items where order matters and a single magnitude per item is the signal.
+- **Required:** name in its own subgrid column to the left of the bar (never on the bar with a text-shadow); ochre marks the current leader, terracotta the rest; bar / name / value / Δ subgrid aligns across rows; secondary dimension (Δ, age, score) gets its own right-edge column.
+- **Interaction:** sort dropdown at minimum offers value, alpha, and the secondary dimension; bars re-scale to the new leader when sort changes.
+- **Avoid:** text-shadow / outline glow on labels (illegible); per-bar rainbow coloring; bars without a max-width cap.
+
+#### Sparkline — stat-tile cluster
+- **Pick when:** 2–4 hero metrics where each metric IS the subject (not an artifact count), current value + recent-trend shape is the one-glance read.
+- **Required:** single accent color for the spark line across all tiles; delta carries direction-of-good (ok / accent / muted); latest-point dot is hollow (paper fill, accent stroke) so it reads as a marker, not a glitch; faint area fill (`opacity ~0.08`) is optional weight, not a true area chart.
+- **Interaction:** hover the spark drops a vertical guide + value/time tooltip at the nearest data point.
+- **Avoid:** 4+ tiles (cross into dashboard territory); stat tiles that count the artifact itself; axis tick marks per data point (tooltip carries precision).
+
+#### Stacked bar — composition over time
+- **Pick when:** categories sum to a meaningful whole each period (success/fail buckets, traffic mix, deal stages); 7–30 periods on the x-axis.
+- **Required:** y-axis recomputes when categories toggle off; severity-ascending bottom-up stack order; per-column tooltip with the day's breakdown + total; chip legend doubles as the filter (clicking removes that category from the stack).
+- **Interaction:** hover any column for the full breakdown tooltip; click chips to remove/add categories.
+- **Avoid:** categories that don't sum cleanly (use grouped bars); fixed y-axis when categories can toggle off.
+
+#### Topology — inline service graph
+- **Pick when:** connections are the point and node count is ≤30 (≤10 sits comfortably inline; 10–30 still works hand-positioned).
+- **Required:** hand-positioned coordinates (force-directed wiggle earns its place at 30+); mono-uppercase node labels; paper-card node fill with a cluster-colored dot (never fill the node with category color — doesn't scale when clusters grow); edges meet rect boundaries (clip via center-offset math); right-rail inspector matching the editorial-shape entity pattern.
+- **Interaction:** click a node to focus its neighborhood (dim others, light direct edges, update inspector); search ochre-highlights matches independently of focus; `× clear focus` resets.
+- **Avoid:** force-directed simulations on small graphs; edges drawn center-to-center poking through node rects; SVG with no surrounding tile chrome.
+
+### Tables
+
+#### Dense ops table
+- **Pick when:** flat list of records keyed by an identifier; ≥6 rows; filtering / sorting is the central interaction. The instrument-register workhorse.
+- **Required:** mono first column (the identifier); sans middle (the labels); mono right-aligned numerics with `tabular-nums`; status pills carry outline + colored dot + text (color is never the sole signal); footer reports true row count (not the filtered count).
+- **Interaction:** column-header click cycles sort asc → desc → none (always-escapable); pill-filter in toolbar inverts (ink fill, paper text) when active; search across identifier + label fields.
+- **Avoid:** color-only status; footers that lie about dataset size when filtered; sorts with no neutral state.
+
+#### Comparison matrix — items as columns
+- **Pick when:** "X vs Y vs Z" decision matrix with shared criteria; you want the reader to tune weights and see who wins live; 2–5 items, 3–10 criteria.
+- **Required:** items as columns (entities-as-rows would be a dashboard, not this — the axis flip *is* the shape); weight column on the far left with a full-height +/− stepper flanking the input (no native browser spinners); aggregate row normalized to 0–100 (so total-weight changes don't mask relative position); explicit `↑ better` / `↓ better` per-criterion direction; per-row star + ochre tint marks row winner; overall winner in the footer goes terracotta; round-trip `copy as prompt` with visible textarea fallback.
+- **Interaction:** step or type any weight 0–5; per-row and overall winners recompute on every change.
+- **Avoid:** entities-as-rows layout; tiny native spinner buttons; weights without bounds; copy buttons that imply another canonical format (use `copy as recommendation` / `copy as prompt`, not `copy as markdown`).
+
+#### Annotated diff — code review primitive
+- **Pick when:** reviewing code changes, security findings, or any line-anchored critique where adjacency to the source matters more than a side panel.
+- **Required:** findings sit IN the diff, anchored to the line they touch; severity carried three ways (strip count at the top + left bar on the finding card + colored badge fill — color is never alone); explicit `L<n> · new` / `L<n> · removed` line labels so reviewers know which side they're commenting on; `+`/`−` gutter chars in their own column AND row background tint (two cues); syntax highlighting via local CSS classes only (no Prism, no CDN, no runtime tokenizer); per-finding `copy as prompt` quoting the line context.
+- **Interaction:** click any line number to copy a `file:line` reference (gutter flashes); per-finding copy button round-trips back as a paste-able instruction; `show nits` toggle hides low-priority findings.
+- **Avoid:** findings in a sidebar separated from the lines they discuss; color-only severity; runtime syntax highlighters or CDN dependencies.
+
+#### Log stream — chronological event table
+- **Pick when:** the data is a tail of timestamped events with a categorical level; newest-first reading is the default; payloads have structure worth expanding.
+- **Required:** three live-state cues (pulsing dot + LIVE/PAUSED label + button mode-flip) so state reads without sound and survives a screenshot; ochre flash on new rows (~1.2s fade) for peripheral-glance detection; FATAL fills its pill background, other levels are outline-only (visual weight matches operational weight); counts are against full event set (never the filtered view); expanded payload uses the same syntax-token palette as the diff primitive (keys terracotta, strings ochre, numbers note-blue).
+- **Interaction:** multi-select level chips; search across messages; click any row to expand the payload; `⏸ pause tail` freezes scroll and tail state so investigation doesn't lose the spot.
+- **Avoid:** live-only state cues (must read when muted or in screenshots); identical pill styling for FATAL vs ERROR; expanding a row that destroys scroll position.
+
+### Cross-cutting rules
+
+- **One palette across all primitives.** The donut's success-green is the stacked-bar's success-green is the log stream's INFO blue. If a primitive's color doesn't appear in the design-system palette, it's wrong.
+- **Subgrid for cross-row column alignment.** Where multiple rows have parallel structure (legend, ranked list, comparison matrix), the outer container is the grid and rows are `display: grid; grid-template-columns: subgrid; grid-column: 1 / -1;` — so columns line up without per-row width hacks.
+- **Every filter has a visible clear.** Color-state alone is invisible; pair it with a textual `× clear` or an inverted-pill `active` state. Same rule already in §Interactivity.
+- **Color is never the only signal.** Pills get outline + dot + text; severity gets bar + badge + count; live-state gets dot + label + button. Test by squinting at a grayscale screenshot.
+- **Counts reflect the underlying data, not the filtered view.** Filters hide events; they never lie about how many exist.
 
 ## Design system
 

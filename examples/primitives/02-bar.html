@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bar — ranked top-N</title>
+<style>
+  :root {
+    --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+    --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+    --rule:#d9d1c2; --rule-soft:#ece5d6;
+    --accent:#8a3a1a; --accent-2:#c2901a;
+    --ok:#2f7d44; --warn:#9b641d; --note:#2f6fb3;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+      --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+      --rule:#38332b; --rule-soft:#2c2820;
+      --accent:#e0794f; --accent-2:#d8a73a;
+      --ok:#5cae6f; --warn:#c79a4a; --note:#6f9fd0;
+    }
+  }
+  html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); margin:0; }
+  body { padding: 32px; font-size: 14px; line-height: 1.5; }
+  .stage { max-width: 720px; margin: 0 auto; }
+  .tile { background: var(--paper-card); border: 1px solid var(--rule); border-radius: 6px; padding: 20px 22px; }
+  .tile-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--rule-soft); padding-bottom: 10px; margin-bottom: 14px; }
+  .tile-title { font-weight: 700; font-size: 13px; color: var(--ink); letter-spacing: 0.01em; }
+  .tile-meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; font-size: 12px; }
+  .toolbar label { color: var(--muted); }
+  .toolbar select { font: inherit; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 3px 6px; font-size: 12px; }
+  .toolbar .right { margin-left: auto; color: var(--muted); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 11px; }
+  .rank { display: grid; grid-template-columns: 22px auto 1fr auto auto; column-gap: 12px; row-gap: 2px; }
+  .rank .name { font-size: 13px; color: var(--ink); font-weight: 500; white-space: nowrap; }
+  .rank-row { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; padding: 4px 6px; border-radius: 4px; }
+  .rank-row:hover { background: var(--paper-tint); }
+  .rank-row .pos { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+  .rank-row .bar-bg { height: 22px; background: var(--rule-soft); border-radius: 2px; overflow: hidden; position: relative; }
+  .rank-row .bar-fill { height: 100%; background: var(--accent); border-radius: 2px 0 0 2px; transition: width 0.25s; }
+  .rank-row.alt .bar-fill { background: var(--accent-2); }
+  .rank-row .val { font-family: var(--font-mono); font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums; text-align: right; }
+  .rank-row .delta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; min-width: 56px; }
+  .rank-row .delta.up { color: var(--ok); }
+  .rank-row .delta.down { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="tile">
+    <div class="tile-head">
+      <div class="tile-title">Top egress destinations</div>
+      <div class="tile-meta">last 24h · 9 of 47 shown</div>
+    </div>
+    <div class="toolbar">
+      <label for="sortBy">sort</label>
+      <select id="sortBy">
+        <option value="value">by traffic (desc)</option>
+        <option value="delta">by Δ 24h</option>
+        <option value="alpha">A→Z</option>
+      </select>
+      <span class="right" id="totalLine">42.6 GB total</span>
+    </div>
+    <div class="rank" id="rank"></div>
+  </div>
+</div>
+<script>
+  const data = [
+    { name: 'cdn.cloudflare.com',     value: 8.4, delta: +12 },
+    { name: 'api.github.com',         value: 6.9, delta:  -3 },
+    { name: 'registry.npmjs.org',     value: 5.7, delta: +28 },
+    { name: 's3.amazonaws.com',       value: 5.2, delta:  -8 },
+    { name: 'fonts.gstatic.com',      value: 4.1, delta:   0 },
+    { name: 'pypi.org',               value: 3.8, delta:  +4 },
+    { name: 'storage.googleapis.com', value: 3.3, delta: -15 },
+    { name: 'auth0.com',              value: 2.6, delta:  +1 },
+    { name: 'sentry.io',              value: 2.6, delta:  +6 },
+  ];
+  const total = data.reduce((s, d) => s + d.value, 0);
+  document.getElementById('totalLine').textContent = total.toFixed(1) + ' GB total';
+  function render(rows) {
+    const max = Math.max(...rows.map(d => d.value));
+    const el = document.getElementById('rank');
+    el.innerHTML = '';
+    rows.forEach((d, i) => {
+      const pct = (d.value / max) * 100;
+      const altClass = i === 0 ? ' alt' : '';
+      const deltaClass = d.delta > 0 ? 'up' : d.delta < 0 ? 'down' : '';
+      const deltaTxt = d.delta === 0 ? '·' : (d.delta > 0 ? '▲' : '▼') + Math.abs(d.delta) + '%';
+      const row = document.createElement('div');
+      row.className = 'rank-row' + altClass;
+      row.innerHTML = `
+        <div class="pos">${i + 1}</div>
+        <div class="name">${d.name}</div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="val">${d.value.toFixed(1)} GB</div>
+        <div class="delta ${deltaClass}">${deltaTxt}</div>`;
+      el.appendChild(row);
+    });
+  }
+  document.getElementById('sortBy').addEventListener('change', e => {
+    const v = e.target.value;
+    const sorted = [...data];
+    if (v === 'value') sorted.sort((a, b) => b.value - a.value);
+    else if (v === 'delta') sorted.sort((a, b) => b.delta - a.delta);
+    else sorted.sort((a, b) => a.name.localeCompare(b.name));
+    render(sorted);
+  });
+  render(data);
+</script>
+</body></html>

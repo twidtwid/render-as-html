@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>render-as-html — canonical primitives</title>
+<meta name="description" content="Nine canonical chart and table primitives — one-truth palette, contracts, when-to-pick rules, anti-patterns.">
+<meta property="og:title" content="render-as-html — canonical primitives">
+<meta property="og:description" content="Nine canonical chart and table primitives — one-truth palette, contracts, when-to-pick rules, anti-patterns.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="render-as-html">
+<meta name="twitter:card" content="summary">
+<style>
+  :root {
+    --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+    --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+    --rule:#d9d1c2; --rule-soft:#ece5d6;
+    --accent:#8a3a1a; --accent-2:#c2901a;
+    --serif:"Charter","Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Source Serif Pro",serif;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+      --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+      --rule:#38332b; --rule-soft:#2c2820;
+      --accent:#e0794f; --accent-2:#d8a73a;
+    }
+  }
+  *{box-sizing:border-box}
+  html, body { margin:0; max-width:100%; overflow-x:hidden; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 60rem; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+  .kicker { font-family: var(--mono); text-transform: uppercase; letter-spacing: .14em; font-size: .72rem; color: var(--accent); margin: 0 0 .8rem; }
+  h1 { font-family: var(--serif); font-weight: 800; font-size: clamp(2rem, 7vw, 3rem); letter-spacing: -.022em; line-height: 1.05; margin: 0 0 .6rem; }
+  .lede { font-style: italic; color: var(--ink-soft); font-size: 1.2rem; max-width: 42rem; margin: 0 0 .4rem; }
+  .meta { font-family: var(--mono); font-size: .78rem; color: var(--muted); margin: 1rem 0 0; }
+  .meta b { color: var(--accent-2); }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 2.5rem 0; }
+
+  .toc {
+    background: var(--paper-card); border: 1px solid var(--rule);
+    border-radius: 10px; padding: 1.1rem 1.4rem;
+    font-family: var(--sans); font-size: .92rem;
+    columns: 2; column-gap: 2rem;
+  }
+  @media (max-width: 760px) { .toc { columns: 1; } }
+  .toc a { display: block; color: var(--ink-soft); text-decoration: none; padding: .25rem 0; border-bottom: 1px solid var(--rule-soft); }
+  .toc a:hover { color: var(--accent); }
+  .toc a .num { font-family: var(--mono); color: var(--muted); margin-right: .6rem; font-size: .8rem; }
+  .toc a .group { font-family: var(--mono); font-size: .7rem; color: var(--accent-2); text-transform: uppercase; letter-spacing: .08em; margin-left: .5rem; }
+
+  section.prim { margin-top: 4rem; scroll-margin-top: 1rem; }
+  section.prim .ptag { font-family: var(--mono); text-transform: uppercase; letter-spacing: .12em; font-size: .7rem; color: var(--accent-2); margin: 0 0 .35rem; }
+  section.prim h2 { font-family: var(--serif); font-weight: 800; font-size: 1.7rem; letter-spacing: -.015em; line-height: 1.15; margin: 0 0 .4rem; }
+  section.prim .blurb { color: var(--ink-soft); margin: 0 0 1.2rem; max-width: 42rem; }
+
+  .frame-wrap {
+    background: var(--paper-card);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 1rem 0 1.4rem;
+  }
+  .frame-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    background: var(--paper-tint);
+    border-bottom: 1px solid var(--rule-soft);
+    font-family: var(--mono); font-size: .72rem; color: var(--muted);
+    letter-spacing: .04em;
+  }
+  .frame-bar .live { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-2); margin-right: 6px; vertical-align: middle; }
+  .frame-bar .src { margin-left: auto; color: var(--ink-soft); }
+  .frame-bar .src a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--muted); }
+  .frame-bar .src a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  iframe { display: block; width: 100%; border: 0; background: var(--paper); }
+
+  .contract {
+    font-family: var(--sans); font-size: .92rem; line-height: 1.55;
+    background: var(--paper); border: 1px solid var(--rule-soft);
+    border-radius: 8px; padding: 1rem 1.2rem;
+    display: grid; grid-template-columns: max-content 1fr;
+    column-gap: 1rem; row-gap: .35rem;
+  }
+  .contract dt {
+    font-family: var(--mono); font-size: .7rem;
+    color: var(--accent-2); text-transform: uppercase;
+    letter-spacing: .08em; padding-top: .15rem;
+  }
+  .contract dd {
+    margin: 0; color: var(--ink-soft);
+  }
+  .contract dd code {
+    font-family: var(--mono); font-size: .85em;
+    background: var(--paper-tint); padding: 1px 5px; border-radius: 3px;
+    color: var(--ink);
+  }
+  @media (max-width: 600px) {
+    .contract { grid-template-columns: 1fr; }
+    .contract dt { padding-top: .6rem; }
+  }
+
+  footer { margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); font-family: var(--mono); font-size: .72rem; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+  footer a { color: var(--accent); text-decoration: none; }
+  @media (max-width: 768px) { .wrap { padding: 2.5rem 1.1rem 4rem; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <p class="kicker">render-as-html · canonical primitives</p>
+  <h1>Nine bones the whole system is built on.</h1>
+  <p class="lede">Charts and tables that show up across the page shapes, locked to the one-truth palette, with their interaction contracts and anti-patterns written down once. Each frame below is the reference implementation — open it standalone, copy it, fork it.</p>
+  <p class="meta">9 primitives · 5 charts · 4 tables · <b>self-contained</b>, zero external requests · WCAG-AA · same palette as every shape</p>
+
+  <hr>
+
+  <nav class="toc" aria-label="Table of contents">
+    <a href="#donut"><span class="num">01</span>Donut <span class="group">chart</span></a>
+    <a href="#bar"><span class="num">02</span>Bar — ranked top-N <span class="group">chart</span></a>
+    <a href="#sparkline"><span class="num">03</span>Sparkline cluster <span class="group">chart</span></a>
+    <a href="#stacked"><span class="num">04</span>Stacked bar over time <span class="group">chart</span></a>
+    <a href="#topology"><span class="num">05</span>Topology graph <span class="group">chart</span></a>
+    <a href="#table-ops"><span class="num">06</span>Dense ops table <span class="group">table</span></a>
+    <a href="#table-comparison"><span class="num">07</span>Comparison matrix <span class="group">table</span></a>
+    <a href="#diff"><span class="num">08</span>Annotated diff <span class="group">table</span></a>
+    <a href="#logs"><span class="num">09</span>Log / event stream <span class="group">table</span></a>
+  </nav>
+
+  <!-- ============================================================ -->
+  <section class="prim" id="donut">
+    <p class="ptag">01 · chart</p>
+    <h2>Donut — categorical status mix</h2>
+    <p class="blurb">A one-glance "shape of the population" summary that pairs above a dense table. The legend doubles as a cross-highlight filter — clicking a row isolates that segment and surfaces a visible <code>× clear</code> control.</p>
+    <div class="frame-wrap">
+      <div class="frame-bar"><span class="live"></span>donut <span class="src">source: <a href="primitives/01-donut.html">primitives/01-donut.html</a></span></div>
+      <iframe src="primitives/01-donut.html" loading="lazy" title="Donut — categorical status mix" style="height: 360px;"></iframe>
+    </div>
+    <dl class="contract">
+      <dt>pick when</dt><dd>You have 2–5 mutually-exclusive categories and the proportion is more useful at a glance than the absolute counts.</dd>
+      <dt>required</dt><dd>Subject-count in the center (never a category count); ring track in <code>--rule-soft</code>; legend in CSS subgrid so counts and percents align across rows.</dd>
+      <dt>interaction</dt><dd>Click a legend row to isolate that segment; visible <code>× clear</code> appears when a filter is active.</dd>
+      <dt>avoid</dt><dd>6+ slivers (use a stacked bar instead); donut-on-its-own as a hero — it's always paired with the data beneath it.</dd>
+    </dl>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="prim" id="bar">
+    <p class="ptag">02 · chart</p>
+    <h2>Bar — ranked top-N</h2>
+    <p class="blurb">Used when the question is "which N are biggest, and by how much." Bar length carries magnitude; the name lives in its own subgrid column to the left so long identifiers stay legible. Ochre marks the current leader; terracotta the rest.</p>
+    <div class="frame-wrap">
+      <div class="frame-bar"><span class="live"></span>bar <span class="src">source: <a href="primitives/02-bar.html">primitives/02-bar.html</a></span></div>
+      <iframe src="primitives/02-bar.html" loading="lazy" title="Bar — ranked top-N" style="height: 460px;"></iframe>
+    </div>
+    <dl class="contract">
+      <dt>pick when</dt><dd>Showing ≤12 items where the order matters and a single magnitude per item is the signal.</dd>
+      <dt>required</dt><dd>Name column to the left of the bar (never on the bar with text-shadow); ochre leader, terracotta rest; bars use a subgrid that aligns name / bar / value / Δ across rows.</dd>
+      <dt>interaction</dt><dd>Sort dropdown: at minimum value, alpha, and the secondary dimension (Δ, age, etc.). Bars re-scale when the sort changes.</dd>
+      <dt>avoid</dt><dd>Text-shadow / outline glow on labels; rainbow per-bar coloring; horizontal bars without a max-width cap.</dd>
+    </dl>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="prim" id="sparkline">
+    <p class="ptag">03 · chart</p>
+    <h2>Sparkline — stat-tile cluster</h2>
+    <p class="blurb">2–4 hero metrics, each with its current value, its delta vs. a prior period, and the shape of its recent trend. Tile cluster sits above the dense table; the sparkline carries direction-of-trend without becoming a separate chart.</p>
+    <div class="frame-wrap">
+      <div class="frame-bar"><span class="live"></span>sparkline cluster <span class="src">source: <a href="primitives/03-sparkline.html">primitives/03-sparkline.html</a></span></div>
+      <iframe src="primitives/03-sparkline.html" loading="lazy" title="Sparkline cluster" style="height: 220px;"></iframe>
+    </div>
+    <dl class="contract">
+      <dt>pick when</dt><dd>The metric IS the subject (not an artifact count); current value + shape-of-recent-history is what the reader needs in one glance.</dd>
+      <dt>required</dt><dd>Single accent color for the spark line; <em>delta</em> carries direction-of-good (ok / accent / muted); latest-point dot is hollow (paper fill, accent stroke) so it reads as a marker, not a glitch.</dd>
+      <dt>interaction</dt><dd>Hover the spark to drop a vertical guide + value/time tip at the nearest data point.</dd>
+      <dt>avoid</dt><dd>4+ tiles (cross into dashboard territory); stat tiles that count the artifact's own production; axis tick marks for every data point (the tooltip carries precision).</dd>
+    </dl>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="prim" id="stacked">
+    <p class="ptag">04 · chart</p>
+    <h2>Stacked bar — composition over time</h2>
+    <p class="blurb">When you need total volume <em>and</em> category mix across periods in one figure. Bars carry the trend; segment colors carry the mix. The legend is a chip filter that re-stacks bars when you remove a category — so dropping <code>Success</code> lets you see the failure rhythm.</p>
+    <div class="frame-wrap">
+      <div class="frame-bar"><span class="live"></span>stacked bar <span class="src">source: <a href="primitives/04-stacked-bar.html">primitives/04-stacked-bar.html</a></span></div>
+      <iframe src="primitives/04-stacked-bar.html" loading="lazy" title="Stacked bar — composition over time" style="height: 420px;"></iframe>
+    </div>
+    <dl class="contract">
+      <dt>pick when</dt><dd>Categories sum to a meaningful whole each period (success/fail buckets, traffic mix, deal stage); 7–30 periods on the x-axis.</dd>
+      <dt>required</dt><dd>Y-axis recomputes when categories toggle off; severity-ascending bottom-up stack order; per-column tooltip with the day's breakdown + total; chip legend doubles as the filter.</dd>
+      <dt>interaction</dt><dd>Hover any column for the full breakdown tooltip; click chips to add/remove categories.</dd>
+      <dt>avoid</dt><dd>Categories that don't sum cleanly (use grouped bars instead); fixed y-axis when categories can toggle off.</dd>
+    </dl>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="prim" id="topology">
+    <p class="ptag">05 · chart</p>
+    <h2>Topology — inline service graph</h2>
+    <p class="blurb">When connections are the point and the node count is ≤30. Hand-positioned coordinates (force-directed simulations earn their place at 30+ nodes); straight edges meet rect boundaries; click-to-focus dims everything outside the neighborhood.</p>
+    <div class="frame-wrap">
+      <div class="frame-bar"><span class="live"></span>topology <span class="src">source: <a href="primitives/05-topology.html">primitives/05-topology.html</a></span></div>
+      <iframe src="primitives/05-topology.html" loading="lazy" title="Topology — inline service graph" style="height: 460px;"></iframe>
+    </div>
+    <dl class="contract">
+      <dt>pick when</dt><dd>Reader needs to trace connections, not scan a list; node count fits a single viewport hand-positioned (≤30).</dd>
+      <dt>required</dt><dd>Mono-uppercase node labels; paper-card node fill with a cluster-colored dot (never fill the whole node with a category color); right-rail inspector matching the editorial-shape entity pattern; edges meet rect boundaries.</dd>
+      <dt>interaction</dt><dd>Click a node to focus its neighborhood (dim others, light direct edges, update inspector); search to ochre-highlight matches independent of focus; <code>× clear focus</code> resets.</dd>
+      <dt>avoid</dt><dd>Force-directed wiggle on small graphs; edges drawn center-to-center poking out of nodes; an unstyled SVG with no surrounding chrome.</dd>
+    </dl>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="prim" id="table-ops">
+    <p class="ptag">06 · table</p>
+    <h2>Dense ops table</h2>
+    <p class="blurb">The instrument-register workhorse: scan results, inventories, port lists. Mono first column for identifiers, sortable headers, status pills carrying outline + dot + label (so colorblind viewers still parse via shape and text), footer rows with provenance.</p>
+    <div class="frame-wrap">
+      <div class="frame-bar"><span class="live"></span>dense ops table <span class="src">source: <a href="primitives/06-table-ops.html">primitives/06-table-ops.html</a></span></div>
+      <iframe src="primitives/06-table-ops.html" loading="lazy" title="Dense ops table" style="height: 520px;"></iframe>
+    </div>
+    <dl class="contract">
+      <dt>pick when</dt><dd>The dataset is a flat list of records keyed by an identifier; ≥6 rows; filtering / sorting is the central interaction.</dd>
+      <dt>required</dt><dd>Mono first column (identifier); sans middle (labels); mono right-aligned numerics with <code>tabular-nums</code>; pills with outline + dot + text (no color-only); footer reports true row count (not filtered).</dd>
+      <dt>interaction</dt><dd>Click column header to sort (asc → desc → none cycle); pill-filter in toolbar with active state shown by color inversion; search across identifier + label fields.</dd>
+      <dt>avoid</dt><dd>Color-only status; footer that lies about the dataset size when filtered; sorts with no neutral state.</dd>
+    </dl>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="prim" id="table-comparison">
+    <p class="ptag">07 · table</p>
+    <h2>Comparison matrix — items as columns</h2>
+    <p class="blurb">The axis flip <em>is</em> the shape. Items get columns; criteria get rows; a weight column on the far left tunes the aggregate live. Star marks the per-row winner; the aggregate row marks the overall. The +/− stepper is full-height so weight tuning is one click, not a fiddly spinner.</p>
+    <div class="frame-wrap">
+      <div class="frame-bar"><span class="live"></span>comparison matrix <span class="src">source: <a href="primitives/07-table-comparison.html">primitives/07-table-comparison.html</a></span></div>
+      <iframe src="primitives/07-table-comparison.html" loading="lazy" title="Comparison matrix — items as columns" style="height: 720px;"></iframe>
+    </div>
+    <dl class="contract">
+      <dt>pick when</dt><dd>"X vs Y vs Z" decision matrix with shared criteria; you want the reader to tune weights and see who wins; 2–5 items, 3–10 criteria.</dd>
+      <dt>required</dt><dd>Items as columns (entities-as-rows is a dashboard, not this); weight column on the far left with a full-height +/− stepper flanking the input; aggregate row normalized to 0–100; per-criterion direction (<code>↑ better</code> / <code>↓ better</code>) is explicit; round-trip <code>copy as prompt</code> with visible textarea fallback.</dd>
+      <dt>interaction</dt><dd>Step or type any weight 0–5; per-row winner + overall winner recompute on every change.</dd>
+      <dt>avoid</dt><dd>Entities-as-rows layout; tiny native spinner buttons; weights without bounds; copy buttons that imply another canonical format.</dd>
+    </dl>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="prim" id="diff">
+    <p class="ptag">08 · table</p>
+    <h2>Annotated diff — code review primitive</h2>
+    <p class="blurb">Findings sit <em>in</em> the diff, anchored to the line they touch — not in a sidebar that loses spatial context. Severity travels three ways (left bar + badge fill + strip count) so the signal survives colorblind viewing. Syntax highlighting is a tiny set of local CSS classes — no Prism, no CDN.</p>
+    <div class="frame-wrap">
+      <div class="frame-bar"><span class="live"></span>annotated diff <span class="src">source: <a href="primitives/08-diff.html">primitives/08-diff.html</a></span></div>
+      <iframe src="primitives/08-diff.html" loading="lazy" title="Annotated diff" style="height: 880px;"></iframe>
+    </div>
+    <dl class="contract">
+      <dt>pick when</dt><dd>Reviewing code changes, security findings, or any line-anchored critique where adjacency to the source matters more than a side panel.</dd>
+      <dt>required</dt><dd>Severity carried three ways (strip count + left bar + badge); inline annotations with explicit <code>L· new</code> / <code>L· removed</code> labels; +/− gutter chars in their own column AND row background tint; per-finding <code>copy as prompt</code> with the line context embedded.</dd>
+      <dt>interaction</dt><dd>Click any line number to copy <code>file:line</code> reference; click finding's copy button to round-trip back as a prompt; toggle <em>show nits</em> to focus on critical/warning.</dd>
+      <dt>avoid</dt><dd>Findings in a sidebar separated from the lines they discuss; color-only severity; runtime tokenizers / CDN syntax highlighters.</dd>
+    </dl>
+  </section>
+
+  <!-- ============================================================ -->
+  <section class="prim" id="logs">
+    <p class="ptag">09 · table</p>
+    <h2>Log stream — chronological event table</h2>
+    <p class="blurb">When events arrive in real time, not when you're auditing a static set. Different from the dense ops table: rows are chronological, levels carry urgency, expand-on-click reveals the structured payload, and the table itself is a scrollable container with a live-tail indicator.</p>
+    <div class="frame-wrap">
+      <div class="frame-bar"><span class="live"></span>log stream <span class="src">source: <a href="primitives/09-logs.html">primitives/09-logs.html</a></span></div>
+      <iframe src="primitives/09-logs.html" loading="lazy" title="Log stream" style="height: 580px;"></iframe>
+    </div>
+    <dl class="contract">
+      <dt>pick when</dt><dd>The data is a tail of timestamped events with a categorical level; newest-first reading is the default; payloads have structure worth expanding.</dd>
+      <dt>required</dt><dd>Three live-state cues (pulsing dot + LIVE/PAUSED label + button mode); ochre flash on new rows (1.2s fade); FATAL fills its pill background (other levels outline-only); counts are against full data, not filtered; payload JSON syntax-colored with the diff's token palette.</dd>
+      <dt>interaction</dt><dd>Multi-select level chips; search across messages; click any row to expand the payload; <code>⏸ pause tail</code> freezes scroll position and state.</dd>
+      <dt>avoid</dt><dd>Live-only state cue (state must read when video is muted or screenshot); identical pill styling for FATAL vs ERROR; expanding a row that destroys scroll position.</dd>
+    </dl>
+  </section>
+
+  <hr>
+
+  <p style="font-family: var(--sans); font-size: .95rem; color: var(--ink-soft); max-width: 42rem;">All nine primitives share the one-truth palette and the two-register split — five sit naturally inside the <em>instrument</em>-register shapes (dashboard, comparison, developer, runbook, triage-board, network-map) and the others compose into <em>reading</em>-register shapes when an essay needs a chart or a table. Same tokens, same content-discipline rules.</p>
+
+  <footer>
+    <span>examples/primitives.html · v2.1.0</span>
+    <span>render-as-html · <a href="https://x.com/trq212/status/2052809885763747935">the unreasonable effectiveness of HTML</a></span>
+  </footer>
+</main>
+</body>
+</html>

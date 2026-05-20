@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Annotated diff — code review primitive</title>
+<style>
+  :root {
+    --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+    --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+    --rule:#d9d1c2; --rule-soft:#ece5d6;
+    --accent:#8a3a1a; --accent-2:#c2901a;
+    --ok:#2f7d44; --warn:#9b641d; --note:#2f6fb3;
+    --add-bg: color-mix(in srgb, var(--ok) 8%, transparent);
+    --add-gutter: color-mix(in srgb, var(--ok) 20%, transparent);
+    --del-bg: color-mix(in srgb, var(--accent) 8%, transparent);
+    --del-gutter: color-mix(in srgb, var(--accent) 20%, transparent);
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+      --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+      --rule:#38332b; --rule-soft:#2c2820;
+      --accent:#e0794f; --accent-2:#d8a73a;
+      --ok:#5cae6f; --warn:#c79a4a; --note:#6f9fd0;
+      --add-bg: color-mix(in srgb, var(--ok) 14%, transparent);
+      --add-gutter: color-mix(in srgb, var(--ok) 35%, transparent);
+      --del-bg: color-mix(in srgb, var(--accent) 14%, transparent);
+      --del-gutter: color-mix(in srgb, var(--accent) 35%, transparent);
+    }
+  }
+  html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); margin:0; }
+  body { padding: 32px; font-size: 14px; line-height: 1.5; }
+  .stage { max-width: 720px; margin: 0 auto; }
+  .sev-strip { display: flex; gap: 8px; margin-bottom: 12px; }
+  .sev-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px; border: 1px solid currentColor; background: transparent; letter-spacing: 0.02em; }
+  .sev-chip .ct { font-variant-numeric: tabular-nums; opacity: 0.7; }
+  .sev-chip.critical { color: var(--accent); }
+  .sev-chip.warning { color: var(--warn); }
+  .sev-chip.nit { color: var(--muted); }
+  .file { background: var(--paper-card); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+  .file-head { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--rule); background: var(--paper-tint); }
+  .file-path { font-family: var(--font-mono); font-size: 12px; color: var(--ink); font-weight: 600; }
+  .file-stats { font-family: var(--font-mono); font-size: 11px; margin-left: auto; }
+  .file-stats .add { color: var(--ok); }
+  .file-stats .del { color: var(--accent); }
+  .file-stats .add::before { content: '+'; }
+  .file-stats .del::before { content: '−'; margin-left: 6px; }
+  .diff { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55; }
+  .diff-row { display: grid; grid-template-columns: 36px 36px 18px 1fr; align-items: stretch; }
+  .diff-row .ln { text-align: right; padding: 0 8px; color: var(--muted); background: var(--paper-tint); border-right: 1px solid var(--rule-soft); font-variant-numeric: tabular-nums; user-select: none; cursor: pointer; }
+  .diff-row .ln:hover { color: var(--accent); }
+  .diff-row .mark { text-align: center; user-select: none; }
+  .diff-row .code { padding: 0 12px; white-space: pre; overflow-x: auto; color: var(--ink); }
+  .diff-row.ctx .ln { background: var(--paper-card); }
+  .diff-row.add { background: var(--add-bg); }
+  .diff-row.add .ln { background: var(--add-gutter); color: var(--ink-soft); }
+  .diff-row.add .mark { color: var(--ok); }
+  .diff-row.del { background: var(--del-bg); }
+  .diff-row.del .ln { background: var(--del-gutter); color: var(--ink-soft); }
+  .diff-row.del .mark { color: var(--accent); }
+  .diff-row.flagged .ln { background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--ink); font-weight: 700; }
+  .hunk-header { background: var(--paper-tint); color: var(--muted); padding: 6px 12px; font-family: var(--font-mono); font-size: 11px; border-top: 1px solid var(--rule-soft); border-bottom: 1px solid var(--rule-soft); }
+  .tok-kw { color: var(--accent); }
+  .tok-str { color: var(--accent-2); }
+  .tok-com { color: var(--muted); font-style: italic; }
+  .tok-num { color: var(--note); }
+  .tok-fn { color: var(--note); }
+  .tok-op { color: var(--ink-soft); }
+  .anno { margin: 0; background: var(--paper); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 12px 14px 12px 90px; font-family: var(--font-sans); font-size: 13px; color: var(--ink); line-height: 1.5; position: relative; }
+  .anno + .anno { border-top: 0; }
+  .anno .badge { display: inline-block; font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 3px; letter-spacing: 0.04em; text-transform: uppercase; margin-right: 8px; vertical-align: 1px; }
+  .anno.critical { border-left: 4px solid var(--accent); }
+  .anno.critical .badge { background: var(--accent); color: var(--paper); }
+  .anno.warning { border-left: 4px solid var(--warn); }
+  .anno.warning .badge { background: var(--warn); color: var(--paper); }
+  .anno.nit { border-left: 4px solid var(--muted); }
+  .anno.nit .badge { background: var(--muted); color: var(--paper); }
+  .anno .anno-head { font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .anno .lineref { font-family: var(--font-mono); font-size: 11px; color: var(--muted); float: right; margin-left: 8px; }
+  .anno .body { color: var(--ink-soft); }
+  .anno .body code { font-family: var(--font-mono); font-size: 12px; background: var(--paper-tint); padding: 1px 4px; border-radius: 2px; }
+  .anno .copy { margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; }
+  .anno .copy button { all: unset; cursor: pointer; font-family: var(--font-mono); font-size: 11px; padding: 4px 8px; border-radius: 3px; border: 1px solid var(--rule); color: var(--ink-soft); background: var(--paper-card); }
+  .anno .copy button:hover { color: var(--accent); border-color: var(--accent); }
+  .anno .copy button.copied { color: var(--ok); border-color: var(--ok); }
+  .anno textarea { width: 100%; margin-top: 6px; font-family: var(--font-mono); font-size: 11px; background: var(--paper-card); color: var(--ink-soft); border: 1px solid var(--rule-soft); border-radius: 3px; padding: 6px; display: none; min-height: 48px; resize: vertical; }
+  .anno textarea.show { display: block; }
+  .toolbar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--rule); background: var(--paper-card); font-size: 12px; }
+  .toolbar label { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-soft); }
+  .toolbar .right { margin-left: auto; color: var(--muted); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="sev-strip">
+    <span class="sev-chip critical">CRITICAL <span class="ct">· 1</span></span>
+    <span class="sev-chip warning">WARNING <span class="ct">· 1</span></span>
+    <span class="sev-chip nit">NIT <span class="ct">· 1</span></span>
+  </div>
+  <div class="file">
+    <div class="file-head">
+      <span class="file-path">src/auth/session.js</span>
+      <span class="file-stats"><span class="add">5</span><span class="del">2</span></span>
+    </div>
+    <div class="toolbar">
+      <label><input type="checkbox" id="showNits" checked> show nits</label>
+      <span class="right">2 hunks · 1 file · pr #4128</span>
+    </div>
+    <div class="hunk-header">@@ -1,8 +1,12 @@  session.js</div>
+    <div class="diff-row ctx">
+      <div class="ln">1</div><div class="ln">1</div><div class="mark"></div>
+      <div class="code"><span class="tok-kw">const</span> crypto = <span class="tok-fn">require</span>(<span class="tok-str">'node:crypto'</span>);</div>
+    </div>
+    <div class="diff-row ctx">
+      <div class="ln">2</div><div class="ln">2</div><div class="mark"></div>
+      <div class="code"></div>
+    </div>
+    <div class="diff-row ctx">
+      <div class="ln">3</div><div class="ln">3</div><div class="mark"></div>
+      <div class="code"><span class="tok-kw">function</span> <span class="tok-fn">verifyToken</span>(token) {</div>
+    </div>
+    <div class="diff-row ctx flagged">
+      <div class="ln">4</div><div class="ln">4</div><div class="mark"></div>
+      <div class="code">  <span class="tok-kw">const</span> expected = process.env.SESSION_SECRET;</div>
+    </div>
+    <div class="diff-row del">
+      <div class="ln">5</div><div class="ln"></div><div class="mark">−</div>
+      <div class="code">  <span class="tok-kw">if</span> (!token) <span class="tok-kw">return</span> <span class="tok-kw">false</span>;</div>
+    </div>
+    <div class="diff-row add">
+      <div class="ln"></div><div class="ln">5</div><div class="mark">+</div>
+      <div class="code">  <span class="tok-kw">if</span> (!token || <span class="tok-kw">typeof</span> token !== <span class="tok-str">'string'</span>) <span class="tok-kw">return</span> <span class="tok-kw">false</span>;</div>
+    </div>
+    <div class="diff-row add">
+      <div class="ln"></div><div class="ln">6</div><div class="mark">+</div>
+      <div class="code">  <span class="tok-kw">if</span> (token.length !== expected.length) <span class="tok-kw">return</span> <span class="tok-kw">false</span>;</div>
+    </div>
+    <div class="anno warning" data-line="6">
+      <span class="lineref">L6 · new</span>
+      <div class="anno-head"><span class="badge">warning</span>expected may be undefined</div>
+      <div class="body">If <code>process.env.SESSION_SECRET</code> isn't set at boot, line 6 throws <code>TypeError: Cannot read properties of undefined</code> before the length check fires. Validate on startup or guard here with <code>expected != null</code>.</div>
+      <div class="copy"><button data-anno="warning">copy as prompt</button></div>
+      <textarea readonly></textarea>
+    </div>
+    <div class="diff-row del">
+      <div class="ln">6</div><div class="ln"></div><div class="mark">−</div>
+      <div class="code">  <span class="tok-kw">return</span> token === expected;</div>
+    </div>
+    <div class="anno critical" data-line="6-old">
+      <span class="lineref">L6 · removed</span>
+      <div class="anno-head"><span class="badge">critical</span>Fixes a timing attack — flag this for security review</div>
+      <div class="body">The removed line compared secrets with <code>===</code>, which short-circuits on the first byte and leaks token length and prefix via response timing. The new implementation uses <code>crypto.timingSafeEqual</code> on equal-length buffers. Confirm the length-guard above runs first so <code>timingSafeEqual</code> never throws on mismatched lengths.</div>
+      <div class="copy"><button data-anno="critical">copy as prompt</button></div>
+      <textarea readonly></textarea>
+    </div>
+    <div class="diff-row add">
+      <div class="ln"></div><div class="ln">7</div><div class="mark">+</div>
+      <div class="code">  <span class="tok-kw">return</span> crypto.<span class="tok-fn">timingSafeEqual</span>(</div>
+    </div>
+    <div class="diff-row add">
+      <div class="ln"></div><div class="ln">8</div><div class="mark">+</div>
+      <div class="code">    Buffer.<span class="tok-fn">from</span>(token),</div>
+    </div>
+    <div class="diff-row add">
+      <div class="ln"></div><div class="ln">9</div><div class="mark">+</div>
+      <div class="code">    Buffer.<span class="tok-fn">from</span>(expected)</div>
+    </div>
+    <div class="diff-row add">
+      <div class="ln"></div><div class="ln">10</div><div class="mark">+</div>
+      <div class="code">  );</div>
+    </div>
+    <div class="anno nit" data-line="8">
+      <span class="lineref">L8–9 · new</span>
+      <div class="anno-head"><span class="badge">nit</span>Make the Buffer encoding explicit</div>
+      <div class="body"><code>Buffer.from(token)</code> defaults to UTF-8; for opaque session tokens that's fine, but if these are ever hex- or base64-encoded the silent default will hash-mismatch. Spell it: <code>Buffer.from(token, 'utf8')</code>.</div>
+      <div class="copy"><button data-anno="nit">copy as prompt</button></div>
+      <textarea readonly></textarea>
+    </div>
+    <div class="diff-row ctx">
+      <div class="ln">7</div><div class="ln">11</div><div class="mark"></div>
+      <div class="code">}</div>
+    </div>
+  </div>
+</div>
+<script>
+  document.querySelectorAll('.diff-row .ln').forEach(el => {
+    el.addEventListener('click', () => {
+      const txt = el.textContent.trim();
+      if (!txt) return;
+      const ref = `src/auth/session.js:${txt}`;
+      if (navigator.clipboard) navigator.clipboard.writeText(ref).catch(()=>{});
+      const orig = el.textContent;
+      el.style.color = 'var(--ok)';
+      el.textContent = '✓';
+      setTimeout(() => { el.textContent = orig; el.style.color = ''; }, 700);
+    });
+  });
+  const promptText = {
+    critical: `In <artifact.html>, address the critical finding on src/auth/session.js L6 (removed): the prior \`===\` comparison was a timing-attack vector. Confirm the new \`crypto.timingSafeEqual\` path is fronted by a length-equal guard so it never throws on mismatched-length inputs.`,
+    warning: `In <artifact.html>, fix src/auth/session.js L6: if process.env.SESSION_SECRET is unset, accessing \`expected.length\` throws TypeError. Add a startup assertion or guard with \`expected != null\`.`,
+    nit: `In <artifact.html>, src/auth/session.js L8-L9: make the Buffer encoding explicit — \`Buffer.from(token, 'utf8')\` — so the default doesn't silently mismatch if tokens ever become hex/base64.`,
+  };
+  document.querySelectorAll('.anno .copy button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sev = btn.dataset.anno;
+      const text = promptText[sev];
+      const ta = btn.closest('.anno').querySelector('textarea');
+      ta.value = text;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          btn.textContent = '✓ copied'; btn.classList.add('copied');
+          setTimeout(() => { btn.textContent = 'copy as prompt'; btn.classList.remove('copied'); }, 1500);
+        }).catch(() => { ta.classList.add('show'); ta.focus(); ta.select(); });
+      } else { ta.classList.add('show'); ta.focus(); ta.select(); }
+    });
+  });
+  document.getElementById('showNits').addEventListener('change', e => {
+    document.querySelectorAll('.anno.nit').forEach(a => { a.style.display = e.target.checked ? '' : 'none'; });
+  });
+</script>
+</body></html>

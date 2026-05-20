@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comparison matrix — items as columns</title>
+<style>
+  :root {
+    --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+    --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+    --rule:#d9d1c2; --rule-soft:#ece5d6;
+    --accent:#8a3a1a; --accent-2:#c2901a;
+    --ok:#2f7d44; --warn:#9b641d; --note:#2f6fb3;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+      --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+      --rule:#38332b; --rule-soft:#2c2820;
+      --accent:#e0794f; --accent-2:#d8a73a;
+      --ok:#5cae6f; --warn:#c79a4a; --note:#6f9fd0;
+    }
+  }
+  html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); margin:0; }
+  body { padding: 32px; font-size: 14px; line-height: 1.5; }
+  .stage { max-width: 720px; margin: 0 auto; }
+  .tile { background: var(--paper-card); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; overflow: hidden; }
+  .tile-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--rule-soft); padding: 4px 4px 10px; margin-bottom: 6px; gap: 12px; }
+  .tile-title { font-weight: 700; font-size: 13px; color: var(--ink); }
+  .tile-meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 8px 10px; vertical-align: middle; }
+  thead th { text-align: center; font-size: 13px; color: var(--ink); font-weight: 700; border-bottom: 1px solid var(--rule); background: var(--paper-card); }
+  thead th.weight-col { width: 96px; text-align: center; font-size: 11px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+  thead th.crit-col { width: 38%; text-align: left; }
+  thead th .meta { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--muted); font-weight: 500; margin-top: 2px; letter-spacing: 0.04em; text-transform: uppercase; }
+  tbody tr { border-bottom: 1px solid var(--rule-soft); }
+  tbody tr:hover { background: var(--paper-tint); }
+  .crit-name { font-size: 13px; color: var(--ink); font-weight: 500; }
+  .crit-name .dir { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-left: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .weight-stepper { display: inline-flex; align-items: stretch; border: 1px solid var(--rule); border-radius: 3px; background: var(--paper); overflow: hidden; }
+  .step-btn { all: unset; cursor: pointer; width: 22px; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--ink-soft); background: var(--paper); user-select: none; }
+  .step-btn:hover { background: var(--paper-tint); color: var(--accent); }
+  .step-btn:active { background: var(--accent); color: var(--paper); }
+  .step-btn[disabled] { color: var(--rule); cursor: not-allowed; background: var(--paper); }
+  .step-btn[disabled]:hover { background: var(--paper); color: var(--rule); }
+  .weight-input { width: 28px; font: inherit; font-family: var(--font-mono); font-size: 13px; text-align: center; background: var(--paper); color: var(--ink); border: 0; border-left: 1px solid var(--rule); border-right: 1px solid var(--rule); padding: 4px 0; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+  .weight-input::-webkit-outer-spin-button, .weight-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .weight-input:focus { outline: none; background: var(--paper-tint); }
+  .weight-input.zero { color: var(--muted); }
+  .cell { text-align: center; font-variant-numeric: tabular-nums; position: relative; }
+  .cell.winner { background: color-mix(in srgb, var(--accent-2) 14%, transparent); }
+  .cell .val { font-family: var(--font-mono); font-size: 13px; color: var(--ink); display: block; }
+  .cell .bar { display: block; margin: 4px auto 0; width: 70%; height: 4px; background: var(--rule-soft); border-radius: 2px; overflow: hidden; }
+  .cell .bar-fill { display: block; height: 100%; border-radius: 2px; transition: width 0.2s, background-color 0.2s; }
+  .cell .star { position: absolute; top: 4px; right: 4px; color: var(--accent-2); font-size: 12px; }
+  tfoot td { background: var(--paper-tint); border-top: 2px solid var(--rule); font-family: var(--font-mono); font-variant-numeric: tabular-nums; padding: 12px 10px; }
+  tfoot .agg-label { text-align: right; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  tfoot .agg-val { text-align: center; font-size: 18px; font-weight: 700; color: var(--ink); }
+  tfoot .agg-val.winner { color: var(--accent); }
+  tfoot .agg-val .rank { display: block; font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 4px; }
+  tfoot .agg-val.winner .rank { color: var(--accent); }
+  .rec { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--paper-tint); border: 1px solid var(--rule-soft); border-radius: 4px; font-size: 12px; }
+  .rec .text { color: var(--ink-soft); }
+  .rec .text strong { color: var(--ink); }
+  .rec button { all: unset; cursor: pointer; font-family: var(--font-mono); font-size: 11px; padding: 5px 10px; border: 1px solid var(--accent); color: var(--accent); border-radius: 3px; letter-spacing: 0.02em; }
+  .rec button:hover { background: var(--accent); color: var(--paper); }
+  .rec button.copied { background: var(--ok); color: var(--paper); border-color: var(--ok); }
+  textarea#promptOut { width: 100%; margin-top: 8px; font-family: var(--font-mono); font-size: 11px; background: var(--paper); color: var(--ink-soft); border: 1px solid var(--rule-soft); border-radius: 3px; padding: 8px; display: none; min-height: 80px; resize: vertical; }
+  textarea#promptOut.show { display: block; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="tile">
+    <div class="tile-head">
+      <div class="tile-title">Vector store evaluation</div>
+      <div class="tile-meta">3 candidates · 7 criteria</div>
+    </div>
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th class="weight-col">Weight</th>
+          <th class="crit-col">Criterion</th>
+          <th>Pinecone<br><span class="meta">managed</span></th>
+          <th>Weaviate<br><span class="meta">self-host</span></th>
+          <th>Qdrant<br><span class="meta">self-host</span></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td class="agg-label" colspan="2">Weighted score</td>
+          <td class="agg-val" data-item="0"><span class="num">0</span><span class="rank"></span></td>
+          <td class="agg-val" data-item="1"><span class="num">0</span><span class="rank"></span></td>
+          <td class="agg-val" data-item="2"><span class="num">0</span><span class="rank"></span></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <div class="rec">
+    <div class="text" id="recText">Recommend <strong id="recName">—</strong> at current weights.</div>
+    <button id="copyBtn">copy as prompt</button>
+  </div>
+  <textarea id="promptOut" readonly></textarea>
+</div>
+<script>
+  const items = ['Pinecone','Weaviate','Qdrant'];
+  const criteria = [
+    { name:'Free tier',           unit:'gb',   dir:'higher', raw:[2,        Infinity, Infinity], weight:3 },
+    { name:'p95 query latency',   unit:'ms',   dir:'lower',  raw:[38,       52,       29],       weight:4 },
+    { name:'Ingest throughput',   unit:'k/s',  dir:'higher', raw:[18,       24,       31],       weight:3 },
+    { name:'Filter expressivity', unit:'/10',  dir:'higher', raw:[7,        9,        8],        weight:2 },
+    { name:'Operational burden',  unit:'/10',  dir:'lower',  raw:[2,        7,        5],        weight:4 },
+    { name:'Cost (1M vec/mo)',    unit:'$',    dir:'lower',  raw:[70,       18,       12],       weight:5 },
+    { name:'Migration risk',      unit:'/10',  dir:'lower',  raw:[6,        4,        3],        weight:2 },
+  ];
+  function normalize(crit) {
+    const finite = crit.raw.filter(v => Number.isFinite(v));
+    const lo = Math.min(...finite), hi = Math.max(...finite);
+    return crit.raw.map(v => {
+      if (v === Infinity) return crit.dir === 'higher' ? 10 : 0;
+      if (hi === lo) return 5;
+      const t = (v - lo) / (hi - lo);
+      return crit.dir === 'higher' ? t * 10 : (1 - t) * 10;
+    });
+  }
+  function scoreColor(s) { if (s<4) return 'var(--accent)'; if (s<7) return 'var(--accent-2)'; return 'var(--ok)'; }
+  function formatRaw(v, unit) { if (v===Infinity) return '∞'; if (unit==='$') return '$'+v; if (unit==='/10') return v+'/10'; return v+' '+unit; }
+  function render() {
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = '';
+    criteria.forEach((c, ci) => {
+      const scores = normalize(c);
+      const winIdx = scores.indexOf(Math.max(...scores));
+      const tr = document.createElement('tr');
+      const wzero = c.weight === 0 ? ' zero' : '';
+      tr.innerHTML = `
+        <td style="text-align:center">
+          <div class="weight-stepper">
+            <button class="step-btn" data-ci="${ci}" data-dir="-1" ${c.weight===0?'disabled':''} aria-label="decrease weight">−</button>
+            <input class="weight-input${wzero}" data-ci="${ci}" type="number" min="0" max="5" step="1" value="${c.weight}">
+            <button class="step-btn" data-ci="${ci}" data-dir="1" ${c.weight===5?'disabled':''} aria-label="increase weight">+</button>
+          </div>
+        </td>
+        <td><span class="crit-name">${c.name}<span class="dir">${c.dir==='higher'?'↑ better':'↓ better'}</span></span></td>
+        ${items.map((_, i) => {
+          const s = scores[i];
+          const isWin = i === winIdx;
+          return `<td class="cell${isWin?' winner':''}">${isWin?'<span class="star">★</span>':''}<span class="val">${formatRaw(c.raw[i],c.unit)}</span><span class="bar"><span class="bar-fill" style="width:${s*10}%; background:${scoreColor(s)}"></span></span></td>`;
+        }).join('')}`;
+      tbody.appendChild(tr);
+    });
+    document.querySelectorAll('.weight-input').forEach(inp => {
+      inp.addEventListener('input', e => {
+        let v = parseInt(e.target.value, 10);
+        if (isNaN(v) || v<0) v=0;
+        if (v>5) v=5;
+        setWeight(+e.target.dataset.ci, v);
+      });
+    });
+    document.querySelectorAll('.step-btn').forEach(b => {
+      b.addEventListener('click', () => { setWeight(+b.dataset.ci, criteria[+b.dataset.ci].weight + (+b.dataset.dir)); });
+    });
+    recompute();
+  }
+  function setWeight(ci, v) {
+    v = Math.max(0, Math.min(5, v));
+    criteria[ci].weight = v;
+    const inp = document.querySelector(`.weight-input[data-ci="${ci}"]`);
+    inp.value = v;
+    inp.classList.toggle('zero', v===0);
+    document.querySelectorAll(`.step-btn[data-ci="${ci}"]`).forEach(b => {
+      const dir = +b.dataset.dir;
+      b.disabled = (dir===-1 && v===0) || (dir===1 && v===5);
+    });
+    recompute();
+  }
+  function recompute() {
+    const totals = items.map(()=>0);
+    let totalWeight = 0;
+    criteria.forEach(c => {
+      totalWeight += c.weight;
+      const scores = normalize(c);
+      scores.forEach((s,i) => totals[i] += s*c.weight);
+    });
+    const norm = totals.map(t => totalWeight ? (t/(totalWeight*10))*100 : 0);
+    const max = Math.max(...norm);
+    const ordered = norm.map((v,i)=>({v,i})).sort((a,b)=>b.v-a.v);
+    norm.forEach((v,i) => {
+      const td = document.querySelector(`.agg-val[data-item="${i}"]`);
+      td.querySelector('.num').textContent = v.toFixed(1);
+      td.classList.toggle('winner', v===max && totalWeight>0);
+      const rank = ordered.findIndex(o => o.i===i) + 1;
+      td.querySelector('.rank').textContent = rank===1 ? '#1 · winner' : '#'+rank;
+    });
+    document.getElementById('recName').textContent = totalWeight>0 ? items[ordered[0].i] : '—';
+  }
+  const copyBtn = document.getElementById('copyBtn');
+  const promptOut = document.getElementById('promptOut');
+  copyBtn.addEventListener('click', () => {
+    const weights = criteria.map(c => `${c.name}=${c.weight}`).join(', ');
+    const winner = document.getElementById('recName').textContent;
+    const text = `In <artifact.html>, lock the vector-store comparison: set weights to ${weights}. Aggregate winner at these weights is ${winner}.`;
+    promptOut.value = text;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.textContent = '✓ copied'; copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'copy as prompt'; copyBtn.classList.remove('copied'); }, 1500);
+      }).catch(() => { promptOut.classList.add('show'); promptOut.focus(); promptOut.select(); });
+    } else { promptOut.classList.add('show'); promptOut.focus(); promptOut.select(); }
+  });
+  render();
+</script>
+</body></html>
