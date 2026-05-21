@@ -32,7 +32,11 @@ If multiple inputs possible, ask which.
 - Auto-`open` the file at the end when the environment allows it. The browser is where this thing lives.
 - Footer shows the artifact path and generated/updated timestamp.
 - Generated artifacts should be self-contained and make no external network requests by default.
-- **Social card (always, in `<head>`):** emit an Open Graph / Twitter summary card so a hosted artifact unfurls as a titled preview instead of a bare link. Required tags: `<meta name="description">`, `og:title`, `og:description`, `og:type`, `og:site_name`, `twitter:card`. Sourcing: `og:title` = the artifact `<title>`; `og:description` = one plain sentence (≤155 chars) describing *what the artifact is*, derived from the artifact's own subtitle/thesis — not a production count, not "an HTML artifact about X"; `og:type` = `article` for content, `website` for an index/gallery; `twitter:card` = `summary`. **No `og:image`** (would require a hosted image file — breaks self-containment) and **no `og:url`** (final URL is unknown at generation time; scrapers fall back to the request URL). Inert on `file://`, ~6 lines, costs nothing — so it is unconditional, not publish-gated.
+- **Social card (always, in `<head>`)** so a hosted artifact unfurls as a titled preview:
+  - **Required tags:** `<meta name="description">`, `og:title`, `og:description`, `og:type`, `og:site_name`, `twitter:card`.
+  - **Sourcing:** `og:title` = the artifact `<title>`. `og:description` = one plain sentence (≤155 chars) describing *what the artifact is*, derived from the subtitle/thesis — not a production count, not "an HTML artifact about X". `og:type` = `article` for content, `website` for an index/gallery. `twitter:card` = `summary`.
+  - **Omit `og:image`** (would need a hosted image file, breaks self-containment) and **omit `og:url`** (final URL unknown at generation time; scrapers fall back to the request URL).
+  - Inert on `file://`, ~6 lines, costs nothing — unconditional, not publish-gated.
 - If metadata mentions supporting context, label it as context/provenance. Do not present another file as canonical.
 - Any copy-as-prompt action must target the current `.html` artifact path, not a notes file, source file, or parallel document.
 
@@ -172,7 +176,7 @@ Explicit user override always wins.
 - **Layout:** max-width 1280px, 1.4fr/1fr two-column dashboard grid, sticky controls row at top
 - **First viewport:** hero with stats tiles + search + chip filters + TL;DR
 - **Required primitives:** search input, toggleable category chips, dense table with mono first column, stats tiles, donut chart inline SVG, status pills, one inline-SVG topology/diagram
-- **Density:** Instrument register — 14–15px sans body, 1.5 line-height, table cell padding 8px 10px, packed; 4-8px table padding acceptable for compact variant
+- **Density:** instrument defaults; 4-8px table padding acceptable for the compact variant.
 - **HTML-native ≥3:** live filter, clickable cross-highlights, inline charts, toggles, sortable headers, copy buttons
 - **Avoid:** narrow column, generous whitespace, single-column scroll, generic h2/p/table layout
 
@@ -181,26 +185,25 @@ Explicit user override always wins.
 - **Layout:** max-width 880px, single column, sticky TOC sidebar on desktop
 - **First viewport:** title, byline, TL;DR (required), TOC visible
 - **Required primitives:** TL;DR block, sticky TOC sidebar with scroll-spy, footnote pattern, inline dense tables, callouts (note/warn), per-section copy button (hover-revealed on each h2)
-- **Density:** Reading register — 17–18px serif body, line-height 1.6, prose measure capped at 46rem
+- **Density:** reading defaults.
 - **HTML-native ≥3:** TOC scroll-spy, per-section copy buttons, collapsible appendix, click-to-expand footnotes
 - **Avoid:** dashboard-style multi-column grid, 60+ char line length, corporate "executive summary card" headers
 
 #### `editorial`
 - **Register:** Reading (serif display + serif body, cream paper, terracotta accent; see Density).
-- **Layout:** studio max-width ~1320px. Three zones, tuned narrow–wide–narrow so the reading column dominates:
-  - Left rail ~18rem, sticky: kicker + title hero + a "context/about" card.
-  - Center: prose, measure capped at `50rem` (~75ch) even though chrome is wide; stays anchored left-of-center on wide screens.
+- **Layout:** studio max-width ~1320px. Three zones, narrow–wide–narrow so the reading column dominates:
+  - Left rail ~18rem, sticky: kicker + title hero + "context/about" card.
+  - Center: prose, measure capped at `50rem` (~75ch); stays anchored left-of-center on wide screens.
   - Right inspector ~18rem: entity list grouped by category with canonical links, then a "read next" link list.
   - Collapse: inspector drops below center under ~1180px; single column under ~820px.
-  - **Collapse mechanic (load-bearing — skip it and the rails overlap the prose):** prefer the **mobile-first sticky** pattern — default the rail to a normal in-flow block (single-column layout, no `position`, no fixed `height`), and add `position: sticky` + its grid column *together* only inside the wide-screen `@media (min-width: …)` rule. The sticky then structurally cannot exist without its column, so there is no reset to forget. (`document`'s TOC sidebar is the reference implementation.) If you instead build desktop-first (rail sticky by default, undone at narrow breakpoints): drive the layout with named `grid-template-areas`, not bare column counts; at *every* breakpoint where a rail loses its column it MUST reset to `position: static; height: auto` and drop the `border`/`overflow` that assumed a tall column; when a rule sets `grid-column` on a rail for a 2-col collapse, the next-narrower single-column rule MUST reset `grid-column: auto` or the browser keeps an implicit second column; re-assign every zone's `grid-area` at each breakpoint so no zone references an area name absent from the active template.
-  - **Footer placement (load-bearing — skip it and the inspector overlaps the footer):** the footer MUST be a sibling *outside* the multi-zone grid container, never a grid child spanning the sticky rail's column (`footer { grid-column: 1/-1 }` inside the grid is the trap). A `position: sticky` rail's containing block is the grid; if the footer lives inside that grid, the still-pinned rail keeps painting over the footer at scroll-bottom. Close the grid div, then emit `<footer>` after it as a normal full-width block.
+  - Both rails follow the **sticky-rail, footer, and scrollbox invariants** in §Layout principles. Skip them and the rails overlap the prose at narrow widths and paint over the footer at scroll-bottom.
 - **First viewport:** kicker + title + italic thesis/bottom-line + start of body. No stat tiles.
 - **Required primitives:**
   - Italic serif thesis/bottom-line pull-quote, left-aligned (never centered). No left-handle bar.
   - Stacked numbered takeaways — single column with mono numerals, never a tile grid.
   - Claim/section cards: arguing headline + 1–3 sentence mechanism body + small `Evidence:` line.
-  - **Evidence lines must hyperlink, not just name, their sources.** Every source token in a claim's `Evidence:` line (and every inline entity mention that has a primary source) must be an `<a href>` to that item's actual URL. When the upstream data is structured (e.g. a research engine's JSON with a `url` per item/candidate), the link target MUST come from that data — never synthesized, inferred, or left as a bare publication name. If an item genuinely has no URL in the source data, render it as plain text and say why (e.g. "primary source not in feed"); do not fabricate a plausible link.
-  - Right-rail entity inspector grouped by category (people, companies, orgs, concepts, books, …), each row a colored category dot + name (canonical link if present, `↗` for external) + one-line note. **The inspector is a bounded independent scrollbox** — `height` (or `max-height`) `calc(100dvh - <top>)`, `overflow-y: auto`, `overscroll-behavior: contain` — added in the same wide `@media (min-width:…)` rule that makes it sticky. A sticky rail with no height cap and no internal scroll is the bug: entities past the fold become unreachable and any scroll-to-entity is forced to move the whole document.
+  - **Evidence lines hyperlink their sources.** Every source token in a claim's `Evidence:` line (and every inline entity mention with a primary source) must be an `<a href>`. When the upstream data is structured (e.g. a research engine's JSON with a `url` per item), the link target MUST come from that data — never synthesized, inferred, or left as a bare publication name. If an item genuinely has no URL, render plain text and say why ("primary source not in feed"). Hard self-check before saving: every Evidence `href` is a substring of the source data you were given, and every claim section has ≥1 evidence link.
+  - Right-rail entity inspector grouped by category (people, companies, orgs, concepts, …), each row a colored category dot + name (canonical link if present, `↗` for external) + one-line note. Follows the scrollbox invariant in §Layout principles.
   - "Read next" list of source links.
   - Per-section copy-as-prompt button (hover-revealed on each section heading), targeting the current `.html` artifact path.
 - **HTML-native ≥3:** in-text `<mark>` search + scroll-to-match; click-entity-to-open / cross-highlight; per-section copy-as-prompt; section scroll-spy if a section rail is present.
@@ -208,7 +211,6 @@ Explicit user override always wins.
   - *Prose mention → entity card:* highlight both, then reveal the card by scrolling **the inspector's own scrollbox only** — `card.scrollIntoView({ block: 'nearest' })` (with the inspector as the nearest scroll container) or set `inspector.scrollTop` directly. Never call a scroll that moves the document/prose, and skip the scroll entirely if the card is already within the inspector's visible box. Clicking a prose link must not move the prose.
   - *Entity card → prose mention:* scroll the **document** to the first `<mark>` with `block: 'center'`; make it a no-op if that mention is already in the viewport (no yank).
   - The rule of thumb: a click scrolls *the other panel*, never the panel you clicked in.
-- **Evidence-link verification (self-check before saving):** extract every `href` in the Evidence lines and assert each is a substring of the source data you were given — zero un-traceable evidence links. Every claim section has ≥1 evidence link. This is a hard, checkable gate, not a style suggestion.
 - **External links** open `target="_blank" rel="noopener noreferrer"`; internal anchors stay same-window.
 - **Avoid:** artifact-counting stat tiles; left-handle accent bars; category-label section titles; identical-tile card grids; prose measure wider than ~75ch; dashboard-style multi-column-of-tiles; **prose `Evidence:` lines that name sources ("per Bloomberg", "X @HPCwire (score 69)") without linking them** — a plain-text Evidence line when the URLs were available in the source data is a hard miss; it makes the artifact strictly worse than a raw source dump, which links everything for free.
 
@@ -217,7 +219,7 @@ Explicit user override always wins.
 - **Layout:** vertical spine on the left (~140px column for date markers + dots), event cards on the right (~720px). Max-width ~1000px.
 - **First viewport:** title + date-range scrubber + search input + most recent N events
 - **Required primitives:** vertical spine line, date-marker dots on the spine, event cards (timestamp/title/body/tags), sticky year/month group headers, jump-to-date picker, per-event copy button
-- **Density:** Reading register — 17–18px serif body, 1.6 line-height; dense event cards (8-10px padding), 12px gap between events
+- **Density:** reading defaults; dense event cards (8-10px padding), 12px gap between events.
 - **HTML-native ≥3:** live text search across events with highlight, date-range filter pills, cluster-collapse (month/year → count), tag-chip filter, per-event "copy as quote"
 - **Avoid:** decorative-CV-style animations, wall of dates with no spine, event cards too wide (reads as document paragraphs)
 
@@ -226,7 +228,7 @@ Explicit user override always wins.
 - **Layout:** sticky header with "Step X of N" + progress bar; max-width 960px single column; step cards stacked vertically
 - **First viewport:** title + scope/danger callout + progress bar + step 1 visible
 - **Required primitives:** step card with `[number] [checkbox] [title]` + expandable body, code block with per-block copy button (load-bearing), "expected output" collapsible callouts, branch markers ("if X, jump to step Y"), sticky progress bar, "I'm stuck" copy-as-prompt
-- **Density:** Instrument register — 14–15px sans body, 1.5 line-height; prominent code blocks (mono)
+- **Density:** instrument defaults; prominent mono code blocks.
 - **HTML-native ≥3:** per-code-block copy button, live progress tracking, "stuck" prompt generator, conditional step visibility
 - **Avoid:** plain numbered list with code blocks, making it look like `document`-shape (this is an *instrument*, not just reading material)
 
@@ -235,7 +237,7 @@ Explicit user override always wins.
 - **Layout:** items as **columns** (the axis flip vs dashboard), criteria as **rows**. Sticky header row with item names. Max-width 1280px.
 - **First viewport:** title + TL;DR + matrix with weight column on left, aggregate-winner row on bottom
 - **Required primitives:** column-header item cards, criterion rows with per-item values, winner highlighting per row (background tint + ★), weight inputs per criterion, aggregate-score footer that live-recomputes, color-coded value scale (red→amber→green) for numerics
-- **Density:** Instrument register — 14–15px sans body, 1.5 line-height, dense cells (6-10px padding)
+- **Density:** instrument defaults; dense cells (6-10px padding).
 - **HTML-native ≥3:** live weight tuning recomputes winners, column sort by aggregate, "must-have" criterion toggle, "copy as recommendation" prompt
 - **Avoid:** dashboard-style layout (entities as rows). The axis flip *is* the shape.
 
@@ -244,7 +246,7 @@ Explicit user override always wins.
 - **Layout:** big graph canvas center (60-70% width), entity-detail right rail (~280px), filter chips top
 - **First viewport:** the graph fitted to viewport, filter chips above, "click for details" hint
 - **Required primitives:** SVG canvas with positioned nodes (hand-positioned or small vanilla force-directed sim), edges, node sizing by importance, cluster color-coding, right-rail entity card updating on click, top filter chips, search to focus, click-node-to-focus (dim others, highlight direct edges)
-- **Density:** Instrument register — 14–15px sans body, 1.5 line-height, packed node labels and edge metadata
+- **Density:** instrument defaults; packed node labels and edge metadata.
 - **HTML-native ≥3:** click-to-focus, hover-edge-highlight, search-to-focus, cluster toggle, shortest-path finder
 - **Avoid:** rendering as a table of names with "connections: X, Y, Z" — that's a dashboard. The graph IS the primary view.
 
@@ -252,7 +254,7 @@ Explicit user override always wins.
 - **Register:** Instrument (sans display + sans body; see Density).
 - **Layout:** title + brief instruction + 3-5 column boards horizontally (e.g. Now / Next / Later / Cut). Cards inside columns. Sticky export bar at bottom.
 - **Required primitives:** column headers with live count, draggable cards (HTML5 DnD, vanilla — no React-DnD), per-card one-line rationale text input, pre-sorted suggested distribution at load, sticky copy/export + "copy as prompt" bar, undo
-- **Density:** Instrument register — 14–15px sans body, 1.5 line-height; cards 80-120px tall, columns 240-320px wide
+- **Density:** instrument defaults; cards 80-120px tall, columns 240-320px wide.
 - **HTML-native ≥3:** drag-between-columns, live column counts, copy-as-prompt exporting final assignments, undo, filter/search across all cards
 - **Avoid:** vertical lists with status badges (that's a dashboard). The horizontal layout WITH drag IS the shape.
 
@@ -261,7 +263,7 @@ Explicit user override always wins.
 - **Layout:** title + PR/commit metadata strip + risk callouts at top + annotated diff body + summary footer. Max-width 1280px. Optional left rail with "files changed" nav.
 - **First viewport:** PR summary, severity-coded findings count (critical / warning / nit), top risk callout
 - **Required primitives:** syntax-highlighted code with local CSS classes, per-file diffs with `+`/`−` line gutters in green/red soft tints, inline margin annotations on specific lines, severity-coded finding cards, files-changed navigator, copy-link-to-finding buttons
-- **Density:** Instrument register — 14–15px sans body, 1.5 line-height; mono at 13px for code
+- **Density:** instrument defaults; mono at 13px for code.
 - **HTML-native ≥3:** syntax-highlighted code without relying on an external renderer, severity-color findings, jump-to-file, click-to-copy individual findings, side-by-side before/after
 - **Avoid:** generic document with code blocks (that's `document`). The annotated diff + severity findings IS the shape.
 
@@ -345,13 +347,12 @@ These are primitives, not shapes. They compose **inside** a shape's contract; pi
 - **Interaction:** multi-select level chips; search across messages; click any row to expand the payload; `⏸ pause tail` freezes scroll and tail state so investigation doesn't lose the spot.
 - **Avoid:** live-only state cues (must read when muted or in screenshots); identical pill styling for FATAL vs ERROR; expanding a row that destroys scroll position.
 
-### Cross-cutting rules
+### Cross-cutting rules (primitives only)
 
-- **One palette across all primitives.** The donut's success-green is the stacked-bar's success-green is the log stream's INFO blue. If a primitive's color doesn't appear in the design-system palette, it's wrong.
 - **Subgrid for cross-row column alignment.** Where multiple rows have parallel structure (legend, ranked list, comparison matrix), the outer container is the grid and rows are `display: grid; grid-template-columns: subgrid; grid-column: 1 / -1;` — so columns line up without per-row width hacks.
-- **Every filter has a visible clear.** Color-state alone is invisible; pair it with a textual `× clear` or an inverted-pill `active` state. Same rule already in §Interactivity.
-- **Color is never the only signal.** Pills get outline + dot + text; severity gets bar + badge + count; live-state gets dot + label + button. Test by squinting at a grayscale screenshot.
 - **Counts reflect the underlying data, not the filtered view.** Filters hide events; they never lie about how many exist.
+
+(Three more rules apply to every primitive but live elsewhere: one palette per §Color, visible filter clears per §Interactivity, color-is-never-the-only-signal per §Color.)
 
 ## Design system
 
