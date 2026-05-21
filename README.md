@@ -1,29 +1,49 @@
 # render-as-html
 
-> A Claude Code skill for creating HTML artifacts as the source of truth: filters, charts, drag-and-drop boards, and buttons that turn browser edits back into prompts for Claude.
+> A Claude Code / Codex skill for making HTML the artifact you keep — filters, charts, drag-and-drop boards, and buttons that turn browser edits back into prompts for the model.
 >
 > Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935).
 
-**Version:** 2.1.0 · **Live design system:** https://twidtwid.github.io/render-as-html/
+**Version 2.1.0** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
 
----
+## Install
+
+**Claude Code**
+
+```bash
+git clone https://github.com/twidtwid/render-as-html ~/.claude/skills/render-as-html
+```
+
+**Codex**
+
+```bash
+mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
+git clone https://github.com/twidtwid/render-as-html "${CODEX_HOME:-$HOME/.codex}/skills/render-as-html"
+```
+
+Restart the agent so it picks up the skill. Then say `make an HTML artifact for this`, `turn this into an interactive HTML file`, `update this HTML artifact`, or `/render-as-html`.
+
+Output lands at `~/Reports/<YYYY-MM-DD>-<slug>.html` by default and opens in your browser. That `.html` file is the artifact — edit it, share it, revisit it, improve it.
+
+To update later: `git -C <install-path> pull`.
 
 ## Why this exists
 
-This repo is an implementation of [@trq212's HTML-artifact philosophy](https://x.com/trq212/status/2052809885763747935), not my attempt to rebrand it. The claim I am borrowing is: HTML can be the file you keep, not an export, preview, or PDF-like rendering of another canonical document. The browser artifact becomes the working surface and the source of truth.
+This repo is an implementation of [@trq212's HTML-artifact philosophy](https://x.com/trq212/status/2052809885763747935), not an attempt to rebrand it. The claim I'm borrowing: HTML can be the file you keep, not an export, preview, or PDF-like rendering of another canonical document. The browser artifact becomes the working surface and the source of truth.
 
-Thariq's key move is that HTML lets the artifact control layout, styling, state, interaction, and round-trip edits directly. Use the browser for the parts where it is clearly better: live filters, sortable headers, SVG charts, cross-highlighting, drag-and-drop, sliders, checkboxes, and copy-as-prompt buttons. You mutate state in the browser, copy a precise instruction, paste it into Claude Code, update the `.html` file, and keep going.
+Thariq's key move is that HTML lets the artifact control layout, styling, state, interaction, and round-trip edits directly. Use the browser for the parts where it's clearly better: live filters, sortable headers, SVG charts, cross-highlighting, drag-and-drop, sliders, checkboxes, copy-as-prompt buttons. You mutate state in the browser, copy a precise instruction, paste it into the model, update the `.html` file, keep going.
 
-My contribution here is the opinionated design system and page-shape contracts around that idea. The goal is not to make a prettier document. The goal is to make a local, inspectable, editable HTML artifact that can carry enough structure and interaction to stay useful after the first read.
+My contribution is the opinionated design system and page-shape contracts around that idea. The goal is not a prettier document. The goal is a local, inspectable, editable HTML artifact that carries enough structure and interaction to stay useful after the first read.
 
 ## Scope
 
-`render-as-html` is a design system and Claude Code skill for writing and updating standalone HTML artifacts. It does not fetch URLs, parse arbitrary exports, crawl repos, or provide a standalone CLI.
+`render-as-html` is a design system and skill for writing and updating standalone HTML artifacts. It does not fetch URLs, parse arbitrary exports, crawl repos, or ship a standalone CLI.
 
 ## What's in here
 
-- `SKILL.md` — read this first. Page shapes, design system, copy-as-prompt, the "would this die outside HTML?" bar.
-- `index.html` — the design system as a single file. Live link above.
+- `SKILL.md` — read this first. Page shapes, design system, canonical primitives, copy-as-prompt, the "would this die outside HTML?" bar.
+- `index.html` — the design system as a single file (the live link above).
+- `examples/` — eleven self-contained artifacts: one per page shape, plus a canonical-primitives reference. Browse the [example gallery](https://twidtwid.github.io/render-as-html/examples/).
 - `LICENSE` — MIT.
 
 ## Page shapes
@@ -44,38 +64,13 @@ Pick the shape from content signals before designing. Nine shapes, each with a c
 
 ## The bar
 
-Ask what would disappear if this were flattened into a static text document. If only the SVG diagram disappears, it is styled prose, not a real HTML artifact. Try again. Aim for at least three HTML-native features: live filter, click-to-cross-highlight, inline charts, toggles, copy-as-prompt, drag-and-drop, you get the idea.
-
-## Install (Claude Code)
-
-```bash
-git clone https://github.com/twidtwid/render-as-html ~/.claude/skills/render-as-html
-```
-
-Restart Claude Code. Then say `make an HTML artifact for this`, `turn this into an interactive HTML file`, `update this HTML artifact`, or `/render-as-html`.
-
-Output lands at `~/Reports/<YYYY-MM-DD>-<slug>.html` by default and opens in your browser. That `.html` file is the artifact to edit, share, revisit, and improve.
-
-To update later:
-
-```bash
-git -C ~/.claude/skills/render-as-html pull
-```
-
-## Install (Codex)
-
-```bash
-mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
-git clone https://github.com/twidtwid/render-as-html "${CODEX_HOME:-$HOME/.codex}/skills/render-as-html"
-```
-
-Restart Codex so it loads the skill.
+Ask what would disappear if this were flattened into a static text document. If only the SVG diagram disappears, it's styled prose, not a real HTML artifact. Try again. Aim for at least three HTML-native features: live filter, click-to-cross-highlight, inline charts, toggles, copy-as-prompt, drag-and-drop — pick your three.
 
 ## Sharing the output
 
-The skill emits a vanilla `.html` file. Serve it however you want — locally, Tailscale Serve, Tailscale Funnel, GitHub Pages, S3, `python3 -m http.server`, whatever. By default, generated artifacts should be self-contained and make no external network requests.
+The skill emits a vanilla `.html` file. Serve it however you want — locally, Tailscale Serve / Funnel, GitHub Pages, S3, `python3 -m http.server`, whatever. By default, generated artifacts should be self-contained and make no external network requests.
 
-Treat generated HTML as sensitive. It can embed private report text, file paths, internal hostnames, local IPs, account names, or other details that were included while building the artifact. `SKILL.md` sketches a private-by-default, publish-on-explicit-trigger pattern if you want one.
+Treat generated HTML as sensitive. It can embed private report text, file paths, internal hostnames, local IPs, account names, or other details that got pulled in while building the artifact. `SKILL.md` sketches a private-by-default, publish-on-explicit-trigger pattern if you want one.
 
 ## Credits
 
