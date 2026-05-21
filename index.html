@@ -308,7 +308,7 @@ footer a { color: var(--faint); }
       <li><a href="#controls">Real controls</a></li>
       <li><a href="#copy-prompt">Copy-as-prompt (live)</a></li>
       <li><a href="#section-copy">Section copy</a></li>
-      <li><a href="#charts">Charts &amp; diagrams</a></li>
+      <li><a href="#charts">Canonical primitives</a></li>
       <li><a href="#editorial">The editorial shape</a></li>
       <li><a href="#checklist">Checklist sub-pattern</a></li>
       <li><a href="#antipatterns">Anti-patterns</a></li>
@@ -798,10 +798,77 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
       </details>
     </div>
 
-    <h2 id="charts">Charts &amp; diagrams</h2>
-    <p class="h2-sub">All hand-written inline SVG. No chart libraries — they cost weight and produce generic-looking output.</p>
+    <h2 id="charts">Canonical primitives <span style="font-size:0.85rem;font-weight:400;color:var(--muted)">— charts and tables</span></h2>
+    <p class="h2-sub">Nine primitives, hand-written inline SVG and HTML. No chart libraries — they cost weight and produce generic-looking output. Page shapes are built by composing these.</p>
+    <p class="h2-sub" style="margin-top:6px">Live reference with code: <a href="examples/primitives.html"><code>examples/primitives.html</code></a>. Each tile below links to its frame.</p>
 
-    <h3>Donut chart</h3>
+    <div class="shape-grid" style="margin:14px 0 22px">
+      <div class="shape-card">
+        <h4><code>donut</code> · part-of-whole</h4>
+        <p class="what">Up to 5 slices of one total. Center number is the total; legend is sorted desc; click a slice to filter or focus.</p>
+        <p class="when"><strong>Pick when:</strong> categories sum to a whole and order matters less than share. <strong>Avoid for:</strong> trends, &gt;5 buckets, or near-equal slices (use ranked bar).</p>
+        <p class="when" style="margin-top:6px"><a href="examples/primitives/01-donut.html">open frame →</a></p>
+      </div>
+      <div class="shape-card">
+        <h4><code>ranked-bar</code> · ordering</h4>
+        <p class="what">Horizontal bars sorted desc, names in their own column so labels never sit on the fill. Right-rail values aligned by subgrid.</p>
+        <p class="when"><strong>Pick when:</strong> "what's biggest" beats "what share." <strong>Avoid for:</strong> long-tail (&gt;15 rows — switch to dense table).</p>
+        <p class="when" style="margin-top:6px"><a href="examples/primitives/02-bar.html">open frame →</a></p>
+      </div>
+      <div class="shape-card">
+        <h4><code>sparkline-cluster</code> · trend at a glance</h4>
+        <p class="what">A small-multiples row of single-line sparks, each with a current value and delta. No axes; same Y-scale within a row only when it matters.</p>
+        <p class="when"><strong>Pick when:</strong> showing direction across many series in a header strip. <strong>Avoid for:</strong> precise reads — pair with a table.</p>
+        <p class="when" style="margin-top:6px"><a href="examples/primitives/03-sparkline.html">open frame →</a></p>
+      </div>
+      <div class="shape-card">
+        <h4><code>stacked-bar</code> · composition over time</h4>
+        <p class="what">Stacked horizontal segments with a single shared legend; hover a segment to read the value, click to filter rows below.</p>
+        <p class="when"><strong>Pick when:</strong> composition matters and the total also matters. <strong>Avoid for:</strong> &gt;4 segments — eye can't track them.</p>
+        <p class="when" style="margin-top:6px"><a href="examples/primitives/04-stacked-bar.html">open frame →</a></p>
+      </div>
+      <div class="shape-card">
+        <h4><code>topology</code> · who-talks-to-whom</h4>
+        <p class="what">SVG nodes (mono-uppercase labels, category fill + category stroke) with solid=wired/sync and dashed=wireless/async edges. Click a node to cross-highlight related rows.</p>
+        <p class="when"><strong>Pick when:</strong> structure or routing matters more than count. <strong>Avoid for:</strong> dense graphs &gt;~15 nodes (switch to a table).</p>
+        <p class="when" style="margin-top:6px"><a href="examples/primitives/05-topology.html">open frame →</a></p>
+      </div>
+      <div class="shape-card">
+        <h4><code>dense-table</code> · the workhorse</h4>
+        <p class="what">Sortable headers, sticky head, mono numerics with tabular-nums, status pills as inline glyphs. Live filter and chip filters at the top, both with visible clears.</p>
+        <p class="when"><strong>Pick when:</strong> the reader needs to scan and compare specific rows. <strong>Avoid:</strong> color-only signaling — always pair with text.</p>
+        <p class="when" style="margin-top:6px"><a href="examples/primitives/06-table-ops.html">open frame →</a></p>
+      </div>
+      <div class="shape-card">
+        <h4><code>comparison-matrix</code> · decisions</h4>
+        <p class="what">Items as columns, criteria as rows, weight steppers with full-height +/− buttons flanking the input. Recompute weighted score live; copy-as-recommendation at the bottom.</p>
+        <p class="when"><strong>Pick when:</strong> trade-off across &gt;2 options against shared criteria. <strong>Avoid for:</strong> &gt;6 columns or non-comparable criteria.</p>
+        <p class="when" style="margin-top:6px"><a href="examples/primitives/07-table-comparison.html">open frame →</a></p>
+      </div>
+      <div class="shape-card">
+        <h4><code>annotated-diff</code> · code review</h4>
+        <p class="what">Unified-diff view with severity findings in a side rail; local CSS-class syntax tokens (no Prism, no CDN). Click a finding to scroll its hunk into view.</p>
+        <p class="when"><strong>Pick when:</strong> a change needs commentary, not just inspection. <strong>Avoid for:</strong> whole-file rewrites — link out to the file instead.</p>
+        <p class="when" style="margin-top:6px"><a href="examples/primitives/08-diff.html">open frame →</a></p>
+      </div>
+      <div class="shape-card">
+        <h4><code>log-stream</code> · live tail</h4>
+        <p class="what">Reverse-chronological rows with a level glyph, monospace timestamp, and ochre flash on new arrivals. Pause/resume + level filter + visible clear.</p>
+        <p class="when"><strong>Pick when:</strong> ongoing events matter more than aggregates. <strong>Avoid for:</strong> historical analysis — aggregate into a table or stacked bar.</p>
+        <p class="when" style="margin-top:6px"><a href="examples/primitives/09-logs.html">open frame →</a></p>
+      </div>
+    </div>
+
+    <h3>Cross-cutting rules</h3>
+    <ul style="font-size:0.94rem;line-height:1.55;margin:6px 0 22px">
+      <li><strong>One palette across all primitives</strong> — cream paper, ink, terracotta accent, ochre fill (with ink text), and the AA-verified <code>--muted</code>. Never introduce a per-chart color.</li>
+      <li><strong>Subgrid for cross-row column alignment</strong> — legends, bar values, matrix scores all live on the parent's grid so columns line up across rows.</li>
+      <li><strong>Every filter has a visible clear</strong> — chip with × or a dedicated "clear all" affordance; never strand the reader in a filtered view.</li>
+      <li><strong>Color is never the only signal</strong> — pair fill/stroke with a glyph, a label, or a sort position. WCAG-AA contrast at minimum.</li>
+      <li><strong>Counts reflect underlying data, not the filtered view</strong> — show "12 of 318" rather than rewriting the denominator when filters apply.</li>
+    </ul>
+
+    <h3>Donut chart <span style="font-size:0.7rem;color:var(--muted);font-weight:500">— inline reference</span></h3>
     <div class="sample">
       <div class="donut-wrap">
         <svg class="donut" viewBox="0 0 42 42">
@@ -829,7 +896,7 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
       </details>
     </div>
 
-    <h3>Topology / workflow pattern</h3>
+    <h3>Topology / workflow pattern <span style="font-size:0.7rem;color:var(--muted);font-weight:500">— inline reference</span></h3>
     <div class="topo-prev">
       <svg viewBox="0 0 500 180">
         <rect x="10" y="70" width="60" height="40" rx="6" fill="var(--surface-2)" stroke="var(--border-strong)"/>
