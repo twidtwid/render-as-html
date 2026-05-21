@@ -1,6 +1,6 @@
 # render-as-html
 
-> A Claude Code / Codex skill for making HTML the artifact you keep — filters, charts, drag-and-drop boards, and buttons that turn browser edits back into prompts for the model.
+> A Claude Code / Codex skill that treats the HTML file as the artifact, not an export of one. Filters, sortable tables, SVG charts, drag-and-drop boards, copy-as-prompt buttons. You edit the page in the browser, paste an instruction back, the model updates the file.
 >
 > Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935).
 
@@ -21,9 +21,9 @@ mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 git clone https://github.com/twidtwid/render-as-html "${CODEX_HOME:-$HOME/.codex}/skills/render-as-html"
 ```
 
-Restart the agent so it picks up the skill. Then say `make an HTML artifact for this`, `turn this into an interactive HTML file`, `update this HTML artifact`, or `/render-as-html`.
+Restart the agent. Then say `make an HTML artifact for this`, `turn this into an interactive HTML file`, `update this HTML artifact`, or `/render-as-html`.
 
-Output lands at `~/Reports/<YYYY-MM-DD>-<slug>.html` by default and opens in your browser. That `.html` file is the artifact — edit it, share it, revisit it, improve it.
+Output lands at `~/Reports/<YYYY-MM-DD>-<slug>.html` and opens in your browser. That file is the thing — edit it directly, or feed it back to the model with a follow-up.
 
 To update later: `git -C <install-path> pull`.
 
@@ -33,7 +33,7 @@ This repo is an implementation of [@trq212's HTML-artifact philosophy](https://x
 
 Thariq's key move is that HTML lets the artifact control layout, styling, state, interaction, and round-trip edits directly. Use the browser for the parts where it's clearly better: live filters, sortable headers, SVG charts, cross-highlighting, drag-and-drop, sliders, checkboxes, copy-as-prompt buttons. You mutate state in the browser, copy a precise instruction, paste it into the model, update the `.html` file, keep going.
 
-My contribution is the opinionated design system and page-shape contracts around that idea. The goal is not a prettier document. The goal is a local, inspectable, editable HTML artifact that carries enough structure and interaction to stay useful after the first read.
+My contribution is the opinionated design system and page-shape contracts around that idea. Not a prettier document — a local, inspectable, editable HTML file that's still useful the second time you open it.
 
 ## Scope
 
@@ -48,7 +48,7 @@ My contribution is the opinionated design system and page-shape contracts around
 
 ## Page shapes
 
-Pick the shape from content signals before designing. Nine shapes, each with a contract (layout, required primitives, density, what to avoid):
+Pick the shape from content signals. Nine shapes, each with a contract — layout, required primitives, density, what to avoid:
 
 | Shape | For | Distinct because |
 |---|---|---|
@@ -61,6 +61,26 @@ Pick the shape from content signals before designing. Nine shapes, each with a c
 | <code>triage&#8209;board</code> | GTD reorg, inbox triage | Drag cards between Now/Next/Later/Cut columns |
 | `developer` | PR writeups, code review | Annotated diffs, severity findings, file nav |
 | `editorial` | Deep essays, research synthesis, analytical memos | Sustained argument front-to-back, italic thesis, entity inspector rail |
+
+## Canonical primitives
+
+The page shapes are built out of nine reusable chart and table primitives. They share one palette, one type system, and one set of interaction rules, so a dashboard and a developer artifact feel like the same system.
+
+| Primitive | Pick when |
+|---|---|
+| `donut` | Up to 5 slices of one total, share matters more than order |
+| `ranked-bar` | "What's biggest" beats "what share" — bars sorted descending, labels in their own column |
+| `sparkline-cluster` | Direction across many series in a header strip |
+| `stacked-bar` | Composition over time, ≤4 segments |
+| `topology` | Structure or routing matters more than count |
+| `dense-table` | The reader needs to scan and compare specific rows |
+| `comparison-matrix` | Trade-off across >2 options against shared criteria, items as columns |
+| `annotated-diff` | A change that needs commentary, not just inspection |
+| `log-stream` | Ongoing events matter more than aggregates |
+
+Each one has a live reference with code at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html). The contracts (when to pick, what to avoid, required interactions) live in `SKILL.md` and in the [design system page](https://twidtwid.github.io/render-as-html/#charts).
+
+Five rules cut across all of them: one palette, subgrid for cross-row column alignment, every filter has a visible clear, color is never the only signal, counts reflect underlying data — not the filtered view.
 
 ## The bar
 
