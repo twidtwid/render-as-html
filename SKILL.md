@@ -1,6 +1,6 @@
 ---
 name: render-as-html
-version: 2.1.0
+version: 2.1.1
 description: Create or update a designed, self-contained HTML artifact as the source of truth. Use when the user says "make an HTML artifact", "render this as html", "make me a pretty version", "I want to read this carefully", "make it interactive/readable", "update this HTML", or "/render-as-html". Output is an editable HTML file, not a conversion preview of another canonical document.
 ---
 
@@ -35,7 +35,8 @@ If multiple inputs possible, ask which.
 - **Social card (always, in `<head>`)** so a hosted artifact unfurls as a titled preview:
   - **Required tags:** `<meta name="description">`, `og:title`, `og:description`, `og:type`, `og:site_name`, `twitter:card`.
   - **Sourcing:** `og:title` = the artifact `<title>`. `og:description` = one plain sentence (≤155 chars) describing *what the artifact is*, derived from the subtitle/thesis — not a production count, not "an HTML artifact about X". `og:type` = `article` for content, `website` for an index/gallery. `twitter:card` = `summary`.
-  - **Omit `og:image`** (would need a hosted image file, breaks self-containment) and **omit `og:url`** (final URL unknown at generation time; scrapers fall back to the request URL).
+  - **Omit `og:url`** (final URL unknown at generation time; scrapers fall back to the request URL).
+  - **`og:image` is conditional.** Omit by default — it would need a hosted image file and breaks self-containment for `file://` artifacts. BUT when the artifact is shipped to a portal that hosts a sibling thumbnail (e.g. an `og-card.png` next to the entry), emit `og:image` + `twitter:image` as a relative path and upgrade `twitter:card` to `summary_large_image`. Generate the thumbnail from a 1200×630 HTML+inline-SVG template using the artifact's own design tokens, rendered via `chrome --headless --window-size=1200,630 --screenshot=…`.
   - Inert on `file://`, ~6 lines, costs nothing — unconditional, not publish-gated.
 - If metadata mentions supporting context, label it as context/provenance. Do not present another file as canonical.
 - Any copy-as-prompt action must target the current `.html` artifact path, not a notes file, source file, or parallel document.
@@ -206,7 +207,9 @@ Explicit user override always wins.
   - Right-rail entity inspector grouped by category (people, companies, orgs, concepts, …), each row a colored category dot + name (canonical link if present, `↗` for external) + one-line note. Follows the scrollbox invariant in §Layout principles.
   - "Read next" list of source links.
   - Per-section copy-as-prompt button (hover-revealed on each section heading), targeting the current `.html` artifact path.
-- **HTML-native ≥3:** in-text `<mark>` search + scroll-to-match; click-entity-to-open / cross-highlight; per-section copy-as-prompt; section scroll-spy if a section rail is present.
+- **HTML-native ≥3:** in-text `<mark>` search **with prev/next nav**; click-entity-to-open / cross-highlight; per-section copy-as-prompt; section scroll-spy if a section rail is present.
+- **Search nav (load-bearing — a match counter without stepping is a footgun):** any search that reports a match count MUST let the reader step through matches. Required: `↑`/`↓` buttons by the input; counter shows "N of M" (current position, not just total); the current match gets a distinct style (e.g. `mark.current` filled with `--accent`) so it stands out from the others; Enter advances, Shift+Enter goes back; buttons auto-disable at 0–1 matches. "3 matches" with no way to reach matches 2 and 3 is broken UX.
+- **Narrative-data sections use cards, not wide tables.** When an editorial section has 3–8 items each carrying several prose fields (e.g. artifact / recipient / outcome), render them as stacked cards — mono header (number + key + tag pill) → prose body → outcome line — not a dense ops table. The editorial stage caps prose at 50rem; a 6-column table of prose data clips on wide screens with the inspector rail open, and `overflow-x: auto` inside an editorial column is a cop-out (horizontal scroll is undiscoverable). The dense ops table primitive belongs in `dashboard`/`comparison`/`developer` shapes where the stage isn't capped.
 - **Cross-link scroll semantics (load-bearing — get the direction wrong and clicking a link hurls the reader away from what they clicked):**
   - *Prose mention → entity card:* highlight both, then reveal the card by scrolling **the inspector's own scrollbox only** — `card.scrollIntoView({ block: 'nearest' })` (with the inspector as the nearest scroll container) or set `inspector.scrollTop` directly. Never call a scroll that moves the document/prose, and skip the scroll entirely if the card is already within the inspector's visible box. Clicking a prose link must not move the prose.
   - *Entity card → prose mention:* scroll the **document** to the first `<mark>` with `block: 'center'`; make it a no-op if that mention is already in the viewport (no yank).
