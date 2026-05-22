@@ -594,6 +594,11 @@ footer .ft-ts {
     scrollbar-width: thin;
     scrollbar-color: var(--rule) transparent;
   }
+  /* focus mode: drop the inspector's column so the reading column gets the space */
+  body.inspector-hidden .studio {
+    grid-template-columns: var(--rail-w) 1fr;
+    grid-template-areas: "left center";
+  }
 }
 
 @media (max-width: 480px) {
@@ -621,6 +626,26 @@ footer .ft-ts {
 .flatten-toggle:hover { border-color: var(--accent); color: var(--accent); }
 .flatten-toggle input { accent-color: var(--accent); cursor: pointer; margin: 0; }
 body.flattened .flatten-toggle { border-color: var(--accent); color: var(--accent); }
+
+/* ── INSTRUMENT: inspector show/hide toggle (in search bar) ─ */
+#inspector-toggle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid var(--rule);
+  padding: 0.28rem 0.55rem;
+  border-radius: 3px;
+  background: var(--paper);
+}
+#inspector-toggle:hover { border-color: var(--accent); color: var(--accent); }
+body.inspector-hidden #inspector-toggle { border-color: var(--accent); color: var(--accent); }
+#inspector-toggle .il-show { display: none; }
+body.inspector-hidden #inspector-toggle .il-hide { display: none; }
+body.inspector-hidden #inspector-toggle .il-show { display: inline; }
+body.inspector-hidden .rail-right { display: none; }
 
 /* flatten banner */
 #flatten-banner {
@@ -936,6 +961,10 @@ body.flattened mark { background: transparent; color: inherit; padding: 0; }
   <input id="search-input" type="search" placeholder="search in text…" autocomplete="off" spellcheck="false" aria-label="Search text">
   <span id="search-count" aria-live="polite"></span>
   <button id="search-clear" aria-label="Clear search">× clear</button>
+  <button id="inspector-toggle" aria-pressed="false" title="Hide the entity inspector to focus on reading">
+    <span class="il-hide">hide inspector</span>
+    <span class="il-show">show inspector</span>
+  </button>
   <label class="flatten-toggle" title="Strip the page to static text — see what disappears">
     <input type="checkbox" id="flatten-checkbox" aria-label="Flatten test: strip this artifact to static text">
     flatten test
@@ -1694,6 +1723,13 @@ flattenCb.addEventListener('change', () => {
   } else {
     document.body.classList.remove('flattened');
   }
+});
+
+// ── INSTRUMENT: inspector show/hide (focus mode) ─────────────────────────────
+const inspectorToggle = document.getElementById('inspector-toggle');
+inspectorToggle.addEventListener('click', () => {
+  const hidden = document.body.classList.toggle('inspector-hidden');
+  inspectorToggle.setAttribute('aria-pressed', String(hidden));
 });
 
 // ── INIT: build search targets after DOM ready ───────────────────────────────
