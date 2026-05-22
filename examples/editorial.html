@@ -117,6 +117,20 @@ body {
   display: none;
 }
 #search-clear:hover { background: var(--paper-tint); }
+.search-step {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0.2rem 0.42rem;
+  display: none;
+}
+.search-step:hover:not(:disabled) { background: var(--paper-tint); border-color: var(--accent); }
+.search-step:disabled { color: var(--muted); opacity: 0.45; cursor: default; }
 mark {
   background: #f0d97a;
   color: var(--ink);
@@ -126,9 +140,14 @@ mark {
 mark.entity-highlight {
   background: #f5c17a;
 }
+mark.current {
+  background: var(--accent);
+  color: var(--paper);
+}
 @media (prefers-color-scheme: dark) {
   mark { background: #7a6a20; color: var(--ink); }
   mark.entity-highlight { background: #7a4f20; }
+  mark.current { background: var(--accent); color: var(--paper); }
 }
 
 /* ── STUDIO LAYOUT ───────────────────────────────────────────
@@ -959,6 +978,8 @@ body.flattened mark { background: transparent; color: inherit; padding: 0; }
 <div id="search-bar" role="search">
   <label for="search-input">Find</label>
   <input id="search-input" type="search" placeholder="search in text…" autocomplete="off" spellcheck="false" aria-label="Search text">
+  <button id="search-prev" class="search-step" aria-label="Previous match" title="Previous match (Shift+Enter)">↑</button>
+  <button id="search-next" class="search-step" aria-label="Next match" title="Next match (Enter)">↓</button>
   <span id="search-count" aria-live="polite"></span>
   <button id="search-clear" aria-label="Clear search">× clear</button>
   <button id="inspector-toggle" aria-pressed="false" title="Hide the entity inspector to focus on reading">
@@ -1389,20 +1410,48 @@ function markText(container, query, cssClass) {
 
 let currentSearch = '';
 let currentEntityKey = '';
+let matchEls = [];
+let currentMatchIndex = -1;
+
+const searchPrev = document.getElementById('search-prev');
+const searchNext = document.getElementById('search-next');
+
+function hideSearchNav() {
+  matchEls = [];
+  currentMatchIndex = -1;
+  searchPrev.style.display = 'none';
+  searchNext.style.display = 'none';
+}
+
+function updateMatchUI() {
+  const total = matchEls.length;
+  searchClear.style.display = currentSearch ? 'inline-block' : 'none';
+  searchPrev.style.display = currentSearch ? 'inline-block' : 'none';
+  searchNext.style.display = currentSearch ? 'inline-block' : 'none';
+  if (!currentSearch) { searchCount.textContent = ''; return; }
+  searchCount.textContent = total ? `${currentMatchIndex + 1} of ${total}` : 'no matches';
+  searchPrev.disabled = total <= 1;   // nothing to step to at 0–1 matches
+  searchNext.disabled = total <= 1;
+}
+
+function gotoMatch(i) {
+  if (!matchEls.length) return;
+  currentMatchIndex = (i + matchEls.length) % matchEls.length; // wrap both ways
+  matchEls.forEach((m, idx) => m.classList.toggle('current', idx === currentMatchIndex));
+  matchEls[currentMatchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  updateMatchUI();
+}
 
 function applySearch(query) {
   currentSearch = query;
-  let total = 0;
-  searchTargets.forEach(el => {
-    const count = markText(el, query, '');
-    total += count;
-  });
-  searchCount.textContent = query ? `${total} match${total !== 1 ? 'es' : ''}` : '';
-  searchClear.style.display = query ? 'inline-block' : 'none';
-  if (query && total > 0) {
-    const first = proseRoot.querySelector('mark');
-    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  searchTargets.forEach(el => markText(el, query, ''));
+  matchEls = query ? Array.from(proseRoot.querySelectorAll('mark')) : [];
+  currentMatchIndex = matchEls.length ? 0 : -1;
+  if (matchEls.length) {
+    matchEls[0].classList.add('current');
+    matchEls[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
+  updateMatchUI();
 }
 
 searchInput.addEventListener('input', () => {
@@ -1410,9 +1459,18 @@ searchInput.addEventListener('input', () => {
   clearEntityActive();
   applySearch(searchInput.value.trim());
 });
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    gotoMatch(currentMatchIndex + (e.shiftKey ? -1 : 1));
+  }
+});
+searchPrev.addEventListener('click', () => gotoMatch(currentMatchIndex - 1));
+searchNext.addEventListener('click', () => gotoMatch(currentMatchIndex + 1));
 searchClear.addEventListener('click', () => {
   searchInput.value = '';
   applySearch('');
+  searchInput.focus();
 });
 
 // ── ENTITY CLICK → CROSS-HIGHLIGHT ──────────────────────────────────────────
@@ -1464,6 +1522,7 @@ document.querySelectorAll('.entity-row').forEach(row => {
     currentSearch = '';
     searchCount.textContent = '';
     searchClear.style.display = 'none';
+    hideSearchNav();
     highlightEntity(key);
   });
   row.addEventListener('keydown', e => {
@@ -1720,6 +1779,7 @@ flattenCb.addEventListener('change', () => {
     searchTargets.forEach(el => { el.innerHTML = el.dataset.original || el.innerHTML; });
     if (searchCount) searchCount.textContent = '';
     if (searchClear) searchClear.style.display = 'none';
+    hideSearchNav();
   } else {
     document.body.classList.remove('flattened');
   }
