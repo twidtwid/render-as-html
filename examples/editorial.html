@@ -66,10 +66,25 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── TOPBAR (hosts the hide-sidebar toggle, not search controls) ─ */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 102;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.85rem;
+  padding: 0.25rem 0.85rem;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+
 /* ── SEARCH BAR ──────────────────────────────────────────── */
 #search-bar {
   position: fixed;
-  top: 0; left: 0; right: 0;
+  top: 1.85rem; left: 0; right: 0;
   z-index: 100;
   background: var(--paper-card);
   border-bottom: 1px solid var(--rule);
@@ -562,7 +577,7 @@ footer .ft-ts {
    in-flow below the center. */
 @media (min-width: 821px) {
   .studio {
-    padding-top: 3rem; /* clear the fixed search bar */
+    padding-top: 4.85rem; /* clear topbar (1.85rem) + search bar (3rem) */
     min-height: 100vh;
     min-height: 100dvh;
     grid-template-columns: var(--rail-w) 1fr;
@@ -572,9 +587,9 @@ footer .ft-ts {
   }
   .rail-left {
     position: sticky;
-    top: 3rem;
-    height: calc(100vh - 3rem);
-    height: calc(100dvh - 3rem);
+    top: 4.85rem;
+    height: calc(100vh - 4.85rem);
+    height: calc(100dvh - 4.85rem);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 2.5rem 1.75rem 2.5rem 1.25rem;
@@ -602,9 +617,9 @@ footer .ft-ts {
   .rail-right {
     grid-area: right;
     position: sticky;
-    top: 3rem;
-    height: calc(100vh - 3rem);
-    height: calc(100dvh - 3rem);
+    top: 4.85rem;
+    height: calc(100vh - 4.85rem);
+    height: calc(100dvh - 4.85rem);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 2.5rem 1.25rem 2.5rem 1.5rem;
@@ -646,7 +661,7 @@ footer .ft-ts {
 .flatten-toggle input { accent-color: var(--accent); cursor: pointer; margin: 0; }
 body.flattened .flatten-toggle { border-color: var(--accent); color: var(--accent); }
 
-/* ── INSTRUMENT: inspector show/hide toggle (in search bar) ─ */
+/* ── INSTRUMENT: hide-sidebar toggle (lives in .topbar) ──── */
 #inspector-toggle {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -670,7 +685,7 @@ body.inspector-hidden .rail-right { display: none; }
 #flatten-banner {
   display: none;
   position: fixed;
-  top: 2.85rem;
+  top: 4.7rem;
   left: 0; right: 0;
   z-index: 99;
   background: var(--accent-2);
@@ -682,9 +697,9 @@ body.inspector-hidden .rail-right { display: none; }
   border-bottom: 1px solid var(--rule);
 }
 body.flattened #flatten-banner { display: block; }
-body.flattened .studio { padding-top: 6.5rem; }
+body.flattened .studio { padding-top: 8.35rem; }
 body.flattened .rail-left,
-body.flattened .rail-right { top: 6.5rem; height: calc(100vh - 6.5rem); height: calc(100dvh - 6.5rem); }
+body.flattened .rail-right { top: 8.35rem; height: calc(100vh - 8.35rem); height: calc(100dvh - 8.35rem); }
 #flatten-banner strong { font-weight: 700; }
 
 /* what flattening does: kill interactivity, grey the instruments */
@@ -974,6 +989,14 @@ body.flattened mark { background: transparent; color: inherit; padding: 0; }
 </head>
 <body>
 
+<!-- TOPBAR (dedicated host for the hide-sidebar toggle, separate from the search toolbar) -->
+<header class="topbar">
+  <button id="inspector-toggle" aria-pressed="false" title="Hide the sidebar to focus on reading">
+    <span class="il-hide">hide sidebar</span>
+    <span class="il-show">show sidebar</span>
+  </button>
+</header>
+
 <!-- SEARCH BAR -->
 <div id="search-bar" role="search">
   <label for="search-input">Find</label>
@@ -982,10 +1005,6 @@ body.flattened mark { background: transparent; color: inherit; padding: 0; }
   <button id="search-next" class="search-step" aria-label="Next match" title="Next match (Enter)">↓</button>
   <span id="search-count" aria-live="polite"></span>
   <button id="search-clear" aria-label="Clear search">× clear</button>
-  <button id="inspector-toggle" aria-pressed="false" title="Hide the entity inspector to focus on reading">
-    <span class="il-hide">hide inspector</span>
-    <span class="il-show">show inspector</span>
-  </button>
   <label class="flatten-toggle" title="Strip the page to static text — see what disappears">
     <input type="checkbox" id="flatten-checkbox" aria-label="Flatten test: strip this artifact to static text">
     flatten test
