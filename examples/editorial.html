@@ -34,6 +34,16 @@
   --rail-w: 18rem;
   --center-max: 50rem;
   --studio-max: 1320px;
+
+  /* Fixed-chrome heights. Keep these in lockstep with the actual rendered
+     heights of .topbar and #search-bar — every sticky top and flatten
+     offset below derives from them, so one bump propagates everywhere. */
+  --topbar-h: 1.85rem;
+  --searchbar-h: 3rem;
+  --chrome-h: calc(var(--topbar-h) + var(--searchbar-h));      /* 4.85rem */
+  --flatten-banner-h: 3.5rem;
+  --chrome-flat-h: calc(var(--chrome-h) + var(--flatten-banner-h));  /* 8.35rem */
+  --banner-tuck: 0.15rem;                                      /* banner overlaps chrome bottom border */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -84,7 +94,7 @@ body {
 /* ── SEARCH BAR ──────────────────────────────────────────── */
 #search-bar {
   position: fixed;
-  top: 1.85rem; left: 0; right: 0;
+  top: var(--topbar-h); left: 0; right: 0;
   z-index: 100;
   background: var(--paper-card);
   border-bottom: 1px solid var(--rule);
@@ -577,7 +587,7 @@ footer .ft-ts {
    in-flow below the center. */
 @media (min-width: 821px) {
   .studio {
-    padding-top: 4.85rem; /* clear topbar (1.85rem) + search bar (3rem) */
+    padding-top: var(--chrome-h); /* clear topbar (1.85rem) + search bar (3rem) */
     min-height: 100vh;
     min-height: 100dvh;
     grid-template-columns: var(--rail-w) 1fr;
@@ -587,9 +597,9 @@ footer .ft-ts {
   }
   .rail-left {
     position: sticky;
-    top: 4.85rem;
-    height: calc(100vh - 4.85rem);
-    height: calc(100dvh - 4.85rem);
+    top: var(--chrome-h);
+    height: calc(100vh - var(--chrome-h));
+    height: calc(100dvh - var(--chrome-h));
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 2.5rem 1.75rem 2.5rem 1.25rem;
@@ -617,9 +627,9 @@ footer .ft-ts {
   .rail-right {
     grid-area: right;
     position: sticky;
-    top: 4.85rem;
-    height: calc(100vh - 4.85rem);
-    height: calc(100dvh - 4.85rem);
+    top: var(--chrome-h);
+    height: calc(100vh - var(--chrome-h));
+    height: calc(100dvh - var(--chrome-h));
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 2.5rem 1.25rem 2.5rem 1.5rem;
@@ -662,6 +672,8 @@ footer .ft-ts {
 body.flattened .flatten-toggle { border-color: var(--accent); color: var(--accent); }
 
 /* ── INSTRUMENT: hide-sidebar toggle (lives in .topbar) ──── */
+/* Class .inspector-hidden and id #inspector-toggle preserved from v2.1.1
+   so in-the-wild artifacts keep working — only the user label changed. */
 #inspector-toggle {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -685,7 +697,7 @@ body.inspector-hidden .rail-right { display: none; }
 #flatten-banner {
   display: none;
   position: fixed;
-  top: 4.7rem;
+  top: calc(var(--chrome-h) - var(--banner-tuck));
   left: 0; right: 0;
   z-index: 99;
   background: var(--accent-2);
@@ -697,9 +709,9 @@ body.inspector-hidden .rail-right { display: none; }
   border-bottom: 1px solid var(--rule);
 }
 body.flattened #flatten-banner { display: block; }
-body.flattened .studio { padding-top: 8.35rem; }
+body.flattened .studio { padding-top: var(--chrome-flat-h); }
 body.flattened .rail-left,
-body.flattened .rail-right { top: 8.35rem; height: calc(100vh - 8.35rem); height: calc(100dvh - 8.35rem); }
+body.flattened .rail-right { top: var(--chrome-flat-h); height: calc(100vh - var(--chrome-flat-h)); height: calc(100dvh - var(--chrome-flat-h)); }
 #flatten-banner strong { font-weight: 700; }
 
 /* what flattening does: kill interactivity, grey the instruments */
