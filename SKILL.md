@@ -21,9 +21,30 @@ Create designed HTML artifacts that are the files of record. The HTML is not an 
 | Existing `.html` artifact | Read it and update the HTML file directly |
 | New artifact brief in conversation | Write a new `.html` artifact |
 | Supporting local files | Read only what is needed as context, then write the HTML artifact |
-| URL | Out of scope — explain that this skill writes local HTML artifacts and does not fetch URLs |
+| URL | Pull the **full source** (curl), parse structure (paragraphs, sections, footnotes) into JSON, dispatch a synthesis subagent against the full text, THEN render. See "URL handling" below. **Never render off a WebFetch summary.** |
 
 If multiple inputs possible, ask which.
+
+### URL handling
+
+Rendering a URL means producing an artifact that does justice to the source — not a few quotes and a link-out button. The failure mode is consistent and demoralizing: WebFetch returns a ~1–2KB model-summarized digest of an article that may be 5,000 or 50,000 words, and rendering against that digest produces a TOC + a handful of quote cards + a "read full article ↗" button. Zero HTML-native features. Zero entity index. Zero synthesis. The 2026-05-25 *Magnifica Humanitas* v1 incident named this: "you summarized a 43,000 word article into a few quotes and a TOC."
+
+The pipeline that doesn't fail:
+
+1. **`curl -sL "<url>" -o /tmp/<slug>-raw.html`** — get the actual bytes. WebFetch is summarization, not fetching.
+2. **Parse structure into JSON.** Strip script/style; extract the body; segment paragraphs; pull numbered paragraphs, section headings, footnotes — whatever structure the source carries. Save to `/tmp/<slug>-structured.json`.
+3. **Dispatch a synthesis subagent** against the structured JSON with a tight schema. The subagent reads the actual paragraphs (not just headings) and returns:
+   - `thesis` (one sentence) + `thesis_quote` (verbatim, ≤40 words) + `thesis_quote_ref` (¶N)
+   - `takeaways[]` — 6–10 numbered claims, each ≤30 words, **arguing position** not category label
+   - `claims[]` — 10–15 claim cards: `topic` (4–10 word arguing headline), `body` (1–3 sentence mechanism), `evidence_paras` (real ¶ numbers in the source), `evidence_note`
+   - `entities` grouped by category (predecessor documents with real URLs, people, concepts, etc.), each with the paragraph numbers where they appear
+   - `themes[]` — 8–12 with frequency counts via string-search on the paragraph texts
+   - `chapter_summaries[]` if the source has chapter structure
+4. **Render the editorial-shape (or appropriate-shape) artifact** with the full feature set: italic thesis pull-quote, stacked numbered takeaways, chapter-grouped claim cards whose Evidence ¶ links scroll-flash the matching paragraph in a full annotated-text section below, SVG theme bar chart, structural map, full body with anchor IDs, entity inspector with click-to-highlight-all-mentions, search with prev/next nav, hide-sidebar toggle, theme toggle.
+
+**"Render as an external link" is not an exemption.** The user may want a prominent CTA out to the source; that does not mean skip the synthesis. The artifact orients the reader, indexes the entities, and lets them navigate the document — the external link is one of the affordances, not the entire artifact.
+
+**Size sanity:** a serious editorial-shape render of long-form (≥5,000 source words) is rarely under ~50KB. Under 30KB on long-form input is a smell — likely zero HTML-native features and rendering off a summary.
 
 ## Output
 
@@ -530,7 +551,17 @@ Dark (via prefers-color-scheme):
    - Where does a diagram, chart, or spatial layout add information?
    - Which of the 8 dimensions am I using? (Aim for ≥4)
 4. **Write the HTML** — single self-contained file, all CSS inline, all JS (vanilla, ~100-200 lines) inline, no external fonts or CDN assets by default; include the Open Graph / Twitter summary card in `<head>` (see Output)
-5. **Validate against the bar:** name the HTML-native features. If <3, redesign before saving. Also scan the rendered HTML for content-discipline anti-patterns — artifact-counting hero stats, left-handle accent bars, category-label section titles, whole-block search highlighting; fix any before saving. This is a self-review instruction, not an automated harness.
+5. **Pre-save checklist — hard fail, not a vibe check.** Run every item; if any answer is "no" or "I don't know", do not save yet. This is the load-bearing self-review that catches the "styled prose with a link button" failure mode before it ships.
+
+   - **Shape**: I picked one from the contract list (`dashboard` / `document` / `editorial` / `timeline` / `runbook` / `comparison` / `network-map` / `triage-board` / `developer` / `podcast`). I did not invent a shape.
+   - **HTML-native features ≥3**: I can name at least three, specifically, in this artifact. *Not* "it has nice CSS" — concrete interactions: search-with-nav, click-entity-to-highlight, copy-as-prompt, sortable headers, scroll-spy, drag-to-bucket, etc.
+   - **Information dimensions ≥4** out of the 8 listed in §The 8 information dimensions.
+   - **Flatten test**: I mentally stripped all JS and SVG. What disappeared? If only a hover state changed, this is styled prose, not an artifact — redesign.
+   - **Content discipline**: no artifact-counting hero stats ("12 sections found"), no left-handle accent bars, no category-label section titles ("Overview" / "Key Points"), no whole-block search highlighting, no copy-as-markdown button when copy-as-prompt is the right primitive.
+   - **For URL renders ≥5,000 words**: I pulled the full source via curl + parsed structure + ran a synthesis subagent. I did NOT render off a WebFetch summary.
+   - **File size sanity** for long-form renders: file is ≥30KB (under that on long-form input means I almost certainly skipped features).
+
+   None of this is enforced by a harness — it is enforced by me, before I touch Write. Skipping the checklist is how v1 *Magnifica Humanitas* shipped.
 6. **Write to `~/Reports/<YYYY-MM-DD>-<slug>.html`**
 7. **`open` the file** so it pops in browser when the environment allows it
 8. **Report back:** path, size, list of HTML-native features
