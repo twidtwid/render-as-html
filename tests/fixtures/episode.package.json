@@ -1,0 +1,55 @@
+{
+  "schema": "podcast-transformer/package-v1",
+  "episode": {
+    "title": "The instrument you keep — Files of Record",
+    "short_title": "The instrument you keep",
+    "podcast_title": "Files of Record (fictional)",
+    "episode_number": 7,
+    "duration_seconds": 2820,
+    "published_at": "2026-04-12",
+    "description": "A fictional episode used as a render-as-html fixture: durable instruments beat ephemeral apps when memory is the moat.",
+    "bottom_line": "When memory is the moat, durable instruments win over ephemeral apps.",
+    "episode_url": "https://example.invalid/episodes/the-instrument-you-keep",
+    "hosts": ["Mara Ito"],
+    "guests": ["Vikram Shah"]
+  },
+  "takeaways": [
+    "Treat the artifact as the file of record, not a preview layer.",
+    "Memory beats flow when the user revisits.",
+    "Round-trip editing is what makes a file an instrument."
+  ],
+  "claims": [
+    {
+      "topic": "Why apps lose to instruments",
+      "claim": "Most consumer apps optimize for the next session; instruments optimize for the next year. The one that compounds wins.",
+      "evidence": "Notion's editable-document framing outlasted dozens of single-purpose flow apps that launched the same year."
+    },
+    {
+      "topic": "The round-trip threshold",
+      "claim": "An instrument's bar is that the output is editable in the same surface where it was produced — without re-uploading or re-prompting.",
+      "evidence": "Figma's editor-render unification is the canonical case; pre-Figma tools required round-trip exports."
+    }
+  ],
+  "terms": [
+    {"category": "Concepts", "name": "File of record", "notes": "The canonical artifact a user returns to; not a derived preview."},
+    {"category": "People", "name": "Vikram Shah", "notes": "Designer behind Files of Record.", "url": "https://example.invalid/vikram"},
+    {"category": "Tools", "name": "Notion", "notes": "Editable-document framing, ~2016.", "url": "https://example.invalid/notion"},
+    {"category": "Tools", "name": "Figma", "notes": "Editor-render unification.", "url": "https://example.invalid/figma"}
+  ],
+  "read_next": [
+    {"label": "Why workflows beat apps", "note": "Companion essay on durable surfaces.", "url": "https://example.invalid/workflows-beat-apps"}
+  ],
+  "chapters": [
+    {"title": "The thesis", "anchor_id": "ch-thesis", "timestamp": "00:00", "turn_index": 0},
+    {"title": "Apps vs instruments", "anchor_id": "ch-apps-vs", "timestamp": "08:30", "turn_index": 2},
+    {"title": "Round-trip editing", "anchor_id": "ch-roundtrip", "timestamp": "21:15", "turn_index": 4}
+  ],
+  "turns": [
+    {"speaker": "Mara Ito", "timestamp": "00:00", "text": "Welcome back to Files of Record. Today's question: why does the same team build something that feels permanent one year and something disposable the next?"},
+    {"speaker": "Vikram Shah", "timestamp": "00:35", "text": "It's almost always about whether the artifact survives the session. If you can come back to it next month and have it still mean something, it's an instrument. Otherwise it's a moment."},
+    {"speaker": "Mara Ito", "timestamp": "08:30", "text": "So when you say 'apps vs instruments' — what's the actual fork in the road?"},
+    {"speaker": "Vikram Shah", "timestamp": "08:55", "text": "Apps optimize for the next session. Instruments optimize for the next year. When you compound use over time, the gap is enormous."},
+    {"speaker": "Mara Ito", "timestamp": "21:15", "text": "Round-trip editing. You said earlier that's the threshold. Define it."},
+    {"speaker": "Vikram Shah", "timestamp": "21:40", "text": "The output you produce has to be editable in the same surface where you produced it. No re-upload. No re-prompt. Otherwise your tool isn't an instrument — it's a generator."}
+  ]
+}

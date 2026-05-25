@@ -4,7 +4,7 @@
 >
 > Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935).
 
-**Version 2.3.0** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
+**Version 2.4.0** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
 
 ## Install
 
@@ -43,7 +43,9 @@ My contribution is the opinionated design system and page-shape contracts around
 
 - `SKILL.md` — read this first. Page shapes, design system, canonical primitives, copy-as-prompt, the "would this die outside HTML?" bar.
 - `index.html` — the design system as a single file (the live link above).
-- `examples/` — twelve self-contained artifacts: one per page shape, plus a canonical-primitives reference. Browse the [example gallery](https://twidtwid.github.io/render-as-html/examples/).
+- `examples/` — thirteen self-contained artifacts: one per page shape (now including `podcast-transcript.html` for the transcript view), plus a canonical-primitives reference. Browse the [example gallery](https://twidtwid.github.io/render-as-html/examples/).
+- `bin/render-podcast` — Python CLI that consumes podcastify's `episode.package.json` and writes a `podcast-at-a-glance.html` + `annotated-transcript.html` pair matching the canonical examples. Usage: `bin/render-podcast <package.json> [-o OUT_DIR]`.
+- `tests/` — pytest suite (`python3 -m pytest tests/ -v`) plus the fixture both canonical podcast examples render from.
 - `LICENSE` — MIT.
 
 ## Page shapes
