@@ -4,7 +4,7 @@
 >
 > Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935).
 
-**Version 2.2.0** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
+**Version 2.3.0** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
 
 ## Install
 
@@ -43,12 +43,12 @@ My contribution is the opinionated design system and page-shape contracts around
 
 - `SKILL.md` — read this first. Page shapes, design system, canonical primitives, copy-as-prompt, the "would this die outside HTML?" bar.
 - `index.html` — the design system as a single file (the live link above).
-- `examples/` — eleven self-contained artifacts: one per page shape, plus a canonical-primitives reference. Browse the [example gallery](https://twidtwid.github.io/render-as-html/examples/).
+- `examples/` — twelve self-contained artifacts: one per page shape, plus a canonical-primitives reference. Browse the [example gallery](https://twidtwid.github.io/render-as-html/examples/).
 - `LICENSE` — MIT.
 
 ## Page shapes
 
-Pick the shape from content signals. Nine shapes, each with a contract — layout, required primitives, density, what to avoid:
+Pick the shape from content signals. Ten shapes, each with a contract — layout, required primitives, density, what to avoid:
 
 | Shape | For | Distinct because |
 |---|---|---|
