@@ -1,0 +1,735 @@
+#!/usr/bin/env python3
+"""render-as-html podcast-shape renderer.
+
+Reads an `episode.package.json` produced by podcastify's `export-json` and writes
+a `podcast-at-a-glance.html` briefing + `annotated-transcript.html` pair using
+the canonical examples/podcast.html as the visual contract.
+
+Usage:
+    bin/render-podcast <episode.package.json> [-o OUTPUT_DIR]
+
+The output dir defaults to the directory containing the package file.
+"""
+from __future__ import annotations
+import argparse
+import html
+import json
+import os
+import sys
+from pathlib import Path
+
+# Resolve the template path against the repo root (this script lives in <repo>/bin/).
+# Allows the CLI to work from any cwd and from any clone location, with an env
+# escape hatch (`RENDER_AS_HTML_REPO`) for callers that want to point at a
+# different checkout.
+def _repo_root() -> Path:
+    env = os.environ.get("RENDER_AS_HTML_REPO")
+    if env:
+        return Path(env).expanduser().resolve()
+    return Path(__file__).resolve().parent.parent
+
+TEMPLATE_PATH = _repo_root() / "examples" / "podcast.html"
+
+# Replace the v2.2.0 example's @media (prefers-color-scheme: dark) block with
+# a body.dark class so light is the default and dark is opt-in via a toggle.
+DARK_MEDIA_BLOCK = """@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+    --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+    --rule:#38332b; --rule-soft:#2c2820;
+    --accent:#e0794f; --accent-2:#d8a73a;
+    --ok:#5cae6f; --note:#6f9fd0;
+  }
+}"""
+
+DARK_CLASS_BLOCK = """body.dark {
+  --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+  --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+  --rule:#38332b; --rule-soft:#2c2820;
+  --accent:#e0794f; --accent-2:#d8a73a;
+  --ok:#5cae6f; --note:#6f9fd0;
+}"""
+
+THEME_TOGGLE_CSS = """
+/* Theme toggle — sits next to #inspector-toggle in the topbar */
+#theme-toggle {
+  font-family: var(--font-mono); font-size: 13px;
+  line-height: 1;
+  color: var(--muted); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 3px;
+  padding: 0.32rem 0.55rem;
+  cursor: pointer;
+  margin-left: 0.4rem;
+  min-width: 1.9rem; text-align: center;
+}
+#theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+#theme-toggle .glyph-dark, body.dark #theme-toggle .glyph-light { display: none; }
+body.dark #theme-toggle .glyph-dark { display: inline; }
+/* Bottom-align toggles with the tab text baseline. */
+#inspector-toggle, #theme-toggle { align-self: flex-end; margin-bottom: 0.55rem; }
+"""
+
+THEME_TOGGLE_BUTTON = (
+    '<button id="theme-toggle" type="button" '
+    'title="Toggle dark mode" aria-label="Toggle dark mode">'
+    # SVG glyphs (moon/sun) — Unicode ☾/☀ render as the curly-brace fallback
+    # character on iOS Safari at small button sizes (mobile audit 2026-05-24).
+    '<svg class="glyph-light" viewBox="0 0 16 16" width="13" height="13" '
+    'fill="none" stroke="currentColor" stroke-width="1.5" '
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<path d="M13.5 9.5A6 6 0 0 1 6.5 2.5a6 6 0 1 0 7 7Z"/></svg>'
+    '<svg class="glyph-dark" viewBox="0 0 16 16" width="13" height="13" '
+    'fill="none" stroke="currentColor" stroke-width="1.5" '
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<circle cx="8" cy="8" r="3"/>'
+    '<path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.4 1.4M11.55 11.55l1.4 1.4'
+    'M3.05 12.95l1.4-1.4M11.55 4.45l1.4-1.4"/></svg>'
+    "</button>"
+)
+
+COMMON_OVERRIDES = """
+/* Brand: let real podcast titles use the row instead of truncating to "..." */
+.topbar .brand { flex: 1 1 auto; min-width: 0; max-width: 60%; }
+.topbar .brand strong { white-space: normal; overflow: visible; text-overflow: clip; }
+.topbar .brand span { white-space: normal; overflow: visible; text-overflow: clip; }
+/* File-folder tabs: rounded tops, sit on the topbar's bottom border. The
+   active tab masks 1px of that border under itself via a paper-colored
+   box-shadow that paints in the tab's own stacking context — so the line
+   visibly stops at the active tab edges (the manila-folder effect). */
+.topbar { border-bottom: 1px solid var(--rule); }
+/* Two-part fix verified via getBoundingClientRect inspection 2026-05-24:
+   (1) topbar-inner has to FILL topbar (it was sizing to its content and
+   leaving ~7px below it), and (2) topbar-inner's padding-bottom has to go
+   to ZERO (the folder-tabs container respected padding-bottom and ended
+   8px above topbar-inner's bottom). Together these let folder-tabs reach
+   the topbar's border row so the box-shadow mask on the active tab lands
+   where the line actually is. Padding-top stays at 0.5rem to keep the
+   brand vertically positioned where it was. */
+.topbar-inner { min-height: calc(var(--topbar-h) - 1px); padding-bottom: 0; }
+.folder-tabs { gap: 2px; align-items: flex-end; align-self: stretch; padding-top: 0.35rem; }
+.folder-tab {
+  border-radius: 5px 5px 0 0;
+  border-bottom: none;
+  background: var(--paper-tint);
+  padding: 0.5rem 0.85rem 0.55rem;
+  margin-bottom: -1px;  /* overlap the topbar's bottom border */
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+.folder-tab.active {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--rule);
+  font-weight: 600;
+  position: relative;
+  z-index: 2;
+  /* Paper-colored 1px strip painted directly below the active tab — masks
+     the topbar's bottom border under this tab while leaving the line intact
+     beside it (the manila-folder effect). */
+  box-shadow: 0 1px 0 0 var(--paper);
+}
+/* Use --ink-soft (not --muted) for inactive tab text to clear WCAG AA
+   4.5:1 against --paper-tint. */
+.folder-tab:not(.active) { color: var(--ink-soft); border-color: var(--rule); }
+.folder-tab:not(.active):hover { color: var(--ink); background: var(--paper-card); }
+.folder-tab.external .ext { margin-left: 0.3rem; font-size: 11px; color: inherit; }
+/* Screen-reader-only utility — visually hidden, exposed to assistive tech. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+/* Keep "Source ↗" on one line — the arrow wrapped to a second row on iPad
+   portrait when the tab strip was just-barely tight (mobile audit). */
+.folder-tab { white-space: nowrap; }
+/* Visible focus ring for keyboard users — none of the existing buttons/links
+   had any focus indicator. WCAG 2.4.7 (Focus Visible). */
+.folder-tab:focus-visible,
+#inspector-toggle:focus-visible,
+#theme-toggle:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Phone/tablet topbar fixes (mobile audit 2026-05-24):
+   - Inspector toggle is dead UI below 821px where its target column (right
+     inspector on briefing, left chapter rail on transcript) is no longer
+     present-as-collapsible-column. The two views diverge above that
+     (briefing toggle is meaningful ≥1181px, transcript toggle is meaningful
+     ≥821px) — so this ≤820 hide is the safe shared rule. Briefing extends
+     it to ≤1180 in its own override.
+   - On iPhone the topbar was growing to 4+ rows (brand 2 lines + subtitle
+     2 lines + tab row), eating the H1 below it on scroll. Compress to 2
+     rows: hide the redundant subtitle (info is in the hero card), allow
+     the topbar height to fit the content, and bottom-align the theme
+     toggle inline with the tab row so it doesn't strand out of alignment. */
+@media (max-width: 820px) { #inspector-toggle { display: none; } }
+@media (max-width: 480px) {
+  .topbar { --topbar-h: auto; }
+  .topbar-inner { padding: 0.4rem 0.75rem; gap: 0.3rem; min-height: 0; }
+  .topbar .brand strong {
+    font-size: 0.82rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar .brand span { display: none; }
+  .folder-tab { padding: 0.4rem 0.6rem; font-size: 0.7rem; }
+  #theme-toggle { margin-bottom: 0; padding: 0.3rem 0.45rem; }
+}
+"""
+
+THEME_TOGGLE_JS = """
+// Theme toggle: light by default, dark opt-in, persists in localStorage.
+// Guarded against file:// / sandboxed contexts where storage access throws.
+(function() {
+  const KEY = 'render-as-html.theme';
+  let saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (saved === 'dark') document.body.classList.add('dark');
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const dark = document.body.classList.toggle('dark');
+    try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch (e) {}
+  });
+})();
+"""
+
+
+def transform_style_block(style_block: str, extra_css: str = "") -> str:
+    """Strip the prefers-color-scheme media query and graft on opt-in dark + theme-toggle CSS."""
+    if DARK_MEDIA_BLOCK in style_block:
+        style_block = style_block.replace(DARK_MEDIA_BLOCK, DARK_CLASS_BLOCK, 1)
+    # Inject the theme-toggle CSS (and any extra) just before </style>
+    return style_block.replace("</style>", THEME_TOGGLE_CSS + extra_css + "\n</style>", 1)
+
+
+def esc(s: str | None) -> str:
+    return html.escape(s or "", quote=True)
+
+
+def fmt_duration(seconds: int | None) -> str:
+    if not seconds:
+        return ""
+    m = seconds // 60
+    h = m // 60
+    if h:
+        return f"{h}h {m % 60}m"
+    return f"{m} min"
+
+
+def dot_class(category: str) -> str:
+    return {
+        "person": "person",
+        "company": "concept",
+        "organization": "concept",
+        "concept": "concept",
+        "book": "article",
+        "article": "article",
+        "tool": "tool",
+    }.get((category or "").lower(), "concept")
+
+
+CATEGORY_LABEL = {
+    "person": "People",
+    "company": "Organizations",
+    "organization": "Organizations",
+    "concept": "Concepts",
+    "tool": "Tools",
+    "book": "Books & articles",
+    "article": "Books & articles",
+}
+CATEGORY_ORDER = ["person", "organization", "company", "concept", "tool", "book", "article"]
+
+
+def render_term(term: dict) -> str:
+    name = esc(term.get("term"))
+    url = term.get("url")
+    if url:
+        name_html = f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">{name}<span class="ext">↗</span></a>'
+    else:
+        name_html = name
+    note = esc(term.get("notes") or "")
+    dot = dot_class(term.get("category", ""))
+    return f'''      <div class="term-row">
+        <span class="dot {dot}"></span>
+        <div>
+          <div class="name">{name_html}</div>
+          <div class="note">{note}</div>
+        </div>
+      </div>'''
+
+
+def group_terms(terms: list[dict]) -> dict[str, list[dict]]:
+    groups: dict[str, list[dict]] = {}
+    for t in terms:
+        cat = (t.get("category") or "concept").lower()
+        # collapse company → organization for grouping
+        bucket = cat if cat in CATEGORY_ORDER else "concept"
+        groups.setdefault(bucket, []).append(t)
+    return groups
+
+
+def render_terms_section(terms: list[dict]) -> str:
+    grouped = group_terms(terms)
+    chunks: list[str] = []
+    seen_labels: set[str] = set()
+    for cat in CATEGORY_ORDER:
+        bucket = grouped.get(cat, [])
+        if not bucket:
+            continue
+        label = CATEGORY_LABEL.get(cat, cat.title())
+        if label in seen_labels:
+            continue
+        # combine company under "Organizations" label etc.
+        if label == "Organizations":
+            bucket = grouped.get("organization", []) + grouped.get("company", [])
+        if label == "Books & articles":
+            bucket = grouped.get("book", []) + grouped.get("article", [])
+        seen_labels.add(label)
+        chunks.append(f'      <p class="group-label">{esc(label)}</p>')
+        for t in bucket:
+            chunks.append(render_term(t))
+    return "\n".join(chunks)
+
+
+def render_takeaways(items: list) -> str:
+    rows = []
+    for i, item in enumerate(items, start=1):
+        text = item if isinstance(item, str) else (item.get("takeaway") or item.get("text") or str(item))
+        rows.append(f'''        <article class="takeaway-tile">
+          <div class="num">{i:02d}</div>
+          <p>{esc(text)}</p>
+        </article>''')
+    return "\n".join(rows)
+
+
+def render_claims(claims: list[dict]) -> str:
+    rows = []
+    for c in claims:
+        topic = esc(c.get("topic") or c.get("title") or "Claim")
+        claim_text = esc(c.get("claim") or c.get("text") or "")
+        evidence = c.get("evidence") or ""
+        ev_html = ""
+        if evidence:
+            ev_html = f'\n          <p class="evidence"><strong>Evidence:</strong> {esc(evidence)}</p>'
+        rows.append(f'''        <article class="claim-card">
+          <span class="topic-pill">{topic}</span>
+          <p class="claim-text">{claim_text}</p>{ev_html}
+        </article>''')
+    return "\n".join(rows)
+
+
+def render_transcript(package_path: Path) -> str:
+    """Render the transcript-view sibling that shares the topbar + dark-mode CSS."""
+    pkg = json.loads(package_path.read_text(encoding="utf-8"))
+    ep = pkg["episode"]
+    template = TEMPLATE_PATH.read_text(encoding="utf-8")
+    style_start = template.find("<style>")
+    style_end = template.find("</style>", style_start) + len("</style>")
+    style_block = template[style_start:style_end]
+    transcript_overrides = COMMON_OVERRIDES + """
+/* Transcript-view chrome */
+.transcript-shell { max-width: var(--studio-max); margin: 0 auto; padding: 1rem 1.25rem 2.5rem; display: grid; grid-template-columns: 1fr; gap: 1rem; }
+@media (min-width: 821px) {
+  .transcript-shell { grid-template-columns: 14rem minmax(0, 1fr); gap: 1.5rem; padding: 1.25rem 1.5rem 3rem; }
+  .chapter-rail { position: sticky; top: calc(var(--topbar-h) + 0.5rem); max-height: calc(100dvh - var(--topbar-h) - 1rem); overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+}
+.chapter-rail { background: var(--paper-card); border: 1px solid var(--rule); border-radius: 8px; padding: 0.85rem 1rem; }
+/* Phone: cap the in-flow chapter rail so it doesn't eat half the viewport
+   before the transcript starts; scroll within the rail for the rest. */
+@media (max-width: 820px) { .chapter-rail { max-height: 12rem; overflow-y: auto; } }
+body.inspector-hidden .chapter-rail { display: none; }
+@media (min-width: 821px) { body.inspector-hidden .transcript-shell { grid-template-columns: 1fr; } }
+.chapter-rail .rail-title { font-family: var(--font-serif); font-size: 1rem; line-height: 1.2; font-weight: 700; color: var(--ink); margin: 0 0 0.55rem; }
+.chapter-rail ol { list-style: none; padding: 0; margin: 0; counter-reset: ch; }
+.chapter-rail li { counter-increment: ch; }
+.chapter-rail a { display: flex; gap: 0.5rem; align-items: flex-start; padding: 0.35rem 0; border-bottom: 1px solid var(--rule-soft); color: var(--ink-soft); text-decoration: none; font-size: 0.83rem; line-height: 1.35; }
+.chapter-rail a:hover { color: var(--accent); }
+.chapter-rail a time { flex: 0 0 auto; min-width: 4.2rem; font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); padding-top: 0.08rem; }
+.chapter-rail a .ch-title { flex: 1 1 auto; min-width: 0; }
+.transcript-body { display: flex; flex-direction: column; gap: 0; }
+.chapter-break { padding: 1rem 0 0.4rem; border-top: 1px solid var(--rule); margin-top: 1rem; scroll-margin-top: calc(var(--topbar-h) + 0.5rem); }
+.chapter-break:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+.chapter-break h2 { font-family: var(--font-serif); font-size: 1.18rem; line-height: 1.2; margin: 0 0 0.2rem; color: var(--ink); }
+.chapter-break .ts { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; }
+.turn { padding: 0.4rem 0; border-bottom: 1px solid var(--rule-soft); }
+.turn .speaker { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.18rem; }
+.turn .speaker.continued { display: none; }
+.turn p { margin: 0; font-size: 0.92rem; line-height: 1.55; color: var(--ink); }
+"""
+    style_block = transform_style_block(style_block, transcript_overrides)
+
+    title = ep.get("short_title") or ep.get("title") or "Untitled episode"
+    podcast_title = ep.get("podcast_title") or ""
+    episode_number = ep.get("episode_number")
+    duration_str = fmt_duration(ep.get("duration_seconds"))
+    episode_url = ep.get("episode_url") or ""
+
+    sub_parts: list[str] = []
+    if podcast_title:
+        sub_parts.append(podcast_title)
+    if episode_number:
+        sub_parts.append(f"#{episode_number}")
+    if duration_str:
+        sub_parts.append(duration_str)
+    sub_line = " · ".join(sub_parts)
+
+    source_tab = ""
+    if episode_url:
+        source_tab = f'<a class="folder-tab external listen" href="{esc(episode_url)}" target="_blank" rel="noopener noreferrer">Source <span class="ext" aria-hidden="true">↗</span></a>'
+
+    # Index chapters by their turn_index so we know where to insert chapter breaks.
+    chapters = pkg.get("chapters") or []
+    turn_index_to_chapter: dict[int, dict] = {}
+    for c in chapters:
+        ti = c.get("turn_index")
+        if isinstance(ti, int):
+            turn_index_to_chapter[ti] = c
+
+    # Chapter rail
+    rail_items: list[str] = []
+    for c in chapters:
+        anchor = esc(c.get("anchor_id") or "")
+        ts = esc(c.get("timestamp") or "")
+        ctitle = esc(c.get("title") or "")
+        rail_items.append(f'<li><a href="#{anchor}"><time>{ts}</time><span class="ch-title">{ctitle}</span></a></li>')
+
+    # Body: interleave chapter breaks + turns
+    body_parts: list[str] = []
+    prev_speaker: str | None = None
+    for i, turn in enumerate(pkg.get("turns") or []):
+        if i in turn_index_to_chapter:
+            c = turn_index_to_chapter[i]
+            anchor = esc(c.get("anchor_id") or f"chapter-{i}")
+            ts = esc(c.get("timestamp") or "")
+            ctitle = esc(c.get("title") or "")
+            body_parts.append(
+                f'<section class="chapter-break" id="{anchor}"><h2>{ctitle}</h2><div class="ts">{ts}</div></section>'
+            )
+            prev_speaker = None  # always show speaker label at the top of a chapter
+        speaker = (turn.get("speaker") or "").strip()
+        text = esc(turn.get("text") or "")
+        same = speaker == prev_speaker
+        speaker_html = (
+            f'<div class="speaker continued">{esc(speaker)}</div>'
+            if same
+            else f'<div class="speaker">{esc(speaker)}</div>'
+        )
+        body_parts.append(f'<div class="turn">{speaker_html}<p>{text}</p></div>')
+        prev_speaker = speaker
+
+    return f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{esc(title)} — Transcript</title>
+<meta name="description" content="Annotated transcript of {esc(title)} ({esc(podcast_title)}).">
+<meta property="og:title" content="{esc(title)} — Transcript">
+<meta property="og:description" content="Annotated transcript of {esc(title)} ({esc(podcast_title)}).">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Todd's Reports">
+<meta name="twitter:card" content="summary">
+{style_block}
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <strong>{esc(title)}</strong>
+      <span>{esc(sub_line)}</span>
+    </div>
+    <nav class="folder-tabs" aria-label="Episode views">
+      <a class="folder-tab" href="podcast-at-a-glance.html">Briefing</a>
+      <a class="folder-tab active" href="annotated-transcript.html" aria-current="page">Transcript</a>
+      {source_tab}
+    </nav>
+    <button id="inspector-toggle" type="button" aria-pressed="false" title="Hide the chapter rail to widen the reading column">
+      <span class="il-hide">hide sidebar</span>
+      <span class="il-show">show sidebar</span>
+    </button>
+    {THEME_TOGGLE_BUTTON}
+  </div>
+</header>
+
+<div class="transcript-shell">
+  <aside class="chapter-rail" aria-label="Chapter navigation">
+    <p class="rail-title">Chapters</p>
+    <ol>
+      {"".join(rail_items)}
+    </ol>
+  </aside>
+  <main class="transcript-body">
+    <h1 class="sr-only">Annotated transcript: {esc(title)}</h1>
+    {"".join(body_parts)}
+  </main>
+</div>
+
+<footer class="colophon">
+  <span class="path">~/Reports/{esc(package_path.parent.parent.name)}/annotated-transcript.html · podcast shape · v2.4.0 · transcript view</span>
+  <a href="podcast-at-a-glance.html">← back to briefing</a>
+</footer>
+
+<script>
+const inspectorToggle = document.getElementById('inspector-toggle');
+if (inspectorToggle) {{
+  inspectorToggle.addEventListener('click', () => {{
+    const hidden = document.body.classList.toggle('inspector-hidden');
+    inspectorToggle.setAttribute('aria-pressed', String(hidden));
+  }});
+}}
+{THEME_TOGGLE_JS}
+</script>
+</body>
+</html>
+'''
+
+
+def render_briefing(package_path: Path) -> str:
+    pkg = json.loads(package_path.read_text(encoding="utf-8"))
+    ep = pkg["episode"]
+    template = TEMPLATE_PATH.read_text(encoding="utf-8")
+    # Extract just the <style>...</style> block (re-using the canonical CSS)
+    style_start = template.find("<style>")
+    style_end = template.find("</style>", style_start) + len("</style>")
+    style_block = template[style_start:style_end]
+    # Local overrides:
+    # - Topbar brand: v2.2.0 example caps at 18rem with nowrap+ellipsis (made
+    #   sense for fictional short title; cuts off real podcast titles awkwardly).
+    # - Theme: drop the prefers-color-scheme media query, switch to opt-in
+    #   body.dark + toggle button (light is default).
+    # Briefing-only: inspector column appears at ≥1181px, so the toggle is dead
+    # UI from 821–1180px too. (COMMON_OVERRIDES already hides it ≤820 for both views.)
+    briefing_overrides = COMMON_OVERRIDES + "\n@media (max-width: 1180px) { #inspector-toggle { display: none; } }\n"
+    style_block = transform_style_block(style_block, briefing_overrides)
+
+    title = ep.get("short_title") or ep.get("title") or "Untitled episode"
+    podcast_title = ep.get("podcast_title") or ""
+    episode_number = ep.get("episode_number")
+    duration_str = fmt_duration(ep.get("duration_seconds"))
+    published_at = (ep.get("published_at") or "")[:10]
+    hosts = ep.get("hosts") or []
+    guests = ep.get("guests") or []
+    description = (ep.get("description") or "").strip()
+    episode_url = ep.get("episode_url") or ""
+    bottom_line = pkg.get("bottom_line") or ""
+    bundle_slug = package_path.parent.parent.name
+
+    # Meta sub-line
+    sub_parts: list[str] = []
+    if podcast_title:
+        sub_parts.append(podcast_title)
+    if episode_number:
+        sub_parts.append(f"#{episode_number}")
+    if duration_str:
+        sub_parts.append(duration_str)
+    sub_line = " · ".join(sub_parts)
+
+    # Meta row inside hero
+    meta_parts: list[str] = []
+    if published_at:
+        meta_parts.append(esc(published_at))
+    if hosts:
+        meta_parts.append(f"{esc(hosts[0])} (host)")
+    if guests:
+        meta_parts.append(f"{esc(guests[0])} (guest)")
+    meta_row = " · ".join(meta_parts)
+
+    # Folder tabs — link to transcript view (sibling file) + episode source URL
+    transcript_tab = '<a class="folder-tab" href="annotated-transcript.html">Transcript</a>'
+    source_tab = ""
+    if episode_url:
+        source_tab = f'<a class="folder-tab external listen" href="{esc(episode_url)}" target="_blank" rel="noopener noreferrer">Source <span class="ext" aria-hidden="true">↗</span></a>'
+
+    host_card = ""
+    if hosts:
+        host_card = f'''
+    <section class="card profile-card">
+      <div class="label">About the host</div>
+      <div class="name">{esc(hosts[0])}</div>
+      <div class="role">Host of <em>{esc(podcast_title)}</em>.</div>
+    </section>'''
+
+    guest_card = ""
+    if guests:
+        guest_card = f'''
+    <section class="card profile-card">
+      <div class="label">About the guest</div>
+      <div class="name">{esc(guests[0])}</div>
+      <div class="role">{esc(description) if description else ""}</div>
+    </section>'''
+
+    takeaways_html = render_takeaways(pkg.get("takeaways") or [])
+    claims_html = render_claims(pkg.get("claims") or [])
+    terms_html = render_terms_section(pkg.get("terms") or [])
+
+    # Read-next list — links from the package + sibling artifacts.
+    # Episode URL is already on the topbar Listen tab; don't duplicate here.
+    next_items: list[str] = []
+    next_items.append(
+        '<li><a href="annotated-transcript.html"><span class="label">Full annotated transcript<span class="next-note">Side-by-side chapter rail and search.</span></span><span class="arrow">→</span></a></li>'
+    )
+    for link in (pkg.get("links") or [])[:4]:
+        label = esc(link.get("label") or link.get("url"))
+        url = esc(link.get("url") or "#")
+        note = esc(link.get("note") or "")
+        next_items.append(
+            f'<li><a href="{url}" target="_blank" rel="noopener noreferrer"><span class="label">{label}<span class="next-note">{note}</span></span><span class="arrow">↗</span></a></li>'
+        )
+    next_list_html = "\n        ".join(next_items)
+
+    # OG meta — keep short
+    og_description = (bottom_line[:150] + "…") if len(bottom_line) > 150 else bottom_line
+
+    theme_toggle = THEME_TOGGLE_BUTTON
+    theme_toggle_js = THEME_TOGGLE_JS
+    html_out = f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{esc(title)} — {esc(podcast_title)}</title>
+<meta name="description" content="{esc(og_description)}">
+<meta property="og:title" content="{esc(title)} — {esc(podcast_title)}">
+<meta property="og:description" content="{esc(og_description)}">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Todd's Reports">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="og-card.png">
+<meta name="twitter:image" content="og-card.png">
+{style_block}
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <strong>{esc(title)}</strong>
+      <span>{esc(sub_line)}</span>
+    </div>
+    <nav class="folder-tabs" aria-label="Episode views">
+      <a class="folder-tab active" href="podcast-at-a-glance.html" aria-current="page">Briefing</a>
+      {transcript_tab}
+      {source_tab}
+    </nav>
+    <button id="inspector-toggle" aria-pressed="false" title="Hide the term inspector to focus on the briefing">
+      <span class="il-hide">hide sidebar</span>
+      <span class="il-show">show sidebar</span>
+    </button>
+    {theme_toggle}
+  </div>
+</header>
+
+<div class="studio">
+
+  <!-- LEFT RAIL: episode hero + host/guest cards -->
+  <aside class="col-episode" aria-label="Episode details">
+    <section class="card episode-hero">
+      <p class="kicker">{esc(sub_line)}</p>
+      <h1>{esc(title)}</h1>
+      <p class="summary">{esc(description)}</p>
+      <p class="meta-row">{meta_row}</p>
+    </section>
+{host_card}
+{guest_card}
+  </aside>
+
+  <!-- CENTER: thesis → takeaways → claims -->
+  <main class="col-main">
+
+    <section class="card thesis-card">
+      <p class="card-title">The thesis</p>
+      <blockquote class="thesis-quote">{esc(bottom_line)}</blockquote>
+    </section>
+
+    <section class="card">
+      <p class="card-title">What to take away</p>
+      <div class="takeaway-grid">
+{takeaways_html}
+      </div>
+    </section>
+
+    <section class="card">
+      <p class="card-title">Notable claims</p>
+      <div class="claim-list">
+{claims_html}
+      </div>
+    </section>
+  </main>
+
+  <!-- RIGHT INSPECTOR: terms grouped + read next -->
+  <aside class="col-inspector" aria-label="Term inspector">
+
+    <section class="card inspector-section">
+      <p class="card-title">Terms in this episode</p>
+{terms_html}
+    </section>
+
+    <section class="card inspector-section">
+      <p class="card-title">Read next</p>
+      <ul class="next-list">
+        {next_list_html}
+      </ul>
+    </section>
+  </aside>
+</div>
+
+<!-- COLOPHON -->
+<footer class="colophon">
+  <span class="path">~/Reports/{esc(bundle_slug)}/podcast-at-a-glance.html · podcast shape · v2.4.0</span>
+  <a href="https://github.com/twidtwid/render-as-html" target="_blank" rel="noopener noreferrer">rendered with render-as-html</a>
+</footer>
+
+<script>
+const inspectorToggle = document.getElementById('inspector-toggle');
+inspectorToggle.addEventListener('click', () => {{
+  const hidden = document.body.classList.toggle('inspector-hidden');
+  inspectorToggle.setAttribute('aria-pressed', String(hidden));
+}});
+{theme_toggle_js}
+</script>
+</body>
+</html>
+'''
+    return html_out
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="render-podcast",
+        description="Render a podcast-shape briefing + annotated transcript from an episode.package.json.",
+    )
+    parser.add_argument("package", type=Path, help="path to episode.package.json")
+    parser.add_argument(
+        "-o", "--output-dir", type=Path, default=None,
+        help="output directory (default: alongside the package file)",
+    )
+    args = parser.parse_args(argv)
+
+    package_path = args.package.resolve()
+    if not package_path.exists():
+        print(f"not found: {package_path}", file=sys.stderr)
+        return 1
+    if not TEMPLATE_PATH.exists():
+        print(f"template not found: {TEMPLATE_PATH}", file=sys.stderr)
+        print("set RENDER_AS_HTML_REPO to your repo checkout if rendering from outside it.", file=sys.stderr)
+        return 1
+
+    out_dir = (args.output_dir or package_path.parent).resolve()
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    briefing_path = out_dir / "podcast-at-a-glance.html"
+    transcript_path = out_dir / "annotated-transcript.html"
+    briefing_path.write_text(render_briefing(package_path), encoding="utf-8")
+    transcript_path.write_text(render_transcript(package_path), encoding="utf-8")
+    print(briefing_path)
+    print(transcript_path)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
