@@ -1,6 +1,6 @@
 ---
 name: render-as-html
-version: 2.2.0
+version: 2.2.1
 description: Create or update a designed, self-contained HTML artifact as the source of truth. Use when the user says "make an HTML artifact", "render this as html", "make me a pretty version", "I want to read this carefully", "make it interactive/readable", "update this HTML", or "/render-as-html". Output is an editable HTML file, not a conversion preview of another canonical document.
 ---
 
@@ -291,7 +291,8 @@ Explicit user override always wins.
 - **Layout (briefing):** three-zone studio at ≥1181px — narrow `--rail-w` left rail (episode hero + host/guest cards), wide center (thesis → takeaways → claims), narrow right inspector (terms grouped by category + read-next links). Collapses to two columns under 1181px (inspector drops below center), single column under 821px.
 - **Layout (transcript):** narrow chapter rail left + speaker-turn list right (one turn per row: speaker label + timestamp + text). Search bound to the turns corpus only.
 - **Required primitives:**
-  - **Topbar** (`<header class="topbar">`): brand left (short_title + podcast_title · #ep · duration), folder tabs center (Briefing / Transcript / Listen↗ / Show notes↗), **hide-sidebar toggle right**. Same v2.1.2 editorial pattern — `body.inspector-hidden` class, two-span label swap, `aria-pressed`, `body.inspector-hidden .col-inspector { display: none }` lives **outside** any media query.
+  - **Topbar** (`<header class="topbar">`): brand left (short_title + podcast_title · #ep · duration — must NOT truncate-with-ellipsis; real podcast titles fit better with `flex: 1 1 auto; max-width: 60%` and `white-space: normal`), **file-folder tabs** center (Briefing / Transcript / Listen↗ / Show notes↗) — rounded top corners, no bottom border, `margin-bottom: -1px` so the active tab overlaps the topbar's bottom border into the content (reads as manila folder tabs, not pills), **hide-sidebar toggle** and **theme toggle** right. Same v2.1.2 editorial pattern for the hide-sidebar (`body.inspector-hidden` class, two-span label swap, `aria-pressed`, `body.inspector-hidden .col-inspector { display: none }` lives **outside** any media query).
+  - **Theme: light by default, dark opt-in.** Do NOT auto-switch via `@media (prefers-color-scheme: dark)` — it surprises users on dark-OS setups who want the artifact to stay light. Instead: `body.dark { … }` carries the dark tokens, a small theme-toggle button in the topbar flips the class, the choice persists in `localStorage` (key `render-as-html.theme`). LocalStorage access must be try/catch'd for `file://` and sandboxed contexts. Button is a one-character glyph (☾ in light, ☀ in dark) sitting next to `#inspector-toggle`.
   - **Episode hero** in the left rail: kicker (podcast · #ep · duration), serif h1 (short_title; first noun or theme word may take `--accent` color), one-sentence summary from `episode.description` or `bottom_line`, meta-row (date · hosts · guests).
   - **Host / guest profile cards** in the left rail (one per person, with one-sentence role line; fictional people in the example are explicitly labeled "fictional").
   - **Thesis card** in the center: the `bottom_line` rendered as an italic serif pull-quote, left-aligned, no left-handle bar.
