@@ -556,6 +556,12 @@ td.agg-winner {
 </div>
 
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
 const ARTIFACT_PATH = "examples/comparison.html";
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -945,7 +951,7 @@ Please update the TL;DR and winner banner in the artifact to reflect this recomm
   out.style.display = "block";
 
   const status = document.getElementById("copy-status");
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
+  writeClipboard(prompt).then(() => {
     status.classList.add("visible");
     setTimeout(() => status.classList.remove("visible"), 2200);
   }).catch(() => {

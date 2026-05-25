@@ -1282,7 +1282,7 @@
     formatAsInstructions(changes);    <span class="code-cmt">// deltas only, not the whole file</span>
   <span class="code-kw">const</span> out = document.querySelector(<span class="code-str">'#prompt-output'</span>);
   out.value = prompt;
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).catch(() =&gt; {
+  writeClipboard(prompt).catch(() =&gt; {
     out.focus(); out.select();        <span class="code-cmt">// visible fallback if clipboard blocked</span>
   });
 }</code></pre>
@@ -1485,6 +1485,12 @@
 </div>
 
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
   /* ── Artifact path (used in copy-as-prompt) ──────────────────────── */
   const ARTIFACT_PATH = 'examples/document.html';
 
@@ -1539,7 +1545,7 @@
     const fallbackId = 'fallback-' + sectionId;
     const fallbackEl = document.getElementById(fallbackId);
 
-    (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
+    writeClipboard(prompt).then(() => {
       btn.textContent = 'copied ✓';
       btn.classList.add('copied');
       setTimeout(() => {

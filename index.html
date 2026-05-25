@@ -758,7 +758,7 @@ async function copyPrompt() {
   const prompt = `In ${ARTIFACT}, update --accent to hsl(${h} ${s}% ${l}%)`;
   $('#prompt-output').value = prompt;
   try {
-    await (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable")));
+    await writeClipboard(prompt);
   } catch {
     $('#prompt-output').focus();
     $('#prompt-output').select();
@@ -788,7 +788,7 @@ $('#copy-btn').onclick = copyPrompt;
 
 $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
   const html = $('#' + btn.dataset.section).outerHTML;
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(html) : Promise.reject(new Error("clipboard unavailable"))).catch(() =&gt; {
+  writeClipboard(html).catch(() =&gt; {
     $('#copy-fallback').hidden = false;
     $('#copy-fallback').value = html;
     $('#copy-fallback').focus();
@@ -1058,6 +1058,12 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
 </div>
 
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
 (() => {
   const $ = (s, c=document) => c.querySelector(s);
   const $$ = (s, c=document) => [...c.querySelectorAll(s)];
@@ -1119,7 +1125,7 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
 
   $('#cap-copy').addEventListener('click', async e => {
     try {
-      await (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(output.value) : Promise.reject(new Error("clipboard unavailable")));
+      await writeClipboard(output.value);
       e.target.textContent = '✓ copied — paste into Claude Code';
       e.target.classList.add('copied');
       copyStatus.textContent = '';
@@ -1168,7 +1174,7 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
     const head = btn.closest('.ed-sec-h').querySelector('h4').textContent.trim();
     const prompt = `In ${ARTIFACT}, revise the editorial section titled "${head}": `;
     try {
-      await (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable")));
+      await writeClipboard(prompt);
       const t = btn.textContent; btn.textContent = '✓ copied';
       edStatus.textContent = '';
       setTimeout(() => { btn.textContent = t; }, 1600);
@@ -1209,7 +1215,7 @@ $$('.copy-section').forEach(btn =&gt; btn.onclick = () =&gt; {
       const p = buildPrompt();
       clExport.value = p;
       try {
-        await (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(p) : Promise.reject(new Error("clipboard unavailable")));
+        await writeClipboard(p);
         clStatus.textContent = 'Copied — paste into Claude Code.';
       } catch {
         clExport.focus(); clExport.select();

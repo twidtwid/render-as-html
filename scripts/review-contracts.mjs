@@ -68,8 +68,12 @@ for (const file of htmlFiles) {
 const clipboardFiles = ["SKILL.md", ...htmlFiles];
 for (const file of clipboardFiles) {
   const text = read(file);
-  if (/navigator\.clipboard\.writeText/.test(text) && !/navigator\.clipboard\s*&&\s*navigator\.clipboard\.writeText/.test(text)) {
-    fail(file, "clipboard writes must guard navigator.clipboard before calling writeText");
+  // Accept either guard form: legacy `&&` or optional chaining `?.`.
+  // Artifacts use a `writeClipboard` helper that wraps `?.writeText`, so
+  // any file with that helper (or a direct `?.writeText` callsite) passes.
+  if (/navigator\.clipboard\.writeText/.test(text)) {
+    const hasGuard = /navigator\.clipboard\s*&&\s*navigator\.clipboard\.writeText|navigator\.clipboard\?\.writeText/.test(text);
+    if (!hasGuard) fail(file, "clipboard writes must guard navigator.clipboard before calling writeText");
   }
 }
 

@@ -112,6 +112,12 @@
   <textarea id="promptOut" readonly></textarea>
 </div>
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
   const items = ['Pinecone','Weaviate','Qdrant'];
   const criteria = [
     { name:'Free tier',           unit:'gb',   dir:'higher', raw:[2,        Infinity, Infinity], weight:3 },
@@ -211,7 +217,7 @@
     const text = `In <artifact.html>, lock the vector-store comparison: set weights to ${weights}. Aggregate winner at these weights is ${winner}.`;
     promptOut.value = text;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
+      writeClipboard(text).then(() => {
         copyBtn.textContent = '✓ copied'; copyBtn.classList.add('copied');
         setTimeout(() => { copyBtn.textContent = 'copy as prompt'; copyBtn.classList.remove('copied'); }, 1500);
       }).catch(() => { promptOut.classList.add('show'); promptOut.focus(); promptOut.select(); });

@@ -1099,6 +1099,12 @@ Both classes had the same exact declaration block. Deduped to a comma selector: 
 </div>
 
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
 // ── Rail active state ──
 function activateRail(el) {
   document.querySelectorAll('.rail-file').forEach(f => f.classList.remove('active'));
@@ -1140,7 +1146,7 @@ function copyFinding(btn, num) {
 
   // Try navigator.clipboard first
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
+    writeClipboard(text).then(() => {
       flashCopied(btn);
     }).catch(() => {
       showFallback(textarea, btn);

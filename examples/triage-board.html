@@ -740,6 +740,12 @@ body {
 </footer>
 
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
 /* ══════════════════════════════════════════════════════════
    triage-board.html — vanilla JS, no external deps
    Subject: render-as-html roadmap triage (the skill triaging itself)
@@ -980,7 +986,7 @@ Apply these buckets to the triage-board cards and save.`;
 
   const out = document.getElementById('prompt-out');
 
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
+  writeClipboard(prompt).then(() => {
     out.classList.remove('visible');
     flashExportBtn();
   }).catch(() => {

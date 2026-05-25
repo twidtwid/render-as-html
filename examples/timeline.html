@@ -727,6 +727,12 @@
 </footer>
 
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
 // ══════════════════════════════════════════
 // DATA
 // ══════════════════════════════════════════
@@ -1046,7 +1052,7 @@ function copyQuote(id) {
   const fallbackWrap = document.getElementById(`fallback-${id}`);
   const fallbackTa = document.getElementById(`fallback-ta-${id}`);
 
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
+  writeClipboard(text).then(() => {
     if (btn) {
       btn.textContent = 'copied ✓';
       btn.classList.add('copied');

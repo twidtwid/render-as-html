@@ -191,12 +191,18 @@
   </div>
 </div>
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
   document.querySelectorAll('.diff-row .ln').forEach(el => {
     el.addEventListener('click', () => {
       const txt = el.textContent.trim();
       if (!txt) return;
       const ref = `src/auth/session.js:${txt}`;
-      if (navigator.clipboard) (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(ref) : Promise.reject(new Error("clipboard unavailable"))).catch(()=>{});
+      writeClipboard(ref).catch(()=>{});
       const orig = el.textContent;
       el.style.color = 'var(--ok)';
       el.textContent = '✓';
@@ -214,12 +220,10 @@
       const text = promptText[sev];
       const ta = btn.closest('.anno').querySelector('textarea');
       ta.value = text;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
-          btn.textContent = '✓ copied'; btn.classList.add('copied');
-          setTimeout(() => { btn.textContent = 'copy as prompt'; btn.classList.remove('copied'); }, 1500);
-        }).catch(() => { ta.classList.add('show'); ta.focus(); ta.select(); });
-      } else { ta.classList.add('show'); ta.focus(); ta.select(); }
+      writeClipboard(text).then(() => {
+        btn.textContent = '✓ copied'; btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'copy as prompt'; btn.classList.remove('copied'); }, 1500);
+      }).catch(() => { ta.classList.add('show'); ta.focus(); ta.select(); });
     });
   });
   document.getElementById('showNits').addEventListener('change', e => {

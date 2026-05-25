@@ -120,12 +120,20 @@ Tune values in the browser, hit a button, get a paste-able prompt for Claude Cod
 <textarea id="prompt-output" readonly></textarea>
 <button class="copy-prompt-btn" onclick="copyPrompt()">copy as prompt</button>
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, call everywhere — every
+// callsite gets a real Promise to attach .catch() to.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
+
 function copyPrompt() {
   const changes = collectChanges();   // read mutated state
   const prompt = `In ${ARTIFACT_PATH}, apply these changes:\n${formatAsInstructions(changes)}`;
   const out = document.querySelector('#prompt-output');
   out.value = prompt;
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).catch(() => {
+  writeClipboard(prompt).catch(() => {
     out.focus();
     out.select(); // visible fallback when clipboard permission is blocked
   });

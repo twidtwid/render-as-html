@@ -865,7 +865,7 @@ contract step 7 checks against.</div>
     formatAsInstructions(changes);
   <span class="kw">const</span> out = document.querySelector(<span class="str">'#prompt-output'</span>);
   out.value = prompt;
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).<span class="cmd">catch</span>(() =&gt; {
+  writeClipboard(prompt).<span class="cmd">catch</span>(() =&gt; {
     out.focus(); out.select();   <span class="c">// visible fallback</span>
   });
 }</pre>
@@ -1076,6 +1076,12 @@ Artifact is the source of truth — not an export of anything.</div>
 </footer>
 
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
 // ── Constants ────────────────────────────────────────────────
 const ARTIFACT_PATH = 'examples/runbook.html';
 
@@ -1173,7 +1179,7 @@ function activateRedesign() {
 function copyCode(btn) {
   const pre = btn.parentElement.querySelector('.code-block');
   const text = pre.textContent;
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
+  writeClipboard(text).then(() => {
     btn.textContent = 'copied!';
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1600);
@@ -1244,7 +1250,7 @@ function copyStuckPrompt() {
   const btn = document.getElementById('stuck-copy-btn');
   const hint = document.getElementById('stuck-hint');
 
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
+  writeClipboard(text).then(() => {
     btn.textContent = 'Copied!';
     btn.classList.add('copied');
     hint.textContent = 'Prompt is on your clipboard — paste it into your coding agent.';

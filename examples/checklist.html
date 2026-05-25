@@ -746,6 +746,12 @@ h1 {
 </div>
 
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
 /* ── Constants ── */
 const ARTIFACT = 'examples/checklist.html';
 const TOTAL = 12;
@@ -846,7 +852,7 @@ function copyAsPrompt() {
   const out = document.getElementById('prompt-output');
   out.value = prompt;
 
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
+  writeClipboard(prompt).then(() => {
     const btn = document.getElementById('copy-btn');
     const prev = btn.textContent;
     btn.textContent = 'copied!';

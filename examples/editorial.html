@@ -1372,6 +1372,12 @@ body.flattened mark { background: transparent; color: inherit; padding: 0; }
 </footer>
 
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
 // ── CONSTANTS ────────────────────────────────────────────────────────────────
 const ARTIFACT_PATH = 'examples/editorial.html';
 
@@ -1621,7 +1627,7 @@ document.querySelectorAll('.copy-section-btn').forEach(btn => {
       btn.textContent = 'copy as prompt';
     }, 2000);
 
-    (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).catch(() => {
+    writeClipboard(prompt).catch(() => {
       // fallback
       fallbackTA.value = prompt;
       fallbackTA.style.display = 'block';
@@ -1786,7 +1792,7 @@ composerCopy.addEventListener('click', () => {
       composerCopy.textContent = 'copy as prompt';
     }, 2000);
   }
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(txt) : Promise.reject(new Error("clipboard unavailable"))).then(ok).catch(() => {
+  writeClipboard(txt).then(ok).catch(() => {
     // visible fallback: the composer textarea is already on-screen — focus + select it
     composerOut.removeAttribute('readonly');
     composerOut.focus();

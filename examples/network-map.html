@@ -508,6 +508,12 @@ footer {
 </footer>
 
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
 // ─── DATA ─────────────────────────────────────────────
 const ARTIFACT_PATH = 'examples/network-map.html';
 
@@ -1001,7 +1007,7 @@ byId('copy-btn').addEventListener('click', () => {
   const out = byId('prompt-output');
   out.style.display = 'block';
   out.value = prompt;
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
+  writeClipboard(prompt).then(() => {
     byId('copy-btn').textContent = 'copied!';
     byId('copy-btn').setAttribute('aria-label', 'Copied prompt for ' + name + ' to clipboard');
     setTimeout(() => {

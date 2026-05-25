@@ -625,6 +625,12 @@ footer {
 </div><!-- /shell -->
 
 <script>
+// navigator.clipboard.writeText() throws synchronously when navigator.clipboard
+// is undefined (older browsers, some iframes, hardened sandboxes); a bare
+// .catch() does not run on a sync throw. Wrap once, reuse everywhere.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
 // ── Data ───────────────────────────────────────────────────────────
 // The artifact path is repo-relative on purpose: this sample ships into
 // the public render-as-html repo at examples/dashboard.html.
@@ -943,7 +949,7 @@ document.getElementById('shape-tbody').addEventListener('click', e => {
 });
 
 function copyToClipboard(text, btn) {
-  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
+  writeClipboard(text).then(() => {
     if (btn) { btn.classList.add('copied'); btn.textContent = 'copied!'; setTimeout(()=>{ btn.classList.remove('copied'); btn.textContent='copy prompt'; },1800); }
   }).catch(() => {
     showFallback(text);
