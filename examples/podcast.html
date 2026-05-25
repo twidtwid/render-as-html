@@ -89,6 +89,16 @@ body {
   position: relative;
 }
 .folder-tab.active { color: var(--ink); background: var(--paper); border-color: var(--rule); font-weight: 600; z-index: 2; }
+/* The active tab must visibly break through the topbar's bottom border into
+   the content area. margin-bottom: -1px hides 1px; this pseudo-element paints
+   a paper-colored strip across that bottom edge so the line vanishes cleanly
+   under the active tab regardless of sub-pixel rendering. */
+.folder-tab.active::after {
+  content: ''; position: absolute;
+  left: -1px; right: -1px; bottom: -1px;
+  height: 2px;
+  background: var(--paper);
+}
 .folder-tab:not(.active):hover { color: var(--ink); background: var(--paper-card); }
 .folder-tab.external .ext { color: inherit; margin-left: 0.3rem; font-size: 11px; }
 
