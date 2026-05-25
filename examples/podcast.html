@@ -28,14 +28,17 @@
   --rail-w:18rem;
   --gap:0.6rem;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
-    --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
-    --rule:#38332b; --rule-soft:#2c2820;
-    --accent:#e0794f; --accent-2:#d8a73a;
-    --ok:#5cae6f; --note:#6f9fd0;
-  }
+/* Dark mode is opt-in via a body.dark class + toggle button — see #theme-toggle
+   below and the script at the bottom. Light is the default; the toggle persists
+   the choice in localStorage. (The previous version of this example auto-dark'd
+   via @media (prefers-color-scheme: dark) which surprised users on dark-OS
+   setups when they didn't want the artifact to follow OS theme.) */
+body.dark {
+  --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+  --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+  --rule:#38332b; --rule-soft:#2c2820;
+  --accent:#e0794f; --accent-2:#d8a73a;
+  --ok:#5cae6f; --note:#6f9fd0;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; max-width: 100%; }
@@ -61,23 +64,48 @@ body {
   padding: 0.5rem 1.25rem;
   display: flex; align-items: center; gap: 1rem;
 }
-.topbar .brand { display: flex; flex-direction: column; min-width: 0; flex: 0 1 18rem; }
-.topbar .brand strong { font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.92rem; }
-.topbar .brand span { color: var(--muted); font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); }
-.folder-tabs { display: flex; gap: 0.25rem; margin-left: auto; }
+/* Brand: title can be long ("The AI paradox: More automation, more humans,
+   more work | Dan Shipper"). Let it wrap or take the available row width
+   rather than truncating with "..." — the previous `flex: 0 1 18rem` cap
+   made sense only for fictional 4-word example titles. */
+.topbar .brand { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; max-width: 60%; }
+.topbar .brand strong { font-weight: 600; color: var(--ink); font-size: 0.92rem; line-height: 1.2; }
+.topbar .brand span { color: var(--muted); font-size: 0.75rem; font-family: var(--font-mono); line-height: 1.3; }
+/* File-folder tabs: rounded top corners, no bottom border on the active tab,
+   and the tab strip's baseline overlaps the topbar's bottom border. Reads as
+   manila folder tabs — the active tab is the one currently surfaced. */
+.folder-tabs { display: flex; gap: 2px; margin-left: auto; align-items: flex-end; align-self: stretch; padding-top: 0.35rem; }
 .folder-tab {
-  font-family: var(--font-mono); font-size: 11px;
-  letter-spacing: 0.04em; text-transform: uppercase;
-  padding: 0.42rem 0.7rem;
+  font-family: var(--font-mono); font-size: 12px;
+  letter-spacing: 0.03em; text-transform: uppercase;
+  padding: 0.5rem 0.85rem 0.55rem;
   border: 1px solid var(--rule);
-  border-radius: 3px;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
   color: var(--muted);
   text-decoration: none;
-  background: var(--paper);
+  background: var(--paper-tint);
+  margin-bottom: -1px; /* overlap the topbar's bottom border */
+  position: relative;
 }
-.folder-tab.active { color: var(--accent); border-color: var(--accent); background: var(--paper-card); }
-.folder-tab:not(.active):hover { color: var(--ink); border-color: var(--accent); }
-.folder-tab.external .ext { color: var(--muted); margin-left: 0.2rem; font-size: 10px; }
+.folder-tab.active { color: var(--ink); background: var(--paper); border-color: var(--rule); font-weight: 600; z-index: 2; }
+.folder-tab:not(.active):hover { color: var(--ink); background: var(--paper-card); }
+.folder-tab.external .ext { color: inherit; margin-left: 0.3rem; font-size: 11px; }
+
+/* Theme toggle: light by default, dark opt-in, persists in localStorage.
+   Sits in the topbar next to #inspector-toggle. */
+#theme-toggle {
+  font-family: var(--font-mono); font-size: 13px; line-height: 1;
+  color: var(--muted); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 3px;
+  padding: 0.32rem 0.55rem;
+  cursor: pointer;
+  margin-left: 0.4rem;
+  min-width: 1.9rem; text-align: center;
+}
+#theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+#theme-toggle .glyph-dark, body.dark #theme-toggle .glyph-light { display: none; }
+body.dark #theme-toggle .glyph-dark { display: inline; }
 
 /* hide-sidebar toggle — same v2.1.2 editorial pattern, lives in topbar */
 #inspector-toggle {
@@ -237,6 +265,7 @@ body.inspector-hidden .col-inspector { display: none; }
   display: inline-block;
   font-family: var(--font-mono); font-size: 10px;
   text-transform: uppercase; letter-spacing: 0.06em;
+  font-weight: 600;
   color: var(--accent);
   background: var(--paper-tint);
   border: 1px solid var(--rule);
@@ -333,6 +362,10 @@ body.inspector-hidden .col-inspector { display: none; }
     <button id="inspector-toggle" aria-pressed="false" title="Hide the term inspector to focus on the briefing">
       <span class="il-hide">hide sidebar</span>
       <span class="il-show">show sidebar</span>
+    </button>
+    <button id="theme-toggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode">
+      <span class="glyph-light">☾</span>
+      <span class="glyph-dark">☀</span>
     </button>
   </div>
 </header>
@@ -523,6 +556,21 @@ inspectorToggle.addEventListener('click', () => {
   const hidden = document.body.classList.toggle('inspector-hidden');
   inspectorToggle.setAttribute('aria-pressed', String(hidden));
 });
+
+// Theme toggle: light by default, dark opt-in, persists in localStorage.
+// Guarded against file:// / sandboxed contexts where storage access throws.
+(function() {
+  const KEY = 'render-as-html.theme';
+  let saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (saved === 'dark') document.body.classList.add('dark');
+  const btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const dark = document.body.classList.toggle('dark');
+    try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch (e) {}
+  });
+})();
 </script>
 </body>
 </html>
