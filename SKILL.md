@@ -301,7 +301,7 @@ Explicit user override always wins.
   - **Host / guest profile cards** in the left rail (one per person, with one-sentence role line; fictional people in the example are explicitly labeled "fictional").
   - **Thesis card** in the center: the `bottom_line` rendered as an italic serif pull-quote, left-aligned, no left-handle bar.
   - **Takeaway tiles**: numbered (`01..NN` mono), single-column list inside one card, ≤8 tiles. Never a grid of cards.
-  - **Claim cards**: one per `claims[]` entry, terracotta topic pill (uppercase mono) + claim body + Evidence line. Evidence lines hyperlink their sources — same rule as editorial.
+  - **Claim cards**: one per `claims[]` entry, serif bold topic headline in `--ink` (≈1.05rem, normal case — same treatment editorial-shape uses for claim `h3`s; the class name `.topic-pill` is retained for HTML stability but is no longer a pill) + claim body + Evidence line. Evidence lines hyperlink their sources — same rule as editorial.
   - **Term inspector** (right rail): terms grouped by `category` (People / Concepts / Tools / Articles / Books / …), category dot + name (canonical link with `↗` if `url` present) + one-line `notes`. Inspector is a **bounded independent scrollbox** at ≥1181px: `position: sticky; top: <topbar-h>; max-height: calc(100dvh - <topbar-h>); overflow-y: auto; overscroll-behavior: contain`.
   - **Left rail is independently scrollable too** — same `sticky + max-height + overflow-y` pattern at ≥821px (engaged earlier than the inspector since the rail appears at the 2-col breakpoint).
   - **Read-next list** in the right rail: external/internal links with one-line notes.
