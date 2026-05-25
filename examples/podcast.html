@@ -61,7 +61,14 @@ body {
 .topbar-inner {
   max-width: var(--studio-max);
   margin: 0 auto;
-  padding: 0.5rem 1.25rem;
+  /* Two-part fix verified via getBoundingClientRect inspection: (1) stretch
+     topbar-inner to fill topbar (it was sizing to its content and leaving
+     ~7px below it), and (2) zero the padding-bottom so the folder-tabs
+     container (align-self: stretch) actually reaches topbar-inner's bottom.
+     Together these let the active tab's box-shadow mask land at the topbar's
+     border row instead of 8px above it. */
+  padding: 0.5rem 1.25rem 0;
+  min-height: calc(var(--topbar-h) - 1px);
   display: flex; align-items: center; gap: 1rem;
 }
 /* Brand: title can be long ("The AI paradox: More automation, more humans,
