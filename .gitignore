@@ -1,3 +1,10 @@
+# Python
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# macOS
+.DS_Store
+
+# Local-only notes (per CLAUDE.md — DO NOT SHIP)
+.claude.local.md

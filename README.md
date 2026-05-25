@@ -37,7 +37,7 @@ My contribution is the opinionated design system and page-shape contracts around
 
 ## Scope
 
-`render-as-html` is a design system and skill for writing and updating standalone HTML artifacts. It does not fetch URLs, parse arbitrary exports, crawl repos, or ship a standalone CLI.
+`render-as-html` is a design system and skill for writing and updating standalone HTML artifacts. It does not fetch URLs, parse arbitrary exports, or crawl repos. The one packaged renderer — `bin/render-podcast` — converts podcastextract's `episode.package.json` into the podcast shape's two-file output, and exists only because that workflow is fully deterministic. Every other shape is produced by the skill agent, not a CLI.
 
 ## What's in here
 
