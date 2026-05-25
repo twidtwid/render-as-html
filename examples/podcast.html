@@ -121,6 +121,12 @@ body {
 #theme-toggle .glyph-dark, body.dark #theme-toggle .glyph-light { display: none; }
 body.dark #theme-toggle .glyph-dark { display: inline; }
 
+/* Both topbar toggles bottom-align with the tab text baseline (tabs are
+   flex-end stretched to 47px; their text sits low). Without `align-self:
+   flex-end + margin-bottom: 0.55rem`, center-alignment puts the buttons
+   ~5px above the tab text — visible misalignment in both Safari and Chrome. */
+#inspector-toggle, #theme-toggle { align-self: flex-end; margin-bottom: 0.55rem; }
+
 /* hide-sidebar toggle — same v2.1.2 editorial pattern, lives in topbar */
 #inspector-toggle {
   font-family: var(--font-mono); font-size: 11px;
