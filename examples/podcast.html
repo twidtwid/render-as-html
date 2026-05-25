@@ -55,11 +55,8 @@ body {
   position: fixed; top: 0; left: 0; right: 0;
   z-index: 100;
   background: var(--paper-card);
+  border-bottom: 1px solid var(--rule);
   min-height: var(--topbar-h);
-  /* No border-bottom — see folder-tab rules below. The paper-tint vs paper
-     contrast carries the topbar/content boundary; a topbar border-bottom
-     would run under the active tab and break the folder-effect (the tab
-     can't visually extend past its parent's border-decoration). */
 }
 .topbar-inner {
   max-width: var(--studio-max);
@@ -91,7 +88,14 @@ body {
   margin-bottom: -1px; /* overlap the topbar's bottom border */
   position: relative;
 }
-.folder-tab.active { color: var(--ink); background: var(--paper); border-color: var(--rule); font-weight: 600; z-index: 2; }
+.folder-tab.active {
+  color: var(--ink); background: var(--paper); border-color: var(--rule);
+  font-weight: 600; position: relative; z-index: 2;
+  /* Paper-colored 1px strip directly below the active tab — masks the
+     topbar's bottom border under this tab while leaving the line intact
+     to either side. The manila-folder effect. */
+  box-shadow: 0 1px 0 0 var(--paper);
+}
 .folder-tab:not(.active):hover { color: var(--ink); background: var(--paper-card); }
 .folder-tab.external .ext { color: inherit; margin-left: 0.3rem; font-size: 11px; }
 
