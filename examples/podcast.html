@@ -89,7 +89,9 @@ body {
   border: 1px solid var(--rule);
   border-bottom: none;
   border-radius: 5px 5px 0 0;
-  color: var(--muted);
+  /* --ink-soft (not --muted) clears WCAG AA 4.5:1 against --paper-tint;
+     --muted #736d62 on #f3ede1 ≈ 3.9:1 (fail). */
+  color: var(--ink-soft);
   text-decoration: none;
   background: var(--paper-tint);
   margin-bottom: -1px; /* overlap the topbar's bottom border */
@@ -369,7 +371,7 @@ body.inspector-hidden .col-inspector { display: none; }
 }
 .next-list a:last-child { border-bottom: none; }
 .next-list a:hover .label { color: var(--accent); }
-.next-list .arrow { color: var(--muted); font-size: 0.78rem; }
+.next-list .arrow { color: var(--ink); font-size: 0.78rem; }
 .next-list .next-note { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 0.18rem; line-height: 1.4; }
 
 /* ── COLOPHON footer — lives OUTSIDE the .studio grid, full width ─────── */
