@@ -3,6 +3,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Comparison matrix — items as columns</title>
+<meta name="description" content="Comparison matrix primitive with weighted criteria, live winner calculation, and copy-as-prompt output.">
+<meta property="og:title" content="Comparison matrix — items as columns">
+<meta property="og:description" content="Comparison matrix primitive with weighted criteria, live winner calculation, and copy-as-prompt output.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="render-as-html">
+<meta name="twitter:card" content="summary">
 <style>
   :root {
     --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
@@ -205,7 +211,7 @@
     const text = `In <artifact.html>, lock the vector-store comparison: set weights to ${weights}. Aggregate winner at these weights is ${winner}.`;
     promptOut.value = text;
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(() => {
+      (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
         copyBtn.textContent = '✓ copied'; copyBtn.classList.add('copied');
         setTimeout(() => { copyBtn.textContent = 'copy as prompt'; copyBtn.classList.remove('copied'); }, 1500);
       }).catch(() => { promptOut.classList.add('show'); promptOut.focus(); promptOut.select(); });

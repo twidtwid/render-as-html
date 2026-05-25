@@ -943,7 +943,7 @@ document.getElementById('shape-tbody').addEventListener('click', e => {
 });
 
 function copyToClipboard(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
     if (btn) { btn.classList.add('copied'); btn.textContent = 'copied!'; setTimeout(()=>{ btn.classList.remove('copied'); btn.textContent='copy prompt'; },1800); }
   }).catch(() => {
     showFallback(text);

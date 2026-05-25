@@ -497,6 +497,21 @@ body {
 }
 #stuck-close:hover { color: var(--ink); }
 
+.copy-code-fallback {
+  display: block;
+  width: 100%;
+  min-height: 5rem;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  resize: vertical;
+}
+
 #stuck-textarea {
   width: 100%;
   max-width: 860px;
@@ -673,7 +688,7 @@ footer {
 
     <!-- STEP 1 -->
     <div class="step-card expanded" id="step-1" data-step="1">
-      <div class="step-header" onclick="toggleStep(1)" role="button" aria-expanded="true" aria-controls="step-1-body">
+      <div class="step-header" onclick="toggleStep(1)" onkeydown="handleStepHeaderKey(event,1)" role="button" tabindex="0" aria-expanded="true" aria-controls="step-1-body">
         <div class="step-num">1</div>
         <input type="checkbox" class="step-checkbox" id="cb-1" onclick="handleCheck(event,1)" aria-label="Mark step 1 complete: Read the content and pick the page shape">
         <div class="step-title-text">Read the content, extract its signals, and pick the page shape</div>
@@ -710,7 +725,7 @@ Explicit user override of the shape always wins over auto-pick.</div>
 
     <!-- STEP 2 -->
     <div class="step-card expanded" id="step-2" data-step="2">
-      <div class="step-header" onclick="toggleStep(2)" role="button" aria-expanded="true" aria-controls="step-2-body">
+      <div class="step-header" onclick="toggleStep(2)" onkeydown="handleStepHeaderKey(event,2)" role="button" tabindex="0" aria-expanded="true" aria-controls="step-2-body">
         <div class="step-num">2</div>
         <input type="checkbox" class="step-checkbox" id="cb-2" onclick="handleCheck(event,2)" aria-label="Mark step 2 complete: Lock the register the shape dictates">
         <div class="step-title-text">Lock the register the shape dictates — reading vs instrument</div>
@@ -735,7 +750,7 @@ Explicit user override of the shape always wins over auto-pick.</div>
 
     <!-- STEP 3 -->
     <div class="step-card expanded" id="step-3" data-step="3">
-      <div class="step-header" onclick="toggleStep(3)" role="button" aria-expanded="true" aria-controls="step-3-body">
+      <div class="step-header" onclick="toggleStep(3)" onkeydown="handleStepHeaderKey(event,3)" role="button" tabindex="0" aria-expanded="true" aria-controls="step-3-body">
         <div class="step-num">3</div>
         <input type="checkbox" class="step-checkbox" id="cb-3" onclick="handleCheck(event,3)" aria-label="Mark step 3 complete: Plan at least three HTML-native features and write them down">
         <div class="step-title-text">Plan ≥3 HTML-native features — and write them down before any markup</div>
@@ -770,7 +785,7 @@ contract step 7 checks against.</div>
 
     <!-- STEP 4 -->
     <div class="step-card expanded" id="step-4" data-step="4">
-      <div class="step-header" onclick="toggleStep(4)" role="button" aria-expanded="true" aria-controls="step-4-body">
+      <div class="step-header" onclick="toggleStep(4)" onkeydown="handleStepHeaderKey(event,4)" role="button" tabindex="0" aria-expanded="true" aria-controls="step-4-body">
         <div class="step-num">4</div>
         <input type="checkbox" class="step-checkbox" id="cb-4" onclick="handleCheck(event,4)" aria-label="Mark step 4 complete: Map to at least four of the eight information dimensions">
         <div class="step-title-text">Map the artifact to ≥4 of the 8 information dimensions</div>
@@ -797,7 +812,7 @@ contract step 7 checks against.</div>
 
     <!-- STEP 5 -->
     <div class="step-card expanded" id="step-5" data-step="5">
-      <div class="step-header" onclick="toggleStep(5)" role="button" aria-expanded="true" aria-controls="step-5-body">
+      <div class="step-header" onclick="toggleStep(5)" onkeydown="handleStepHeaderKey(event,5)" role="button" tabindex="0" aria-expanded="true" aria-controls="step-5-body">
         <div class="step-num">5</div>
         <input type="checkbox" class="step-checkbox" id="cb-5" onclick="handleCheck(event,5)" aria-label="Mark step 5 complete: Write the self-contained file with one-truth palette tokens">
         <div class="step-title-text">Write the self-contained file — one-truth palette tokens, no CDN</div>
@@ -830,7 +845,7 @@ contract step 7 checks against.</div>
 
     <!-- STEP 6 -->
     <div class="step-card expanded" id="step-6" data-step="6">
-      <div class="step-header" onclick="toggleStep(6)" role="button" aria-expanded="true" aria-controls="step-6-body">
+      <div class="step-header" onclick="toggleStep(6)" onkeydown="handleStepHeaderKey(event,6)" role="button" tabindex="0" aria-expanded="true" aria-controls="step-6-body">
         <div class="step-num">6</div>
         <input type="checkbox" class="step-checkbox" id="cb-6" onclick="handleCheck(event,6)" aria-label="Mark step 6 complete: Wire copy-as-prompt that round-trips state back to this file">
         <div class="step-title-text">Wire copy-as-prompt — round-trip live state back to this file</div>
@@ -850,7 +865,7 @@ contract step 7 checks against.</div>
     formatAsInstructions(changes);
   <span class="kw">const</span> out = document.querySelector(<span class="str">'#prompt-output'</span>);
   out.value = prompt;
-  navigator.clipboard.writeText(prompt).<span class="cmd">catch</span>(() =&gt; {
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).<span class="cmd">catch</span>(() =&gt; {
     out.focus(); out.select();   <span class="c">// visible fallback</span>
   });
 }</pre>
@@ -863,7 +878,7 @@ contract step 7 checks against.</div>
 
     <!-- STEP 7 -->
     <div class="step-card expanded" id="step-7" data-step="7">
-      <div class="step-header" onclick="toggleStep(7)" role="button" aria-expanded="true" aria-controls="step-7-body">
+      <div class="step-header" onclick="toggleStep(7)" onkeydown="handleStepHeaderKey(event,7)" role="button" tabindex="0" aria-expanded="true" aria-controls="step-7-body">
         <div class="step-num">7</div>
         <input type="checkbox" class="step-checkbox" id="cb-7" onclick="handleCheck(event,7)" aria-label="Mark step 7 complete: Run the flatten test — what disappears">
         <div class="step-title-text">Run the flatten test — strip all CSS/JS, ask <em>what disappears?</em></div>
@@ -906,7 +921,7 @@ not chrome. This artifact earns the medium.</div>
 
     <!-- STEP 3-R — redesign loop, conditionally visible -->
     <div class="step-card branch-card branch-hidden" id="step-8" data-step="8">
-      <div class="step-header" onclick="toggleStep(8)" role="button" aria-expanded="true" aria-controls="step-8-body">
+      <div class="step-header" onclick="toggleStep(8)" onkeydown="handleStepHeaderKey(event,8)" role="button" tabindex="0" aria-expanded="true" aria-controls="step-8-body">
         <div class="step-num" style="background:var(--branch-border);border-color:var(--branch-border);color:var(--ink);">3R</div>
         <input type="checkbox" class="step-checkbox" id="cb-8" onclick="handleCheck(event,8)" aria-label="Mark step 3-R complete: Redesign the HTML-native features and re-flatten">
         <div class="step-title-text">Redesign the HTML-native features, then re-run the flatten test</div>
@@ -941,7 +956,7 @@ not chrome. This artifact earns the medium.</div>
 
     <!-- STEP 8 -->
     <div class="step-card expanded" id="step-9" data-step="9">
-      <div class="step-header" onclick="toggleStep(9)" role="button" aria-expanded="true" aria-controls="step-9-body">
+      <div class="step-header" onclick="toggleStep(9)" onkeydown="handleStepHeaderKey(event,9)" role="button" tabindex="0" aria-expanded="true" aria-controls="step-9-body">
         <div class="step-num">8</div>
         <input type="checkbox" class="step-checkbox" id="cb-9" onclick="handleCheck(event,9)" aria-label="Mark step 8 complete: Accessibility and contrast pass">
         <div class="step-title-text">Accessibility &amp; contrast pass — AA, colorblind-safe, real semantics</div>
@@ -978,7 +993,7 @@ Toggle JS writes aria-expanded on every open/close.</div>
 
     <!-- STEP 9 -->
     <div class="step-card expanded" id="step-10" data-step="10">
-      <div class="step-header" onclick="toggleStep(10)" role="button" aria-expanded="true" aria-controls="step-10-body">
+      <div class="step-header" onclick="toggleStep(10)" onkeydown="handleStepHeaderKey(event,10)" role="button" tabindex="0" aria-expanded="true" aria-controls="step-10-body">
         <div class="step-num">9</div>
         <input type="checkbox" class="step-checkbox" id="cb-10" onclick="handleCheck(event,10)" aria-label="Mark step 9 complete: Self-review against content discipline">
         <div class="step-title-text">Self-review against Content discipline</div>
@@ -1005,7 +1020,7 @@ Toggle JS writes aria-expanded on every open/close.</div>
 
     <!-- STEP 10 -->
     <div class="step-card expanded" id="step-11" data-step="11">
-      <div class="step-header" onclick="toggleStep(11)" role="button" aria-expanded="true" aria-controls="step-11-body">
+      <div class="step-header" onclick="toggleStep(11)" onkeydown="handleStepHeaderKey(event,11)" role="button" tabindex="0" aria-expanded="true" aria-controls="step-11-body">
         <div class="step-num">10</div>
         <input type="checkbox" class="step-checkbox" id="cb-11" onclick="handleCheck(event,11)" aria-label="Mark step 10 complete: Ship the artifact">
         <div class="step-title-text">Ship — write the file, set the footer path, open it</div>
@@ -1072,6 +1087,12 @@ let checked = {}; // step -> bool
 let redesignActive = false;
 
 // ── Step toggle (collapse-on-click; starts expanded) ─────────
+function handleStepHeaderKey(event, n) {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  toggleStep(n);
+}
+
 function toggleStep(n) {
   const card = document.getElementById('step-' + n);
   if (!card) return;
@@ -1152,19 +1173,21 @@ function activateRedesign() {
 function copyCode(btn) {
   const pre = btn.parentElement.querySelector('.code-block');
   const text = pre.textContent;
-  navigator.clipboard.writeText(text).then(() => {
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
     btn.textContent = 'copied!';
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1600);
   }).catch(() => {
-    const ta = document.createElement('textarea');
+    let ta = btn.parentElement.querySelector('.copy-code-fallback');
+    if (!ta) {
+      ta = document.createElement('textarea');
+      ta.className = 'copy-code-fallback';
+      ta.readOnly = true;
+      btn.parentElement.appendChild(ta);
+    }
     ta.value = text;
-    ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
-    document.body.appendChild(ta);
     ta.focus(); ta.select();
-    try { document.execCommand('copy'); } catch(_) {}
-    document.body.removeChild(ta);
-    btn.textContent = '✓ selected';
+    btn.textContent = 'copy blocked — selected';
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1600);
   });
@@ -1221,7 +1244,7 @@ function copyStuckPrompt() {
   const btn = document.getElementById('stuck-copy-btn');
   const hint = document.getElementById('stuck-hint');
 
-  navigator.clipboard.writeText(text).then(() => {
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
     btn.textContent = 'Copied!';
     btn.classList.add('copied');
     hint.textContent = 'Prompt is on your clipboard — paste it into your coding agent.';

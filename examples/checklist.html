@@ -846,7 +846,7 @@ function copyAsPrompt() {
   const out = document.getElementById('prompt-output');
   out.value = prompt;
 
-  navigator.clipboard.writeText(prompt).then(() => {
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
     const btn = document.getElementById('copy-btn');
     const prev = btn.textContent;
     btn.textContent = 'copied!';

@@ -125,7 +125,7 @@ function copyPrompt() {
   const prompt = `In ${ARTIFACT_PATH}, apply these changes:\n${formatAsInstructions(changes)}`;
   const out = document.querySelector('#prompt-output');
   out.value = prompt;
-  navigator.clipboard.writeText(prompt).catch(() => {
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).catch(() => {
     out.focus();
     out.select(); // visible fallback when clipboard permission is blocked
   });

@@ -1001,7 +1001,7 @@ byId('copy-btn').addEventListener('click', () => {
   const out = byId('prompt-output');
   out.style.display = 'block';
   out.value = prompt;
-  navigator.clipboard.writeText(prompt).then(() => {
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
     byId('copy-btn').textContent = 'copied!';
     byId('copy-btn').setAttribute('aria-label', 'Copied prompt for ' + name + ' to clipboard');
     setTimeout(() => {

@@ -980,7 +980,7 @@ Apply these buckets to the triage-board cards and save.`;
 
   const out = document.getElementById('prompt-out');
 
-  navigator.clipboard.writeText(prompt).then(() => {
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(prompt) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
     out.classList.remove('visible');
     flashExportBtn();
   }).catch(() => {

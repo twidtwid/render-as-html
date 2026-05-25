@@ -1046,7 +1046,7 @@ function copyQuote(id) {
   const fallbackWrap = document.getElementById(`fallback-${id}`);
   const fallbackTa = document.getElementById(`fallback-ta-${id}`);
 
-  navigator.clipboard.writeText(text).then(() => {
+  (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
     if (btn) {
       btn.textContent = 'copied ✓';
       btn.classList.add('copied');

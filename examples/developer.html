@@ -838,6 +838,8 @@ tr.del .diff-sign { color: var(--critical-bd); }
     <!-- ════════════════════════════════════════════
          Diff 2 — index.html :root value swap
     ═══════════════════════════════════════════════ -->
+    <div class="section-anchor" id="diff-readme"></div>
+
     <div class="section-anchor" id="diff-index">
       <h2>index.html</h2>
       <span class="file-label">:root — value swap, variable names preserved (no-rename constraint)</span>
@@ -1138,7 +1140,7 @@ function copyFinding(btn, num) {
 
   // Try navigator.clipboard first
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => {
+    (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject(new Error("clipboard unavailable"))).then(() => {
       flashCopied(btn);
     }).catch(() => {
       showFallback(textarea, btn);
