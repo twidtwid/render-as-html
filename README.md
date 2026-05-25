@@ -4,7 +4,7 @@
 >
 > Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935).
 
-**Version 2.1.2** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
+**Version 2.2.0** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
 
 ## Install
 
@@ -61,6 +61,7 @@ Pick the shape from content signals. Nine shapes, each with a contract — layou
 | <code>triage&#8209;board</code> | GTD reorg, inbox triage | Drag cards between Now/Next/Later/Cut columns |
 | `developer` | PR writeups, code review | Annotated diffs, severity findings, file nav |
 | `editorial` | Deep essays, research synthesis, analytical memos | Sustained argument front-to-back, italic thesis, entity inspector rail |
+| `podcast` | Podcast episodes from the podcastextract pipeline | Briefing + transcript pair, episode hero + thesis + takeaways + claims + term inspector, hide-sidebar focus mode |
 
 ## Canonical primitives
 

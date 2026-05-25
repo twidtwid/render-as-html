@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The instrument you keep — Files of Record (fictional)</title>
+<meta name="description" content="A fictional podcast episode demonstrating the render-as-html podcast shape — briefing view with episode hero, thesis, takeaways, claims, term inspector, and hide-sidebar toggle.">
+<meta property="og:title" content="The instrument you keep — Files of Record (fictional)">
+<meta property="og:description" content="A fictional podcast episode demonstrating the render-as-html podcast shape — briefing view with episode hero, thesis, takeaways, claims, term inspector, and hide-sidebar toggle.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="render-as-html">
+<meta name="twitter:card" content="summary">
+<style>
+:root {
+  --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+  --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+  --rule:#d9d1c2; --rule-soft:#ece5d6;
+  --accent:#8a3a1a; --accent-2:#c2901a;
+  --ok:#2f7d44; --note:#2f6fb3;
+
+  --font-serif:"Charter","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --font-sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+
+  /* Chrome heights — same lockstep pattern as editorial.html */
+  --topbar-h:3.5rem;
+  --studio-max:1320px;
+  --rail-w:18rem;
+  --gap:0.6rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+    --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+    --rule:#38332b; --rule-soft:#2c2820;
+    --accent:#e0794f; --accent-2:#d8a73a;
+    --ok:#5cae6f; --note:#6f9fd0;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; max-width: 100%; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--font-sans); font-size: 14.5px; line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  padding-top: var(--topbar-h);
+}
+
+/* ── TOPBAR (brand + tabs + hide-sidebar toggle, NOT a search toolbar) ─ */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: var(--paper-card);
+  border-bottom: 1px solid var(--rule);
+  min-height: var(--topbar-h);
+}
+.topbar-inner {
+  max-width: var(--studio-max);
+  margin: 0 auto;
+  padding: 0.5rem 1.25rem;
+  display: flex; align-items: center; gap: 1rem;
+}
+.topbar .brand { display: flex; flex-direction: column; min-width: 0; flex: 0 1 18rem; }
+.topbar .brand strong { font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.92rem; }
+.topbar .brand span { color: var(--muted); font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); }
+.folder-tabs { display: flex; gap: 0.25rem; margin-left: auto; }
+.folder-tab {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 0.42rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  color: var(--muted);
+  text-decoration: none;
+  background: var(--paper);
+}
+.folder-tab.active { color: var(--accent); border-color: var(--accent); background: var(--paper-card); }
+.folder-tab:not(.active):hover { color: var(--ink); border-color: var(--accent); }
+.folder-tab.external .ext { color: var(--muted); margin-left: 0.2rem; font-size: 10px; }
+
+/* hide-sidebar toggle — same v2.1.2 editorial pattern, lives in topbar */
+#inspector-toggle {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 3px;
+  padding: 0.32rem 0.55rem;
+  cursor: pointer;
+  white-space: nowrap;
+  margin-left: 0.4rem;
+}
+#inspector-toggle:hover { border-color: var(--accent); color: var(--accent); }
+body.inspector-hidden #inspector-toggle { border-color: var(--accent); color: var(--accent); }
+#inspector-toggle .il-show { display: none; }
+body.inspector-hidden #inspector-toggle .il-hide { display: none; }
+body.inspector-hidden #inspector-toggle .il-show { display: inline; }
+/* CRITICAL: rail-hide rule MUST live outside any wide-screen media query —
+   otherwise the toggle silently does nothing at narrow viewports where the
+   inspector is in-flow rather than a grid column. */
+body.inspector-hidden .col-inspector { display: none; }
+
+/* ── STUDIO grid (briefing view) ─────────────────────────────────────── */
+.studio {
+  max-width: var(--studio-max);
+  margin: 0 auto;
+  padding: 1rem 1.25rem 2.5rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+}
+@media (min-width: 821px) {
+  .studio { grid-template-columns: var(--rail-w) minmax(0, 1fr); gap: 1rem; padding: 1.25rem 1.5rem 3rem; }
+}
+@media (min-width: 1181px) {
+  .studio { grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--rail-w); gap: 1.25rem; }
+  /* Focus-mode reflow: drop the inspector column when hidden */
+  body.inspector-hidden .studio { grid-template-columns: var(--rail-w) minmax(0, 1fr); }
+}
+
+.col-episode, .col-main, .col-inspector { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
+
+/* Sidebar scrollboxes: each rail is independently scrollable at wide widths,
+   so the reader can scan terms without losing the episode hero — and vice
+   versa. Bounded scrollbox + overscroll-contain mirrors the editorial-shape
+   invariant in §Layout principles. */
+@media (min-width: 821px) {
+  .col-episode {
+    position: sticky;
+    top: calc(var(--topbar-h) + 0.5rem);
+    max-height: calc(100dvh - var(--topbar-h) - 1rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule) transparent;
+  }
+}
+@media (min-width: 1181px) {
+  .col-inspector {
+    position: sticky;
+    top: calc(var(--topbar-h) + 0.5rem);
+    max-height: calc(100dvh - var(--topbar-h) - 1rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule) transparent;
+  }
+}
+
+/* ── CARD primitive (compact: less vertical air than v1) ──────────────── */
+.card {
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 0.9rem 1.05rem 1rem;
+}
+.card-title {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.55rem;
+  font-weight: 500;
+}
+
+/* ── EPISODE hero (left rail) ─────────────────────────────────────────── */
+.episode-hero { padding: 1rem 1.05rem 1.05rem; }
+.episode-hero .kicker {
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+.episode-hero h1 {
+  font-family: var(--font-serif);
+  font-size: 1.55rem; line-height: 1.12;
+  font-weight: 700; letter-spacing: -0.01em;
+  margin: 0 0 0.55rem;
+  color: var(--ink);
+}
+.episode-hero h1 .a { color: var(--accent); }
+.episode-hero p.summary {
+  font-size: 0.88rem; color: var(--ink-soft);
+  line-height: 1.45;
+  margin: 0 0 0.65rem;
+}
+.episode-hero .meta-row {
+  font-family: var(--font-mono); font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* Host / guest profile cards */
+.profile-card .label { color: var(--muted); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.35rem; }
+.profile-card .name { font-weight: 600; color: var(--ink); margin-bottom: 0.18rem; font-size: 0.92rem; }
+.profile-card .role { color: var(--ink-soft); font-size: 0.84rem; line-height: 1.45; }
+
+/* ── CENTER column: thesis → takeaways → claims (compact) ─────────────── */
+.thesis-card { padding: 1rem 1.1rem; }
+.thesis-quote {
+  font-family: var(--font-serif);
+  font-size: 1.12rem; line-height: 1.42;
+  font-style: italic;
+  color: var(--ink);
+  margin: 0;
+  padding: 0; /* explicitly no left-handle bar */
+}
+
+.takeaway-grid { display: grid; gap: 0; }
+.takeaway-tile {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 0.55rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.takeaway-tile:first-child { padding-top: 0.1rem; }
+.takeaway-tile:last-child { border-bottom: none; padding-bottom: 0.1rem; }
+.takeaway-tile .num {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  padding-top: 0.18rem;
+}
+.takeaway-tile p { margin: 0; font-size: 0.94rem; line-height: 1.5; color: var(--ink); }
+
+.claim-list { display: flex; flex-direction: column; gap: 0.65rem; }
+.claim-card {
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+  padding: 0.65rem 0.8rem 0.75rem;
+}
+.claim-card .topic-pill {
+  display: inline-block;
+  font-family: var(--font-mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--accent);
+  background: var(--paper-tint);
+  border: 1px solid var(--rule);
+  padding: 0.16rem 0.5rem;
+  border-radius: 3px;
+  margin-bottom: 0.4rem;
+}
+.claim-card .claim-text { margin: 0 0 0.4rem; font-size: 0.92rem; line-height: 1.5; color: var(--ink); }
+.claim-card .evidence { margin: 0; font-size: 0.84rem; color: var(--ink-soft); line-height: 1.45; }
+.claim-card .evidence strong { color: var(--muted); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; margin-right: 0.3rem; }
+.claim-card .evidence a { color: var(--accent); }
+
+/* ── RIGHT inspector: terms grouped + read next ───────────────────────── */
+.inspector-section .group-label {
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--muted);
+  margin: 0.7rem 0 0.35rem;
+}
+.inspector-section .group-label:first-child { margin-top: 0; }
+.term-row {
+  display: grid; grid-template-columns: 0.55rem 1fr; gap: 0.45rem;
+  padding: 0.32rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+  align-items: start;
+}
+.term-row:last-child { border-bottom: none; }
+.term-row .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  margin-top: 0.42rem;
+}
+.term-row .dot.person { background: var(--note); }
+.term-row .dot.concept { background: var(--accent-2); }
+.term-row .dot.tool { background: var(--ok); }
+.term-row .dot.article { background: var(--accent); }
+.term-row .name { font-weight: 600; color: var(--ink); font-size: 0.86rem; }
+.term-row .name a { color: inherit; text-decoration: none; }
+.term-row .name a:hover { color: var(--accent); }
+.term-row .ext { color: var(--muted); margin-left: 0.2rem; font-size: 0.74rem; }
+.term-row .note { color: var(--ink-soft); font-size: 0.78rem; line-height: 1.4; margin-top: 0.1rem; }
+
+.next-list { list-style: none; margin: 0; padding: 0; }
+.next-list li { margin: 0; }
+.next-list a {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem;
+  padding: 0.42rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 0.86rem; color: var(--ink); text-decoration: none;
+}
+.next-list a:last-child { border-bottom: none; }
+.next-list a:hover .label { color: var(--accent); }
+.next-list .arrow { color: var(--muted); font-size: 0.78rem; }
+.next-list .next-note { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 0.18rem; line-height: 1.4; }
+
+/* ── COLOPHON footer — lives OUTSIDE the .studio grid, full width ─────── */
+.colophon {
+  max-width: var(--studio-max);
+  margin: 0 auto;
+  padding: 1.1rem 1.5rem 2.5rem;
+  display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--muted);
+  border-top: 1px solid var(--rule);
+}
+.colophon a { color: var(--accent); text-decoration: none; }
+.colophon a:hover { text-decoration: underline; }
+.colophon .path { font-variant-ligatures: none; }
+
+/* mobile: 1-col, sidebars unfix, fewer paddings */
+@media (max-width: 820px) {
+  .topbar-inner { flex-wrap: wrap; gap: 0.4rem; padding: 0.45rem 1rem; }
+  .topbar .brand { flex: 1 1 100%; }
+  .topbar .brand strong { font-size: 0.85rem; }
+  .folder-tabs { margin-left: 0; }
+  .episode-hero h1 { font-size: 1.45rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <strong>The instrument you keep</strong>
+      <span>Files of Record · #07 · 47 min</span>
+    </div>
+    <nav class="folder-tabs" role="tablist" aria-label="Episode views">
+      <a class="folder-tab active" href="#" role="tab" aria-selected="true">Briefing</a>
+      <a class="folder-tab" href="#" role="tab" aria-selected="false" title="Transcript view (fictional, not included in this example)">Transcript</a>
+      <a class="folder-tab external listen" href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">Source <span class="ext" aria-hidden="true">↗</span></a>
+    </nav>
+    <button id="inspector-toggle" aria-pressed="false" title="Hide the term inspector to focus on the briefing">
+      <span class="il-hide">hide sidebar</span>
+      <span class="il-show">show sidebar</span>
+    </button>
+  </div>
+</header>
+
+<div class="studio">
+
+  <!-- ── LEFT RAIL: episode hero + host/guest cards ─────────────────── -->
+  <aside class="col-episode" aria-label="Episode details">
+    <section class="card episode-hero">
+      <p class="kicker">Files of Record · #07 · 47 min</p>
+      <h1>The <span class="a">instrument</span> you keep</h1>
+      <p class="summary">An imagined conversation about why the canonical artifact of knowledge work should be a poke-able HTML file — and what the format change actually buys you when the model that made it is still on the other side of the file.</p>
+      <p class="meta-row">24 May 2026 · Ada Linn (host) · M. Sato (guest)</p>
+    </section>
+
+    <section class="card profile-card">
+      <div class="label">About the host</div>
+      <div class="name">Ada Linn</div>
+      <div class="role">Host of <em>Files of Record</em>, a fictional podcast about the formats knowledge work is trapped in. Previously a research engineer at an imaginary lab. (This profile is invented for the gallery example.)</div>
+    </section>
+
+    <section class="card profile-card">
+      <div class="label">About the guest</div>
+      <div class="name">M. Sato</div>
+      <div class="role">Fictional researcher writing about artifact-shaped documents — the idea that the format you keep matters as much as the content. Their (imagined) work argues that exports are photographs of thinking, not the thinking itself.</div>
+    </section>
+  </aside>
+
+  <!-- ── CENTER: thesis → takeaways → claims (compact) ──────────────── -->
+  <main class="col-main">
+
+    <section class="card thesis-card">
+      <p class="card-title">The thesis</p>
+      <blockquote class="thesis-quote">When a document gains the ability to filter itself, recompute itself, and hand a precise instruction back to its author, it stops being a record and becomes an instrument. The canonical artifact of knowledge work should be that instrument — not a PDF or Doc export.</blockquote>
+    </section>
+
+    <section class="card">
+      <p class="card-title">What to take away</p>
+      <div class="takeaway-grid">
+        <article class="takeaway-tile">
+          <div class="num">01</div>
+          <p>A document with a live filter is a different category of object than one without — it's queryable. The shift from prose-with-search-bolted-on to prose-as-data-structure is non-trivial: the reader can express intent to the artifact directly, without going through the author.</p>
+        </article>
+        <article class="takeaway-tile">
+          <div class="num">02</div>
+          <p>The round-trip — browser → copy-as-prompt → model → updated file — is the engineering trick that lets the artifact survive contact with a follow-up question. Without that loop, the document is frozen at export time and dies on the first new question.</p>
+        </article>
+        <article class="takeaway-tile">
+          <div class="num">03</div>
+          <p>HTML is the medium because it lets you skip the conversion step. The file you keep is the same file you read, edit, share, and feed back to the model. No PDF in between. No "export" verb.</p>
+        </article>
+        <article class="takeaway-tile">
+          <div class="num">04</div>
+          <p>The flatten test — strip all CSS and JS, ask <em>what disappeared?</em> — is the cheap diagnostic for whether you built an instrument or just styled prose. If only color and spacing disappeared, you have a document. If the filter, the cross-highlight, and the round-trip disappeared, you have an instrument.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="card">
+      <p class="card-title">Notable claims</p>
+      <div class="claim-list">
+        <article class="claim-card">
+          <span class="topic-pill">PDFs are photographs of thinking</span>
+          <p class="claim-text">A PDF or Doc export captures the state of a document at the moment of export. Every subsequent question — <em>show me only the open items</em>, <em>what changed since last week</em>, <em>hide the boilerplate</em> — requires a new conversation, a new export, a new file. The format does not survive contact with a follow-up question.</p>
+          <p class="evidence"><strong>Evidence:</strong> A 40-page strategy brief exported to PDF. Stakeholder asks "just the risks and owners." Answer: copy-paste to a new doc, manually filter, re-send. Median turnaround in the imagined org: one business day. The artifact failed its first use. <a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">trq212's framing</a> calls this "the unreasonable inefficiency of static exports."</p>
+        </article>
+        <article class="claim-card">
+          <span class="topic-pill">The round-trip changes what the model can do</span>
+          <p class="claim-text">The model that produced the artifact can't see the reader's interactions with it. A copy-as-prompt button is the bridge: it watches the reader mutate the artifact in the browser, packages the deltas as a precise instruction, and hands them back through the user's clipboard. The model now has full context — the original file, the reader's intent, the exact change requested.</p>
+          <p class="evidence"><strong>Evidence:</strong> A triage board where the reader drags items into Now/Next/Later/Cut buckets, hits "copy as prompt," and pastes a paragraph that names the file path and the exact bucket assignments. The model updates the file. Round trip: ~10 seconds. No re-derivation of state.</p>
+        </article>
+        <article class="claim-card">
+          <span class="topic-pill">Self-contained beats CDN</span>
+          <p class="claim-text">Every external dependency is a future broken artifact. A CDN font that disappears, a syntax-highlighter script that rotates its API, an analytics beacon that leaks the document to a third party. The artifacts that survive ten years are the ones that need nothing but a browser.</p>
+          <p class="evidence"><strong>Evidence:</strong> The <a href="https://github.com/twidtwid/render-as-html" target="_blank" rel="noopener noreferrer">render-as-html</a> design system inlines all CSS and JS, uses native system fonts, and forbids external assets by default in generated artifacts. Open the file on a plane, in 2031, in a browser that hasn't been updated since — it still works.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <!-- ── RIGHT INSPECTOR: terms grouped + read next ─────────────────── -->
+  <aside class="col-inspector" aria-label="Term inspector">
+
+    <section class="card inspector-section">
+      <p class="card-title">Terms in this episode</p>
+
+      <p class="group-label">People</p>
+      <div class="term-row">
+        <span class="dot person"></span>
+        <div>
+          <div class="name"><a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">Thariq Shihipar<span class="ext">↗</span></a></div>
+          <div class="note">Author of "The Unreasonable Effectiveness of HTML" — the framing this episode (and render-as-html itself) borrows from. (Real.)</div>
+        </div>
+      </div>
+      <div class="term-row">
+        <span class="dot person"></span>
+        <div>
+          <div class="name">Ada Linn</div>
+          <div class="note">Host. Fictional, invented for the gallery example.</div>
+        </div>
+      </div>
+      <div class="term-row">
+        <span class="dot person"></span>
+        <div>
+          <div class="name">M. Sato</div>
+          <div class="note">Guest. Fictional researcher.</div>
+        </div>
+      </div>
+
+      <p class="group-label">Concepts</p>
+      <div class="term-row">
+        <span class="dot concept"></span>
+        <div>
+          <div class="name">HTML artifact</div>
+          <div class="note">A file that is the source of truth, not an export. Self-contained, edit-in-place, round-trip-able.</div>
+        </div>
+      </div>
+      <div class="term-row">
+        <span class="dot concept"></span>
+        <div>
+          <div class="name">Copy-as-prompt</div>
+          <div class="note">The pattern that turns a browser mutation into a paste-able instruction for the model that made the file.</div>
+        </div>
+      </div>
+      <div class="term-row">
+        <span class="dot concept"></span>
+        <div>
+          <div class="name">The flatten test</div>
+          <div class="note">Strip all CSS and JS, ask <em>what disappeared?</em> If only styling disappeared, it's styled prose, not an instrument.</div>
+        </div>
+      </div>
+      <div class="term-row">
+        <span class="dot concept"></span>
+        <div>
+          <div class="name">Round-trip editing</div>
+          <div class="note">Browser → copy-as-prompt → model → updated file. The loop that keeps the artifact alive past first read.</div>
+        </div>
+      </div>
+
+      <p class="group-label">Tools</p>
+      <div class="term-row">
+        <span class="dot tool"></span>
+        <div>
+          <div class="name"><a href="https://github.com/twidtwid/render-as-html" target="_blank" rel="noopener noreferrer">render-as-html<span class="ext">↗</span></a></div>
+          <div class="note">The Claude Code / Codex skill this gallery documents. Nine page shapes, one palette, canonical primitives, copy-as-prompt as the load-bearing pattern. (Real.)</div>
+        </div>
+      </div>
+
+      <p class="group-label">Articles</p>
+      <div class="term-row">
+        <span class="dot article"></span>
+        <div>
+          <div class="name"><a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">The Unreasonable Effectiveness of HTML<span class="ext">↗</span></a></div>
+          <div class="note">trq212's thesis — the framing this episode operationalizes. (Real.)</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card inspector-section">
+      <p class="card-title">Read next</p>
+      <ul class="next-list">
+        <li><a href="editorial.html"><span class="label">The editorial example<span class="next-note">Sibling artifact making the same argument as a longform essay.</span></span><span class="arrow">→</span></a></li>
+        <li><a href="primitives.html"><span class="label">Canonical primitives<span class="next-note">The nine chart and table primitives the shapes are built from.</span></span><span class="arrow">→</span></a></li>
+        <li><a href="index.html"><span class="label">All eleven shape examples<span class="next-note">Gallery index — one artifact per shape.</span></span><span class="arrow">→</span></a></li>
+        <li><a href="https://github.com/twidtwid/render-as-html" target="_blank" rel="noopener noreferrer"><span class="label">render-as-html on GitHub<span class="next-note">Source repo for the skill.</span></span><span class="arrow">↗</span></a></li>
+      </ul>
+    </section>
+  </aside>
+</div>
+
+<!-- COLOPHON: lives OUTSIDE the .studio grid (editorial footer invariant) -->
+<footer class="colophon">
+  <span class="path">examples/podcast.html · v2.2.0 · fictional episode for the gallery</span>
+  <a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">the unreasonable effectiveness of HTML</a>
+</footer>
+
+<script>
+// Helper: navigator.clipboard.writeText() throws synchronously when
+// navigator.clipboard is undefined (older browsers, some iframes, hardened
+// sandboxes); a bare .catch() does not run on a sync throw.
+const writeClipboard = (t) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(t)
+  : Promise.reject(new Error('clipboard unavailable'));
+
+// Hide-sidebar toggle (same v2.1.2 editorial pattern)
+const inspectorToggle = document.getElementById('inspector-toggle');
+inspectorToggle.addEventListener('click', () => {
+  const hidden = document.body.classList.toggle('inspector-hidden');
+  inspectorToggle.setAttribute('aria-pressed', String(hidden));
+});
+</script>
+</body>
+</html>

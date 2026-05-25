@@ -1,6 +1,6 @@
 ---
 name: render-as-html
-version: 2.1.2
+version: 2.2.0
 description: Create or update a designed, self-contained HTML artifact as the source of truth. Use when the user says "make an HTML artifact", "render this as html", "make me a pretty version", "I want to read this carefully", "make it interactive/readable", "update this HTML", or "/render-as-html". Output is an editable HTML file, not a conversion preview of another canonical document.
 ---
 
@@ -167,6 +167,7 @@ Different content wants different bones. Pick the shape first from content signa
 | **`triage-board`** | Bucketing items into 3-5 columns (Now/Next/Later/Cut), inbox triage, GTD reorg |
 | **`developer`** | PR writeups, code review, "explain this code" — annotated diff with severity findings |
 | **`editorial`** | Argument-driven long-form where the reader absorbs a sustained position — deep essays, research synthesis, analytical memos, argument-driven briefings |
+| **`podcast`** | A podcast episode rendered as a briefing — bottom line, takeaways, claims, terms — alongside a transcript browser. Consumes `episode.package.json` from the podcastextract pipeline. |
 
 **Auto-pick rules:**
 - Source has >5 tables of similar shape → `dashboard`
@@ -174,6 +175,7 @@ Different content wants different bones. Pick the shape first from content signa
 - Source has dates as primary structure → `timeline`
 - Source is procedural (ordered steps with commands) → `runbook`
 - Source is a sustained argument read front-to-back with named entities worth a reference rail → `editorial`
+- Source is an `episode.package.json` with `schema_version` starting `podcast-transformer/` → `podcast`
 - Ambiguous? Ask.
 
 Explicit user override always wins.
@@ -278,6 +280,33 @@ Explicit user override always wins.
 - **Density:** instrument defaults; mono at 13px for code.
 - **HTML-native ≥3:** syntax-highlighted code without relying on an external renderer, severity-color findings, jump-to-file, click-to-copy individual findings, side-by-side before/after
 - **Avoid:** generic document with code blocks (that's `document`). The annotated diff + severity findings IS the shape.
+
+#### `podcast`
+- **Register:** Hybrid. The briefing view uses Reading register for the thesis (serif italic pull-quote) and Instrument register for everything else (sans, compact); the transcript view is Instrument throughout.
+- **Input contract:** consumes `episode.package.json` with `schema_version: "podcast-transformer/package-v1"` (the podcastextract pipeline output). Required input fields the renderer reads: `episode.{title,short_title,podcast_title,episode_number,episode_url,description,published_at,duration_seconds,hosts,guests}`, `bottom_line`, `built_for`, `takeaways[]`, `claims[]{topic,claim,evidence}`, `terms[]{term,category,confidence,notes,url}`, `chapters[]{anchor_id,timestamp,title,turn_id}`, `turns[]{speaker,text,id,word_count}`, `links[]{url,label,note}`, `outputs.{annotated_transcript_html,summary_html}`. Unknown future fields are ignored, never break the render.
+- **Output contract:** TWO sibling files in the same directory, linked via the topbar's folder tabs:
+  - `<outputs.summary_html>` (default `podcast-at-a-glance.html`) — the briefing
+  - `<outputs.annotated_transcript_html>` (default `annotated-transcript.html`) — the transcript browser
+  Both files embed the same `episode.package.json` as a `<script type="application/json" id="episode-data">` island so they're standalone and rehydrate-able.
+- **Layout (briefing):** three-zone studio at ≥1181px — narrow `--rail-w` left rail (episode hero + host/guest cards), wide center (thesis → takeaways → claims), narrow right inspector (terms grouped by category + read-next links). Collapses to two columns under 1181px (inspector drops below center), single column under 821px.
+- **Layout (transcript):** narrow chapter rail left + speaker-turn list right (one turn per row: speaker label + timestamp + text). Search bound to the turns corpus only.
+- **Required primitives:**
+  - **Topbar** (`<header class="topbar">`): brand left (short_title + podcast_title · #ep · duration), folder tabs center (Briefing / Transcript / Listen↗ / Show notes↗), **hide-sidebar toggle right**. Same v2.1.2 editorial pattern — `body.inspector-hidden` class, two-span label swap, `aria-pressed`, `body.inspector-hidden .col-inspector { display: none }` lives **outside** any media query.
+  - **Episode hero** in the left rail: kicker (podcast · #ep · duration), serif h1 (short_title; first noun or theme word may take `--accent` color), one-sentence summary from `episode.description` or `bottom_line`, meta-row (date · hosts · guests).
+  - **Host / guest profile cards** in the left rail (one per person, with one-sentence role line; fictional people in the example are explicitly labeled "fictional").
+  - **Thesis card** in the center: the `bottom_line` rendered as an italic serif pull-quote, left-aligned, no left-handle bar.
+  - **Takeaway tiles**: numbered (`01..NN` mono), single-column list inside one card, ≤8 tiles. Never a grid of cards.
+  - **Claim cards**: one per `claims[]` entry, terracotta topic pill (uppercase mono) + claim body + Evidence line. Evidence lines hyperlink their sources — same rule as editorial.
+  - **Term inspector** (right rail): terms grouped by `category` (People / Concepts / Tools / Articles / Books / …), category dot + name (canonical link with `↗` if `url` present) + one-line `notes`. Inspector is a **bounded independent scrollbox** at ≥1181px: `position: sticky; top: <topbar-h>; max-height: calc(100dvh - <topbar-h>); overflow-y: auto; overscroll-behavior: contain`.
+  - **Left rail is independently scrollable too** — same `sticky + max-height + overflow-y` pattern at ≥821px (engaged earlier than the inspector since the rail appears at the 2-col breakpoint).
+  - **Read-next list** in the right rail: external/internal links with one-line notes.
+  - **Speaker turns** (transcript view): one row per turn, `[speaker] [timestamp] [text]`. Show-speaker rule: omit the speaker label when the prior turn was the same speaker, so a long monologue reads as continuous prose.
+  - **Chapter rail** (transcript view): sticky left, anchor-linked, scroll-spy highlights the active chapter as the reader scrolls.
+  - **Colophon footer**: full-width, lives **outside** the `.studio` grid container (the footer invariant — a `position: sticky` rail painted over an in-grid footer at scroll-bottom). Carries the artifact path, generated timestamp, and a sibling link (Briefing ↔ Transcript).
+- **Density (briefing):** compact. Card gap `0.6rem` (tighter than editorial's `1rem`), card padding `0.9rem 1.05rem 1rem`, no wasted vertical air between thesis and takeaways. Tight by intent — the user's tweak that drove this was "way too much whitespace between first card and each speaker, maybe make one card to compact and less scroll."
+- **Density (transcript):** instrument defaults; speaker label mono small-caps, text 15px serif or 14.5px sans (pick per podcast register), tabular-nums on timestamps.
+- **HTML-native ≥3:** hide-sidebar focus mode; scoped search across turns with prev/next nav (same as editorial search-nav rule); cross-link between chapter rail and transcript via scroll-spy; click any speaker label to filter to that speaker; per-section copy-as-prompt (claims, takeaways) for the briefing.
+- **Avoid:** rendering the briefing and transcript as one mega-scroll (the folder-tabs split is the shape); stat tiles that count the artifact itself (word-count-as-hero) — counts of the episode are fine (turn_count, duration_seconds), counts of the production are slop; loading external fonts or scripts (artifacts must stay self-contained and re-openable years later); fabricating term URLs not present in `terms[].url` — render as plain text if no URL.
 
 ## Sub-patterns (within shapes, not standalone shapes)
 
