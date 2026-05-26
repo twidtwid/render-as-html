@@ -1,6 +1,6 @@
 ---
 name: render-as-html
-version: 2.4.0
+version: 2.4.1
 description: Create or update a designed, self-contained HTML artifact as the source of truth. Use when the user says "make an HTML artifact", "render this as html", "make me a pretty version", "I want to read this carefully", "make it interactive/readable", "update this HTML", or "/render-as-html". Output is an editable HTML file, not a conversion preview of another canonical document.
 ---
 
@@ -359,6 +359,26 @@ Nine primitives that show up across the page shapes. Same one-truth palette as e
 
 These are primitives, not shapes. They compose **inside** a shape's contract; pick the shape first, then reach for the primitives the content calls for.
 
+### Picking a chart primitive
+
+Reach for the right one *before* writing SVG. The 2026-05-25 omega-3 dashboard shipped a scatter for 8 points clustered tightly on both axes (EPA 1860–2580 mg, $0.50–$3/day) — five labels stacked on top of each other, unreadable. The fix was replacing scatter with `bar` (ranked top-N), but the SKILL had not previously made the data-shape → primitive mapping explicit. It is now:
+
+| Data shape | Use | Avoid |
+|---|---|---|
+| ≤12 items, one magnitude per | **bar** (ranked top-N) | scatter, donut |
+| Few points clustered tight on one or both axes | **bar** (ranked) | scatter — labels will collide |
+| Two well-spread dimensions, ≥10 points | **scatter** (implied — not currently a primitive, build inline) | bar (loses one dim) |
+| 2–5 categories summing to a meaningful whole | **donut** | pie (no semantic edge) |
+| 6+ categories summing to a whole, possibly over time | **stacked bar** | donut (slivers), pie |
+| Time series, 2–4 hero metrics, trend-shape matters | **sparkline** (stat-tile cluster) | bar per period |
+| Connections / relationships matter, ≤30 nodes | **topology** | adjacency matrix |
+| Flat record list, ≥6 rows, filter+sort | **dense ops table** | grid of cards |
+| Annotated source code with line-anchored findings | **annotated diff** | sidebar findings |
+| Decision matrix, items as columns, criteria as rows | **comparison matrix** | dashboard-as-rows |
+| Tail of timestamped events, level + payload | **log stream** | dense table (loses live affordance) |
+
+**Self-check before drawing:** if a label needs leader lines or "smart placement heuristics" to not collide, the primitive is wrong — switch.
+
 ### Charts
 
 #### Donut — categorical status mix
@@ -544,7 +564,18 @@ Dark (via prefers-color-scheme):
 ## Rendering process
 
 1. **Read the request and any existing HTML artifact**
-2. **Pick the page shape** from content signals (or ask if ambiguous)
+2. **Pick the page shape — and write the decision out loud before any other planning.** The shape choice is the load-bearing decision; writing it as a one-block log before touching the instrument forces the auto-pick rules to actually fire. The 2026-05-25 *ConsumerLab omega-3* incident shipped an editorial-shape draft against tabular product data; the bug was diagnosable in 5 seconds of looking at the source but only surfaced after ~45 minutes of editorial-shape writing because no preflight log existed. Format:
+
+   ```
+   SHAPE:        <one from contract list>
+   SIGNALS:      <2-4 source signals that drove the pick>
+   REJECTED:     <1-2 shapes considered but wrong, with one-word reasons>
+   PRIMITIVES:   <3-5 primitives this shape needs from §Canonical primitives>
+   DIMENSIONS:   <which of the 8 dimensions, aiming for ≥4>
+   ```
+
+   Run the auto-pick table from §Shape selection against the real content first; do not invent a shape; do not pick `editorial` for tabular data with filterable categories (that is `dashboard`).
+
 3. **Plan the instrument:**
    - What's the central interaction? (filter? compare? execute? explore?)
    - What features require HTML? Pick at least 3 — write them down before writing HTML.
