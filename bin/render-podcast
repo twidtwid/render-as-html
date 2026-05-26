@@ -469,7 +469,7 @@ body.inspector-hidden .chapter-rail { display: none; }
 </div>
 
 <footer class="colophon">
-  <span class="path">~/Reports/{esc(package_path.parent.parent.name)}/annotated-transcript.html · podcast shape · v2.4.0 · transcript view</span>
+  <span class="path">~/Reports/{esc(package_path.parent.parent.name)}/annotated-transcript.html · podcast shape · v2.4.1 · transcript view</span>
   <a href="podcast-at-a-glance.html">← back to briefing</a>
 </footer>
 
@@ -680,7 +680,7 @@ def render_briefing(package_path: Path) -> str:
 
 <!-- COLOPHON -->
 <footer class="colophon">
-  <span class="path">~/Reports/{esc(bundle_slug)}/podcast-at-a-glance.html · podcast shape · v2.4.0</span>
+  <span class="path">~/Reports/{esc(bundle_slug)}/podcast-at-a-glance.html · podcast shape · v2.4.1</span>
   <a href="https://github.com/twidtwid/render-as-html" target="_blank" rel="noopener noreferrer">rendered with render-as-html</a>
 </footer>
 
