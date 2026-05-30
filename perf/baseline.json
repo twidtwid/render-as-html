@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-05-30T09:13:53",
+  "generated_at": "2026-05-30T10:25:11",
   "skill_md": {
-    "total_bytes": 67651,
-    "total_tokens": 16787,
-    "always_tokens": 7755,
-    "reference_tokens": 9026,
-    "reference_pct": 53.8,
+    "total_bytes": 59223,
+    "total_tokens": 14704,
+    "always_tokens": 7757,
+    "reference_tokens": 6941,
+    "reference_pct": 47.2,
     "sections": [
       {
         "name": "Page shapes (pick before designing)",
-        "tokens": 6403
+        "tokens": 4318
       },
       {
         "name": "Design system",
@@ -29,7 +29,7 @@
       },
       {
         "name": "Output",
-        "tokens": 771
+        "tokens": 773
       },
       {
         "name": "Copy-as-prompt",
@@ -62,12 +62,12 @@
     ],
     "contracts": [
       {
-        "contract": "podcast",
-        "tokens": 2561
-      },
-      {
         "contract": "editorial",
         "tokens": 1481
+      },
+      {
+        "contract": "podcast",
+        "tokens": 477
       },
       {
         "contract": "Log stream \u2014 chronological event table",
@@ -138,12 +138,7 @@
         "tokens": 160
       }
     ],
-    "oversized_contracts": [
-      {
-        "contract": "podcast",
-        "tokens": 2561
-      }
-    ]
+    "oversized_contracts": []
   },
   "boilerplate": {
     "common_boilerplate_lines": 81,
@@ -248,24 +243,34 @@
         "label": "repo-fixture",
         "fixture": "tests/fixtures/episode.package.json",
         "ok": true,
-        "seconds": 0.0346,
-        "output_bytes": 62054,
+        "seconds": 0.0219,
+        "output_bytes": 68995,
         "turns": 6,
-        "bytes_per_turn": 10342.3,
+        "bytes_per_turn": 11499.2,
         "stderr": ""
       },
       {
         "label": "synthetic-20x",
         "fixture": "scaled.package.json",
         "ok": true,
-        "seconds": 0.0336,
-        "output_bytes": 85662,
+        "seconds": 0.0211,
+        "output_bytes": 134917,
         "turns": 120,
-        "bytes_per_turn": 713.9,
+        "bytes_per_turn": 1124.3,
+        "stderr": ""
+      },
+      {
+        "label": "lenny-eric-ries-complex",
+        "fixture": "lenny-eric-ries.package.json",
+        "ok": true,
+        "seconds": 0.0207,
+        "output_bytes": 252005,
+        "turns": 220,
+        "bytes_per_turn": 1145.5,
         "stderr": ""
       }
     ],
-    "slowest_seconds": 0.0346,
+    "slowest_seconds": 0.0219,
     "ceiling_seconds": 0.5,
     "all_ok": true,
     "under_ceiling": true
@@ -273,5 +278,287 @@
   "self_contained": {
     "clean": true,
     "violations": {}
+  },
+  "primitives": {
+    "clean": true,
+    "violations": [],
+    "primitives": [
+      {
+        "name": "donut",
+        "file": "examples/primitives/01-donut.html",
+        "has_file": true,
+        "has_gallery_link": true,
+        "has_contract": true
+      },
+      {
+        "name": "bar",
+        "file": "examples/primitives/02-bar.html",
+        "has_file": true,
+        "has_gallery_link": true,
+        "has_contract": true
+      },
+      {
+        "name": "sparkline",
+        "file": "examples/primitives/03-sparkline.html",
+        "has_file": true,
+        "has_gallery_link": true,
+        "has_contract": true
+      },
+      {
+        "name": "stacked-bar",
+        "file": "examples/primitives/04-stacked-bar.html",
+        "has_file": true,
+        "has_gallery_link": true,
+        "has_contract": true
+      },
+      {
+        "name": "topology",
+        "file": "examples/primitives/05-topology.html",
+        "has_file": true,
+        "has_gallery_link": true,
+        "has_contract": true
+      },
+      {
+        "name": "dense-ops-table",
+        "file": "examples/primitives/06-table-ops.html",
+        "has_file": true,
+        "has_gallery_link": true,
+        "has_contract": true
+      },
+      {
+        "name": "comparison-matrix",
+        "file": "examples/primitives/07-table-comparison.html",
+        "has_file": true,
+        "has_gallery_link": true,
+        "has_contract": true
+      },
+      {
+        "name": "annotated-diff",
+        "file": "examples/primitives/08-diff.html",
+        "has_file": true,
+        "has_gallery_link": true,
+        "has_contract": true
+      },
+      {
+        "name": "log-stream",
+        "file": "examples/primitives/09-logs.html",
+        "has_file": true,
+        "has_gallery_link": true,
+        "has_contract": true
+      }
+    ],
+    "candidate_new_primitives": [
+      "scatter"
+    ]
+  },
+  "source_document": {
+    "clean": true,
+    "violations": [],
+    "html_native_feature_counts": {
+      "examples/checklist.html": 5,
+      "examples/comparison.html": 8,
+      "examples/dashboard.html": 9,
+      "examples/developer.html": 5,
+      "examples/document.html": 9,
+      "examples/editorial.html": 8,
+      "examples/index.html": 5,
+      "examples/network-map.html": 7,
+      "examples/podcast-transcript.html": 4,
+      "examples/podcast.html": 7,
+      "examples/primitives/01-donut.html": 3,
+      "examples/primitives/02-bar.html": 1,
+      "examples/primitives/03-sparkline.html": 1,
+      "examples/primitives/04-stacked-bar.html": 1,
+      "examples/primitives/05-topology.html": 2,
+      "examples/primitives/06-table-ops.html": 5,
+      "examples/primitives/07-table-comparison.html": 6,
+      "examples/primitives/08-diff.html": 4,
+      "examples/primitives/09-logs.html": 3,
+      "examples/primitives.html": 6,
+      "examples/runbook.html": 7,
+      "examples/timeline.html": 7,
+      "examples/triage-board.html": 7,
+      "index.html": 9
+    },
+    "html_native_feature_hits": {
+      "examples/checklist.html": [
+        "inline_svg",
+        "copy_as_prompt",
+        "filtering",
+        "toggle",
+        "textarea"
+      ],
+      "examples/comparison.html": [
+        "inline_svg",
+        "table",
+        "copy_as_prompt",
+        "sorting",
+        "filtering",
+        "toggle",
+        "textarea",
+        "cross_highlight"
+      ],
+      "examples/dashboard.html": [
+        "search",
+        "inline_svg",
+        "table",
+        "copy_as_prompt",
+        "sorting",
+        "filtering",
+        "toggle",
+        "textarea",
+        "cross_highlight"
+      ],
+      "examples/developer.html": [
+        "search",
+        "table",
+        "filtering",
+        "textarea",
+        "cross_highlight"
+      ],
+      "examples/document.html": [
+        "search",
+        "inline_svg",
+        "table",
+        "copy_as_prompt",
+        "sorting",
+        "filtering",
+        "toggle",
+        "textarea",
+        "cross_highlight"
+      ],
+      "examples/editorial.html": [
+        "search",
+        "inline_svg",
+        "copy_as_prompt",
+        "sorting",
+        "filtering",
+        "toggle",
+        "textarea",
+        "cross_highlight"
+      ],
+      "examples/index.html": [
+        "search",
+        "sorting",
+        "filtering",
+        "toggle",
+        "cross_highlight"
+      ],
+      "examples/network-map.html": [
+        "search",
+        "inline_svg",
+        "copy_as_prompt",
+        "filtering",
+        "toggle",
+        "textarea",
+        "cross_highlight"
+      ],
+      "examples/podcast-transcript.html": [
+        "search",
+        "inline_svg",
+        "local_storage",
+        "toggle"
+      ],
+      "examples/podcast.html": [
+        "search",
+        "inline_svg",
+        "copy_as_prompt",
+        "filtering",
+        "local_storage",
+        "toggle",
+        "cross_highlight"
+      ],
+      "examples/primitives/01-donut.html": [
+        "inline_svg",
+        "filtering",
+        "toggle"
+      ],
+      "examples/primitives/02-bar.html": [
+        "sorting"
+      ],
+      "examples/primitives/03-sparkline.html": [
+        "inline_svg"
+      ],
+      "examples/primitives/04-stacked-bar.html": [
+        "filtering"
+      ],
+      "examples/primitives/05-topology.html": [
+        "search",
+        "inline_svg"
+      ],
+      "examples/primitives/06-table-ops.html": [
+        "search",
+        "table",
+        "sorting",
+        "filtering",
+        "toggle"
+      ],
+      "examples/primitives/07-table-comparison.html": [
+        "table",
+        "copy_as_prompt",
+        "sorting",
+        "filtering",
+        "toggle",
+        "textarea"
+      ],
+      "examples/primitives/08-diff.html": [
+        "copy_as_prompt",
+        "filtering",
+        "toggle",
+        "textarea"
+      ],
+      "examples/primitives/09-logs.html": [
+        "search",
+        "filtering",
+        "toggle"
+      ],
+      "examples/primitives.html": [
+        "search",
+        "copy_as_prompt",
+        "sorting",
+        "filtering",
+        "toggle",
+        "cross_highlight"
+      ],
+      "examples/runbook.html": [
+        "search",
+        "inline_svg",
+        "copy_as_prompt",
+        "filtering",
+        "toggle",
+        "textarea",
+        "cross_highlight"
+      ],
+      "examples/timeline.html": [
+        "search",
+        "inline_svg",
+        "sorting",
+        "filtering",
+        "toggle",
+        "textarea",
+        "cross_highlight"
+      ],
+      "examples/triage-board.html": [
+        "search",
+        "copy_as_prompt",
+        "filtering",
+        "drag",
+        "toggle",
+        "textarea",
+        "cross_highlight"
+      ],
+      "index.html": [
+        "search",
+        "inline_svg",
+        "table",
+        "copy_as_prompt",
+        "sorting",
+        "filtering",
+        "toggle",
+        "textarea",
+        "cross_highlight"
+      ]
+    },
+    "low_feature_files": {}
   }
 }

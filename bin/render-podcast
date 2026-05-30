@@ -30,6 +30,25 @@ def _repo_root() -> Path:
 
 TEMPLATE_PATH = _repo_root() / "examples" / "podcast.html"
 
+
+def load_package(package_path: Path) -> dict:
+    return json.loads(package_path.read_text(encoding="utf-8"))
+
+
+def load_template_style() -> str:
+    template = TEMPLATE_PATH.read_text(encoding="utf-8")
+    style_start = template.find("<style>")
+    style_end = template.find("</style>", style_start)
+    if style_start == -1 or style_end == -1:
+        raise RuntimeError(f"template has no <style> block: {TEMPLATE_PATH}")
+    return template[style_start:style_end + len("</style>")]
+
+
+def episode_data_island(pkg: dict) -> str:
+    data = json.dumps(pkg, ensure_ascii=False, separators=(",", ":"))
+    data = data.replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
+    return f'<script type="application/json" id="episode-data">{data}</script>'
+
 # Replace the v2.2.0 example's @media (prefers-color-scheme: dark) block with
 # a body.dark class so light is the default and dark is opt-in via a toggle.
 DARK_MEDIA_BLOCK = """@media (prefers-color-scheme: dark) {
@@ -334,14 +353,11 @@ def render_claims(claims: list[dict]) -> str:
     return "\n".join(rows)
 
 
-def render_transcript(package_path: Path) -> str:
+def render_transcript(package_path: Path, pkg: dict | None = None, style_block: str | None = None) -> str:
     """Render the transcript-view sibling that shares the topbar + dark-mode CSS."""
-    pkg = json.loads(package_path.read_text(encoding="utf-8"))
+    pkg = pkg or load_package(package_path)
     ep = pkg["episode"]
-    template = TEMPLATE_PATH.read_text(encoding="utf-8")
-    style_start = template.find("<style>")
-    style_end = template.find("</style>", style_start) + len("</style>")
-    style_block = template[style_start:style_end]
+    style_block = style_block or load_template_style()
     transcript_overrides = COMMON_OVERRIDES + """
 /* Transcript-view chrome */
 .transcript-shell { max-width: var(--studio-max); margin: 0 auto; padding: 1rem 1.25rem 2.5rem; display: grid; grid-template-columns: 1fr; gap: 1rem; }
@@ -438,6 +454,7 @@ body.inspector-hidden .chapter-rail { display: none; }
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
 <title>{esc(title)} — Transcript</title>
 <meta name="description" content="Annotated transcript of {esc(title)} ({esc(podcast_title)}).">
 <meta property="og:title" content="{esc(title)} — Transcript">
@@ -448,6 +465,7 @@ body.inspector-hidden .chapter-rail { display: none; }
 {style_block}
 </head>
 <body>
+{episode_data_island(pkg)}
 
 <header class="topbar">
   <div class="topbar-inner">
@@ -501,14 +519,10 @@ if (inspectorToggle) {{
 '''
 
 
-def render_briefing(package_path: Path) -> str:
-    pkg = json.loads(package_path.read_text(encoding="utf-8"))
+def render_briefing(package_path: Path, pkg: dict | None = None, style_block: str | None = None) -> str:
+    pkg = pkg or load_package(package_path)
     ep = pkg["episode"]
-    template = TEMPLATE_PATH.read_text(encoding="utf-8")
-    # Extract just the <style>...</style> block (re-using the canonical CSS)
-    style_start = template.find("<style>")
-    style_end = template.find("</style>", style_start) + len("</style>")
-    style_block = template[style_start:style_end]
+    style_block = style_block or load_template_style()
     # Local overrides:
     # - Topbar brand: v2.2.0 example caps at 18rem with nowrap+ellipsis (made
     #   sense for fictional short title; cuts off real podcast titles awkwardly).
@@ -604,18 +618,18 @@ def render_briefing(package_path: Path) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
 <title>{esc(title)} — {esc(podcast_title)}</title>
 <meta name="description" content="{esc(og_description)}">
 <meta property="og:title" content="{esc(title)} — {esc(podcast_title)}">
 <meta property="og:description" content="{esc(og_description)}">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Todd's Reports">
-<meta name="twitter:card" content="summary_large_image">
-<meta property="og:image" content="og-card.png">
-<meta name="twitter:image" content="og-card.png">
+<meta name="twitter:card" content="summary">
 {style_block}
 </head>
 <body>
+{episode_data_island(pkg)}
 
 <!-- TOPBAR -->
 <header class="topbar">
@@ -629,7 +643,7 @@ def render_briefing(package_path: Path) -> str:
       {transcript_tab}
       {source_tab}
     </nav>
-    <button id="inspector-toggle" aria-pressed="false" title="Hide the term inspector to focus on the briefing">
+    <button id="inspector-toggle" type="button" aria-pressed="false" title="Hide the term inspector to focus on the briefing">
       <span class="il-hide">hide sidebar</span>
       <span class="il-show">show sidebar</span>
     </button>
@@ -735,10 +749,12 @@ def main(argv: list[str] | None = None) -> int:
     out_dir = (args.output_dir or package_path.parent).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    pkg = load_package(package_path)
+    style_block = load_template_style()
     briefing_path = out_dir / "podcast-at-a-glance.html"
     transcript_path = out_dir / "annotated-transcript.html"
-    briefing_path.write_text(render_briefing(package_path), encoding="utf-8")
-    transcript_path.write_text(render_transcript(package_path), encoding="utf-8")
+    briefing_path.write_text(render_briefing(package_path, pkg, style_block), encoding="utf-8")
+    transcript_path.write_text(render_transcript(package_path, pkg, style_block), encoding="utf-8")
     print(briefing_path)
     print(transcript_path)
     return 0
