@@ -1,0 +1,277 @@
+{
+  "generated_at": "2026-05-30T09:13:53",
+  "skill_md": {
+    "total_bytes": 67651,
+    "total_tokens": 16787,
+    "always_tokens": 7755,
+    "reference_tokens": 9026,
+    "reference_pct": 53.8,
+    "sections": [
+      {
+        "name": "Page shapes (pick before designing)",
+        "tokens": 6403
+      },
+      {
+        "name": "Design system",
+        "tokens": 3043
+      },
+      {
+        "name": "Canonical primitives (charts and tables)",
+        "tokens": 2623
+      },
+      {
+        "name": "Rendering process",
+        "tokens": 999
+      },
+      {
+        "name": "Artifact forms",
+        "tokens": 833
+      },
+      {
+        "name": "Output",
+        "tokens": 771
+      },
+      {
+        "name": "Copy-as-prompt",
+        "tokens": 611
+      },
+      {
+        "name": "The bar (read this every time)",
+        "tokens": 499
+      },
+      {
+        "name": "Sub-patterns (within shapes, not standalone shapes)",
+        "tokens": 489
+      },
+      {
+        "name": "The 8 information dimensions HTML can carry",
+        "tokens": 207
+      },
+      {
+        "name": "(frontmatter)",
+        "tokens": 160
+      },
+      {
+        "name": "When to invoke",
+        "tokens": 77
+      },
+      {
+        "name": "Credits",
+        "tokens": 66
+      }
+    ],
+    "contracts": [
+      {
+        "contract": "podcast",
+        "tokens": 2561
+      },
+      {
+        "contract": "editorial",
+        "tokens": 1481
+      },
+      {
+        "contract": "Log stream \u2014 chronological event table",
+        "tokens": 428
+      },
+      {
+        "contract": "network-map",
+        "tokens": 298
+      },
+      {
+        "contract": "Annotated diff \u2014 code review primitive",
+        "tokens": 269
+      },
+      {
+        "contract": "Comparison matrix \u2014 items as columns",
+        "tokens": 259
+      },
+      {
+        "contract": "developer",
+        "tokens": 251
+      },
+      {
+        "contract": "timeline",
+        "tokens": 234
+      },
+      {
+        "contract": "comparison",
+        "tokens": 225
+      },
+      {
+        "contract": "runbook",
+        "tokens": 224
+      },
+      {
+        "contract": "Topology \u2014 inline service graph",
+        "tokens": 222
+      },
+      {
+        "contract": "triage-board",
+        "tokens": 207
+      },
+      {
+        "contract": "dashboard",
+        "tokens": 187
+      },
+      {
+        "contract": "Sparkline \u2014 stat-tile cluster",
+        "tokens": 187
+      },
+      {
+        "contract": "Dense ops table",
+        "tokens": 187
+      },
+      {
+        "contract": "document",
+        "tokens": 176
+      },
+      {
+        "contract": "Bar \u2014 ranked top-N",
+        "tokens": 165
+      },
+      {
+        "contract": "Donut \u2014 categorical status mix",
+        "tokens": 161
+      },
+      {
+        "contract": "Stacked bar \u2014 composition over time",
+        "tokens": 160
+      }
+    ],
+    "oversized_contracts": [
+      {
+        "contract": "podcast",
+        "tokens": 2561
+      }
+    ]
+  },
+  "boilerplate": {
+    "common_boilerplate_lines": 81,
+    "avg_boilerplate_pct": 20.4,
+    "per_file": {
+      "dashboard.html": {
+        "style_lines": 439,
+        "style_bytes": 9086,
+        "boilerplate_lines": 72,
+        "boilerplate_pct": 28.5
+      },
+      "document.html": {
+        "style_lines": 855,
+        "style_bytes": 17002,
+        "boilerplate_lines": 65,
+        "boilerplate_pct": 15.8
+      },
+      "editorial.html": {
+        "style_lines": 912,
+        "style_bytes": 20132,
+        "boilerplate_lines": 71,
+        "boilerplate_pct": 15.0
+      },
+      "timeline.html": {
+        "style_lines": 557,
+        "style_bytes": 12917,
+        "boilerplate_lines": 68,
+        "boilerplate_pct": 21.7
+      },
+      "runbook.html": {
+        "style_lines": 567,
+        "style_bytes": 11559,
+        "boilerplate_lines": 68,
+        "boilerplate_pct": 22.0
+      },
+      "comparison.html": {
+        "style_lines": 428,
+        "style_bytes": 8251,
+        "boilerplate_lines": 66,
+        "boilerplate_pct": 27.2
+      },
+      "network-map.html": {
+        "style_lines": 378,
+        "style_bytes": 7956,
+        "boilerplate_lines": 63,
+        "boilerplate_pct": 27.2
+      },
+      "triage-board.html": {
+        "style_lines": 480,
+        "style_bytes": 10142,
+        "boilerplate_lines": 69,
+        "boilerplate_pct": 24.6
+      },
+      "developer.html": {
+        "style_lines": 597,
+        "style_bytes": 14298,
+        "boilerplate_lines": 61,
+        "boilerplate_pct": 17.5
+      },
+      "podcast.html": {
+        "style_lines": 362,
+        "style_bytes": 13634,
+        "boilerplate_lines": 36,
+        "boilerplate_pct": 12.7
+      },
+      "podcast-transcript.html": {
+        "style_lines": 481,
+        "style_bytes": 20442,
+        "boilerplate_lines": 39,
+        "boilerplate_pct": 11.1
+      },
+      "checklist.html": {
+        "style_lines": 368,
+        "style_bytes": 6970,
+        "boilerplate_lines": 49,
+        "boilerplate_pct": 21.6
+      }
+    }
+  },
+  "output_sizes": {
+    "sizes": {
+      "checklist.html": 29401,
+      "comparison.html": 29832,
+      "dashboard.html": 38818,
+      "developer.html": 49465,
+      "document.html": 77954,
+      "editorial.html": 73808,
+      "index.html": 8389,
+      "network-map.html": 38098,
+      "podcast-transcript.html": 30760,
+      "podcast.html": 32637,
+      "primitives.html": 22522,
+      "runbook.html": 53953,
+      "timeline.html": 38476,
+      "triage-board.html": 40242
+    },
+    "longform_below_floor": {}
+  },
+  "cli": {
+    "runs": [
+      {
+        "label": "repo-fixture",
+        "fixture": "tests/fixtures/episode.package.json",
+        "ok": true,
+        "seconds": 0.0346,
+        "output_bytes": 62054,
+        "turns": 6,
+        "bytes_per_turn": 10342.3,
+        "stderr": ""
+      },
+      {
+        "label": "synthetic-20x",
+        "fixture": "scaled.package.json",
+        "ok": true,
+        "seconds": 0.0336,
+        "output_bytes": 85662,
+        "turns": 120,
+        "bytes_per_turn": 713.9,
+        "stderr": ""
+      }
+    ],
+    "slowest_seconds": 0.0346,
+    "ceiling_seconds": 0.5,
+    "all_ok": true,
+    "under_ceiling": true
+  },
+  "self_contained": {
+    "clean": true,
+    "violations": {}
+  }
+}

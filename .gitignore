@@ -8,3 +8,6 @@ __pycache__/
 
 # Local-only notes (per CLAUDE.md — DO NOT SHIP)
 .claude.local.md
+
+# Generated per-run perf reports (perf/baseline.json IS committed; reports are not)
+perf/reports/
