@@ -45,7 +45,7 @@ My contribution is the opinionated design system and page-shape contracts around
 - `index.html` — the design system as a single file (the live link above).
 - `examples/` — thirteen self-contained artifacts: one per page shape (now including `podcast-transcript.html` for the transcript view), plus a canonical-primitives reference. Browse the [example gallery](https://twidtwid.github.io/render-as-html/examples/).
 - `bin/render-podcast` — Python CLI that consumes podcastify's `episode.package.json` and writes a `podcast-at-a-glance.html` + `annotated-transcript.html` pair matching the canonical examples. Usage: `bin/render-podcast <package.json> [-o OUT_DIR]`.
-- `tests/` — pytest suite (`python3 -m pytest tests/ -v`) plus the fixture both canonical podcast examples render from.
+- `tests/` — pytest suite (`uv run --with pytest pytest tests/ -v`) plus the fixture both canonical podcast examples render from.
 - `LICENSE` — MIT.
 
 ## Page shapes

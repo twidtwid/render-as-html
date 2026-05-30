@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
 <title>PR: Editorial shape + one-truth design system (render-as-html)</title>
 <meta name="description" content="An annotated PR review: the editorial shape and one-truth design system for render-as-html.">
 <meta property="og:title" content="PR: Editorial shape + one-truth design system (render-as-html)">
@@ -687,10 +688,14 @@ tr.del .diff-sign { color: var(--critical-bd); }
 
 /* Diff tables: allow horizontal scroll inside the block — don't clip wide diffs */
 @media (max-width: 768px) {
-  .diff-block { overflow: visible; }
+  .diff-block {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
   .diff-table { width: max-content; min-width: 100%; }
-  .diff-block > .diff-header ~ *,
-  .diff-block table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .diff-block table { display: table; }
 }
 
 /* Prevent iOS focus-zoom: readonly copy-fallback textarea still benefits */

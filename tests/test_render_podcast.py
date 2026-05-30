@@ -1,7 +1,7 @@
 """Smoke tests for bin/render-podcast against the fixture episode package.
 
 Run from the repo root:
-    python3 -m pytest tests/test_render_podcast.py -v
+    uv run --with pytest pytest tests/test_render_podcast.py -v
 
 These are intentionally low-cardinality assertions — they check that the
 renderer produces both expected files, that the file contracts the SKILL.md
@@ -98,3 +98,17 @@ def test_inspector_toggle_dead_below_breakpoint(tmp_path):
     # Briefing-only extension to 1180 (transcript chapter rail is collapsible ≥821)
     assert "@media (max-width: 1180px) { #inspector-toggle { display: none; } }" in briefing
     assert "@media (max-width: 1180px) { #inspector-toggle { display: none; } }" not in transcript
+
+
+def test_briefing_renders_fixture_terms_and_read_next_links(tmp_path):
+    rp = _load_renderer()
+    rp.main([str(FIXTURE), "-o", str(tmp_path)])
+    html = (tmp_path / "podcast-at-a-glance.html").read_text(encoding="utf-8")
+
+    assert "When memory is the moat, durable instruments win over ephemeral apps." in html
+    assert '<div class="name">File of record</div>' in html
+    assert 'Vikram Shah<span class="ext">↗</span>' in html
+    assert 'Notion<span class="ext">↗</span>' in html
+    assert 'Figma<span class="ext">↗</span>' in html
+    assert 'Why workflows beat apps' in html
+    assert 'https://example.invalid/workflows-beat-apps' in html

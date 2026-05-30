@@ -2,6 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
 <title>Donut — categorical status mix</title>
 <meta name="description" content="Interactive donut primitive for showing categorical status proportions with isolating legend controls.">
 <meta property="og:title" content="Donut — categorical status mix">
@@ -90,6 +91,25 @@
   .clear-bar { display: none; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--rule-soft); font-size: 12px; color: var(--muted); }
   .clear-bar.show { display: flex; justify-content: space-between; align-items: center; }
   .clear-bar button { all: unset; cursor: pointer; color: var(--accent); font-size: 12px; border-bottom: 1px solid currentColor; }
+  @media (max-width: 560px) {
+    body { padding: 18px 12px; }
+    .tile {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 16px;
+      padding: 16px 14px;
+    }
+    .tile-head {
+      width: 100%;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .legend {
+      width: 100%;
+      grid-template-columns: 14px minmax(0, 1fr) auto auto;
+      column-gap: 10px;
+    }
+  }
 </style>
 </head>
 <body>

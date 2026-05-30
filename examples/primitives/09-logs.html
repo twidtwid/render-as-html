@@ -2,6 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
 <title>9 / table — log stream</title>
 <meta name="description" content="Log stream primitive for filtering, tailing, and expanding structured chronological events.">
 <meta property="og:title" content="9 / table — log stream">
@@ -95,6 +96,10 @@
     padding: 4px 8px; width: 180px;
   }
   .toolbar .search::placeholder { color: var(--muted); }
+  @media (max-width: 560px) {
+    body { padding: 24px 12px; }
+    .toolbar .search { width: 100%; font-size: 16px; }
+  }
   .level-chip {
     all: unset; cursor: pointer;
     font-family: var(--font-mono); font-size: 11px;
@@ -235,7 +240,7 @@
     </div>
 
     <div class="toolbar">
-      <input class="search" id="search" type="search" placeholder="search messages…">
+      <input class="search" id="search" type="search" placeholder="search messages…" aria-label="Search log messages">
       <button class="level-chip info"  data-lvl="info">INFO  <span class="ct" id="ctInfo">0</span></button>
       <button class="level-chip warn"  data-lvl="warn">WARN  <span class="ct" id="ctWarn">0</span></button>
       <button class="level-chip error" data-lvl="error">ERROR <span class="ct" id="ctErr">0</span></button>

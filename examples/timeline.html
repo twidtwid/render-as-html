@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
 <title>render-as-html: from idea to one truth — a build log</title>
 <meta name="description" content="A build log of render-as-html — from first idea to the one-truth design system.">
 <meta property="og:title" content="render-as-html: from idea to one truth — a build log">
@@ -886,6 +887,15 @@ function highlightText(rawText, query) {
   return safe.replace(re, '<mark>$1</mark>');
 }
 
+function safeSessionJson(key, fallback) {
+  try {
+    return JSON.parse(sessionStorage.getItem(key) || JSON.stringify(fallback));
+  } catch {
+    sessionStorage.removeItem(key);
+    return fallback;
+  }
+}
+
 function buildWeekGroups(events) {
   const groups = {};
   const order = [];
@@ -977,7 +987,7 @@ function renderTimeline() {
       html += `<button class="copy-quote-btn" onclick="copyQuote('${ev.id}')" aria-label="Copy event as quote">copy quote</button>`;
       html += `</div>`;
       html += `<div class="copy-fallback-wrap" id="fallback-${ev.id}">`;
-      html += `<textarea class="copy-fallback-textarea" id="fallback-ta-${ev.id}" readonly rows="3"></textarea>`;
+      html += `<textarea class="copy-fallback-textarea" id="fallback-ta-${ev.id}" readonly rows="3" aria-label="Copy fallback text for ${escapeHtml(ev.title)}"></textarea>`;
       html += `</div>`;
       html += `</div>`;
       html += `</div>`;
@@ -991,7 +1001,7 @@ function renderTimeline() {
   body.innerHTML = html;
 
   // Restore collapse states
-  const collapseState = JSON.parse(sessionStorage.getItem('collapseState') || '{}');
+  const collapseState = safeSessionJson('collapseState', {});
   Object.keys(collapseState).forEach(id => {
     const el = document.getElementById(id);
     if (el && collapseState[id]) el.classList.add('collapsed');
@@ -1034,7 +1044,7 @@ function toggleWeek(groupId) {
   }
 
   // Persist
-  const collapseState = JSON.parse(sessionStorage.getItem('collapseState') || '{}');
+  const collapseState = safeSessionJson('collapseState', {});
   collapseState[groupId] = !isCollapsed;
   sessionStorage.setItem('collapseState', JSON.stringify(collapseState));
 }
