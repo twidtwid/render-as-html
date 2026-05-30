@@ -2,6 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
 <title>Bar — ranked top-N</title>
 <meta name="description" content="Ranked bar primitive for comparing ordered magnitudes with aligned labels and values.">
 <meta property="og:title" content="Bar — ranked top-N">
@@ -51,6 +52,12 @@
   .rank-row .delta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; min-width: 56px; }
   .rank-row .delta.up { color: var(--ok); }
   .rank-row .delta.down { color: var(--accent); }
+  @media (max-width: 560px) {
+    body { padding: 18px 12px; }
+    .tile { padding: 16px 14px; }
+    .toolbar { flex-wrap: wrap; }
+    .toolbar select { font-size: 16px; }
+  }
 </style>
 </head>
 <body>

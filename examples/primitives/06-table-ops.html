@@ -2,6 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
 <title>Dense ops table</title>
 <meta name="description" content="Dense operations table primitive with sortable columns, status filters, and row-count provenance.">
 <meta property="og:title" content="Dense ops table">
@@ -67,6 +68,13 @@
   tfoot td { padding: 8px 10px 2px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
   tfoot .right { text-align: right; }
   .empty-state { padding: 24px; text-align: center; color: var(--muted); font-style: italic; font-size: 13px; }
+  @media (max-width: 560px) {
+    body { padding: 18px 12px; }
+    .tile { padding: 14px 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tile-head { align-items: flex-start; }
+    .toolbar .search { width: min(100%, 240px); font-size: 16px; }
+    table { min-width: 560px; }
+  }
 </style>
 </head>
 <body>
@@ -77,7 +85,7 @@
       <div class="tile-meta">2026-05-20 14:32 · nmap -sV</div>
     </div>
     <div class="toolbar">
-      <input class="search" id="search" type="search" placeholder="search host or service…">
+      <input class="search" id="search" type="search" placeholder="search host or service…" aria-label="Search host or service">
       <button class="pill-filter" data-st="open">open <span class="ct" id="ctOpen">0</span></button>
       <button class="pill-filter" data-st="filtered">filtered <span class="ct" id="ctFil">0</span></button>
       <button class="pill-filter" data-st="closed">closed <span class="ct" id="ctClo">0</span></button>

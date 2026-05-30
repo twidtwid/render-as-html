@@ -219,6 +219,19 @@ def fmt_duration(seconds: int | None) -> str:
     return f"{m} min"
 
 
+def normalize_category(category: str | None) -> str:
+    raw = (category or "concept").strip().lower()
+    return {
+        "people": "person",
+        "organizations": "organization",
+        "companies": "company",
+        "concepts": "concept",
+        "tools": "tool",
+        "books": "book",
+        "articles": "article",
+    }.get(raw, raw)
+
+
 def dot_class(category: str) -> str:
     return {
         "person": "person",
@@ -228,7 +241,7 @@ def dot_class(category: str) -> str:
         "book": "article",
         "article": "article",
         "tool": "tool",
-    }.get((category or "").lower(), "concept")
+    }.get(normalize_category(category), "concept")
 
 
 CATEGORY_LABEL = {
@@ -244,7 +257,7 @@ CATEGORY_ORDER = ["person", "organization", "company", "concept", "tool", "book"
 
 
 def render_term(term: dict) -> str:
-    name = esc(term.get("term"))
+    name = esc(term.get("term") or term.get("name"))
     url = term.get("url")
     if url:
         name_html = f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">{name}<span class="ext">↗</span></a>'
@@ -264,7 +277,7 @@ def render_term(term: dict) -> str:
 def group_terms(terms: list[dict]) -> dict[str, list[dict]]:
     groups: dict[str, list[dict]] = {}
     for t in terms:
-        cat = (t.get("category") or "concept").lower()
+        cat = normalize_category(t.get("category"))
         # collapse company → organization for grouping
         bucket = cat if cat in CATEGORY_ORDER else "concept"
         groups.setdefault(bucket, []).append(t)
@@ -515,7 +528,7 @@ def render_briefing(package_path: Path) -> str:
     guests = ep.get("guests") or []
     description = (ep.get("description") or "").strip()
     episode_url = ep.get("episode_url") or ""
-    bottom_line = pkg.get("bottom_line") or ""
+    bottom_line = pkg.get("bottom_line") or ep.get("bottom_line") or ""
     bundle_slug = package_path.parent.parent.name
 
     # Meta sub-line
@@ -572,7 +585,7 @@ def render_briefing(package_path: Path) -> str:
     next_items.append(
         '<li><a href="annotated-transcript.html"><span class="label">Full annotated transcript<span class="next-note">Side-by-side chapter rail and search.</span></span><span class="arrow">→</span></a></li>'
     )
-    for link in (pkg.get("links") or [])[:4]:
+    for link in (pkg.get("links") or pkg.get("read_next") or [])[:4]:
         label = esc(link.get("label") or link.get("url"))
         url = esc(link.get("url") or "#")
         note = esc(link.get("note") or "")
