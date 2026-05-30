@@ -46,6 +46,7 @@ My contribution is the opinionated design system and page-shape contracts around
 - `examples/` — thirteen self-contained artifacts: one per page shape (now including `podcast-transcript.html` for the transcript view), plus a canonical-primitives reference. Browse the [example gallery](https://twidtwid.github.io/render-as-html/examples/).
 - `bin/render-podcast` — Python CLI that consumes podcastify's `episode.package.json` and writes a `podcast-at-a-glance.html` + `annotated-transcript.html` pair matching the canonical examples. Usage: `bin/render-podcast <package.json> [-o OUT_DIR]`.
 - `tests/` — pytest suite (`uv run --with pytest pytest tests/ -v`) plus the fixture both canonical podcast examples render from.
+- `scripts/perf_harness.py` — optimization harness for skill-token load, renderer speed, primitive coverage, and HTML source-document invariants (`uv run python scripts/perf_harness.py --check`).
 - `LICENSE` — MIT.
 
 ## Page shapes
@@ -85,13 +86,17 @@ Each one has a live reference with code at [`examples/primitives.html`](https://
 
 Five rules cut across all of them: one palette, subgrid for cross-row column alignment, every filter has a visible clear, color is never the only signal, counts reflect underlying data — not the filtered view.
 
+## Optimization guard
+
+Run `uv run python scripts/perf_harness.py --check` before changing the skill contract, examples, primitives, or `bin/render-podcast`. The harness times the podcast renderer on the small fixture, a scaled fixture, and a complex synthetic Lenny's Podcast fixture based on public episode metadata from ["How to build a company that withstands any era"](https://www.lennysnewsletter.com/p/how-to-build-a-company-that-withstands). It also audits primitive registration and the "HTML is the source document" contract.
+
 ## The bar
 
 Ask what would disappear if this were flattened into a static text document. If only the SVG diagram disappears, it's styled prose, not a real HTML artifact. Try again. Aim for at least three HTML-native features: live filter, click-to-cross-highlight, inline charts, toggles, copy-as-prompt, drag-and-drop — pick your three.
 
 ## Sharing the output
 
-The skill emits a vanilla `.html` file. Serve it however you want — locally, Tailscale Serve / Funnel, GitHub Pages, S3, `python3 -m http.server`, whatever. By default, generated artifacts should be self-contained and make no external network requests.
+The skill emits a vanilla `.html` file. Serve it however you want — locally, Tailscale Serve / Funnel, GitHub Pages, S3, `uv run python -m http.server`, whatever. By default, generated artifacts should be self-contained and make no external network requests.
 
 Treat generated HTML as sensitive. It can embed private report text, file paths, internal hostnames, local IPs, account names, or other details that got pulled in while building the artifact. `SKILL.md` sketches a private-by-default, publish-on-explicit-trigger pattern if you want one.
 

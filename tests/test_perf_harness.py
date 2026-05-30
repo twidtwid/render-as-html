@@ -1,15 +1,15 @@
 """Regression gate built on scripts/perf_harness.py.
 
 Run from the repo root:
-    python3 -m pytest tests/test_perf_harness.py -v
+    uv run --with pytest pytest tests/test_perf_harness.py -v
 
 These assert the publish + perf invariants the harness measures:
   - examples make zero external resource requests (GitHub Pages publish rule),
   - bin/render-podcast stays under its time ceiling and scales,
   - SKILL.md token load has not regressed beyond budget vs the committed baseline.
 The committed perf/baseline.json is the reference; refresh it deliberately with
-`python3 scripts/perf_harness.py --update-baseline` when an intended change moves
-the numbers.
+`uv run python scripts/perf_harness.py --update-baseline` when an intended
+change moves the numbers.
 """
 from __future__ import annotations
 import importlib.util
@@ -43,6 +43,10 @@ def test_cli_under_ceiling_and_scales():
     cli = h.analyze_cli()
     assert cli["all_ok"], "bin/render-podcast must render every fixture cleanly"
     assert cli["under_ceiling"], f"slowest render {cli['slowest_seconds']}s exceeds {cli['ceiling_seconds']}s"
+    labels = {run["label"] for run in cli["runs"]}
+    assert h.LENNY_LABEL in labels, "default CLI harness must include the complex Lenny-style podcast fixture"
+    lenny_run = next(run for run in cli["runs"] if run["label"] == h.LENNY_LABEL)
+    assert lenny_run["turns"] >= 180, "complex fixture should stress a long recent episode, not another tiny package"
 
 
 def test_skill_token_load_within_budget():
@@ -54,3 +58,18 @@ def test_skill_token_load_within_budget():
               "self_contained": h.analyze_self_contained()}
     regs = h.regressions(report, baseline)
     assert not regs, "perf harness hard regressions: " + "; ".join(regs)
+
+
+def test_primitives_have_gallery_files_and_contracts():
+    h = _load_harness()
+    audit = h.analyze_primitives()
+    assert audit["clean"], "primitive audit violations: " + "; ".join(audit["violations"])
+    assert len(audit["primitives"]) == 9
+    assert "scatter" in audit["candidate_new_primitives"]
+
+
+def test_source_document_contract_is_clean():
+    h = _load_harness()
+    audit = h.analyze_source_document()
+    assert audit["clean"], "source-document violations: " + "; ".join(audit["violations"])
+    assert audit["html_native_feature_counts"], "audit should report HTML-native feature counts per example"

@@ -86,6 +86,28 @@ def test_no_dead_aria_tab_roles(tmp_path):
         assert "aria-selected" not in html, f"{name}: aria-selected belongs to tabs only"
 
 
+def test_outputs_are_self_contained_source_documents(tmp_path):
+    rp = _load_renderer()
+    rp.main([str(FIXTURE), "-o", str(tmp_path)])
+    for name in ("podcast-at-a-glance.html", "annotated-transcript.html"):
+        html = (tmp_path / name).read_text(encoding="utf-8")
+        assert '<link rel="icon" href="data:,">' in html, f"{name}: must suppress favicon network requests"
+        assert 'type="application/json" id="episode-data"' in html, f"{name}: must embed the source package data"
+        assert "podcast-transformer/package-v1" in html, f"{name}: data island should include fixture schema"
+        assert '<meta name="twitter:card" content="summary">' in html, f"{name}: default social card is summary"
+        assert "summary_large_image" not in html, f"{name}: large image card needs an actual hosted image"
+        assert "og:image" not in html, f"{name}: generated output is self-contained by default"
+        assert "twitter:image" not in html, f"{name}: generated output is self-contained by default"
+
+
+def test_episode_data_island_escapes_script_delimiters():
+    rp = _load_renderer()
+    island = rp.episode_data_island({"episode": {"title": "</script><script>alert(1)</script>"}})
+    assert 'type="application/json" id="episode-data"' in island
+    assert "</script><script>" not in island
+    assert "\\u003c/script" in island
+
+
 def test_inspector_toggle_dead_below_breakpoint(tmp_path):
     """Inspector toggle is hidden at ≤820 (shared) and ≤1180 (briefing only)."""
     rp = _load_renderer()
