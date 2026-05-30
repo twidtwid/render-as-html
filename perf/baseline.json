@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-05-30T10:25:11",
+  "generated_at": "2026-05-30T10:42:30",
   "skill_md": {
-    "total_bytes": 59223,
-    "total_tokens": 14704,
-    "always_tokens": 7757,
-    "reference_tokens": 6941,
-    "reference_pct": 47.2,
+    "total_bytes": 50596,
+    "total_tokens": 12563,
+    "always_tokens": 7937,
+    "reference_tokens": 4620,
+    "reference_pct": 36.8,
     "sections": [
       {
         "name": "Page shapes (pick before designing)",
-        "tokens": 4318
+        "tokens": 3236
       },
       {
         "name": "Design system",
@@ -17,11 +17,11 @@
       },
       {
         "name": "Canonical primitives (charts and tables)",
-        "tokens": 2623
+        "tokens": 1384
       },
       {
         "name": "Rendering process",
-        "tokens": 999
+        "tokens": 1179
       },
       {
         "name": "Artifact forms",
@@ -62,28 +62,16 @@
     ],
     "contracts": [
       {
-        "contract": "editorial",
-        "tokens": 1481
-      },
-      {
         "contract": "podcast",
         "tokens": 477
       },
       {
-        "contract": "Log stream \u2014 chronological event table",
-        "tokens": 428
+        "contract": "editorial",
+        "tokens": 398
       },
       {
         "contract": "network-map",
         "tokens": 298
-      },
-      {
-        "contract": "Annotated diff \u2014 code review primitive",
-        "tokens": 269
-      },
-      {
-        "contract": "Comparison matrix \u2014 items as columns",
-        "tokens": 259
       },
       {
         "contract": "developer",
@@ -102,8 +90,8 @@
         "tokens": 224
       },
       {
-        "contract": "Topology \u2014 inline service graph",
-        "tokens": 222
+        "contract": "Log stream \u2014 chronological event table",
+        "tokens": 223
       },
       {
         "contract": "triage-board",
@@ -114,28 +102,40 @@
         "tokens": 187
       },
       {
-        "contract": "Sparkline \u2014 stat-tile cluster",
-        "tokens": 187
-      },
-      {
-        "contract": "Dense ops table",
-        "tokens": 187
-      },
-      {
         "contract": "document",
         "tokens": 176
       },
       {
-        "contract": "Bar \u2014 ranked top-N",
-        "tokens": 165
+        "contract": "Annotated diff \u2014 code review primitive",
+        "tokens": 68
       },
       {
-        "contract": "Donut \u2014 categorical status mix",
-        "tokens": 161
+        "contract": "Dense ops table",
+        "tokens": 67
+      },
+      {
+        "contract": "Comparison matrix \u2014 items as columns",
+        "tokens": 66
+      },
+      {
+        "contract": "Sparkline \u2014 stat-tile cluster",
+        "tokens": 63
       },
       {
         "contract": "Stacked bar \u2014 composition over time",
-        "tokens": 160
+        "tokens": 63
+      },
+      {
+        "contract": "Topology \u2014 inline service graph",
+        "tokens": 60
+      },
+      {
+        "contract": "Donut \u2014 categorical status mix",
+        "tokens": 55
+      },
+      {
+        "contract": "Bar \u2014 ranked top-N",
+        "tokens": 49
       }
     ],
     "oversized_contracts": []
@@ -243,7 +243,7 @@
         "label": "repo-fixture",
         "fixture": "tests/fixtures/episode.package.json",
         "ok": true,
-        "seconds": 0.0219,
+        "seconds": 0.0284,
         "output_bytes": 68995,
         "turns": 6,
         "bytes_per_turn": 11499.2,
@@ -253,24 +253,24 @@
         "label": "synthetic-20x",
         "fixture": "scaled.package.json",
         "ok": true,
-        "seconds": 0.0211,
-        "output_bytes": 134917,
+        "seconds": 0.0289,
+        "output_bytes": 134935,
         "turns": 120,
-        "bytes_per_turn": 1124.3,
+        "bytes_per_turn": 1124.5,
         "stderr": ""
       },
       {
         "label": "lenny-eric-ries-complex",
         "fixture": "lenny-eric-ries.package.json",
         "ok": true,
-        "seconds": 0.0207,
-        "output_bytes": 252005,
+        "seconds": 0.0304,
+        "output_bytes": 252023,
         "turns": 220,
-        "bytes_per_turn": 1145.5,
+        "bytes_per_turn": 1145.6,
         "stderr": ""
       }
     ],
-    "slowest_seconds": 0.0219,
+    "slowest_seconds": 0.0304,
     "ceiling_seconds": 0.5,
     "all_ok": true,
     "under_ceiling": true

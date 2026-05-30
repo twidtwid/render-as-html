@@ -1,6 +1,6 @@
 ---
 name: render-as-html
-version: 2.6.0
+version: 2.6.1
 description: Create or update a designed, self-contained HTML artifact as the source of truth. Use when the user says "make an HTML artifact", "render this as html", "make me a pretty version", "I want to read this carefully", "make it interactive/readable", "update this HTML", or "/render-as-html". Output is an editable HTML file, not a conversion preview of another canonical document.
 ---
 
@@ -227,31 +227,12 @@ Explicit user override always wins.
 
 #### `editorial`
 - **Register:** Reading (serif display + serif body, cream paper, terracotta accent; see Density).
-- **Layout:** studio max-width ~1320px. Three zones, narrow–wide–narrow so the reading column dominates:
-  - Left rail ~18rem, sticky: kicker + title hero + "context/about" card.
-  - Center: prose, measure capped at `50rem` (~75ch); stays anchored left-of-center on wide screens.
-  - Right inspector ~18rem: entity list grouped by category with canonical links, then a "read next" link list.
-  - Collapse: inspector drops below center under ~1180px; single column under ~820px.
-  - Both rails follow the **sticky-rail, footer, and scrollbox invariants** in §Layout principles. Skip them and the rails overlap the prose at narrow widths and paint over the footer at scroll-bottom.
+- **Layout:** studio max-width ~1320px; narrow–wide–narrow three-zone — left context rail ~18rem · center prose capped `50rem` (~75ch) · right entity inspector ~18rem. Inspector drops below center <1180px; single column <820px. Both rails follow the sticky-rail/footer/scrollbox invariants in §Layout principles.
 - **First viewport:** kicker + title + italic thesis/bottom-line + start of body. No stat tiles.
-- **Required primitives:**
-  - Italic serif thesis/bottom-line pull-quote, left-aligned (never centered). No left-handle bar.
-  - Stacked numbered takeaways — single column with mono numerals, never a tile grid.
-  - Claim/section cards: arguing headline + 1–3 sentence mechanism body + small `Evidence:` line.
-  - **Evidence lines hyperlink their sources.** Every source token in a claim's `Evidence:` line (and every inline entity mention with a primary source) must be an `<a href>`. When the upstream data is structured (e.g. a research engine's JSON with a `url` per item), the link target MUST come from that data — never synthesized, inferred, or left as a bare publication name. If an item genuinely has no URL, render plain text and say why ("primary source not in feed"). Hard self-check before saving: every Evidence `href` is a substring of the source data you were given, and every claim section has ≥1 evidence link.
-  - Right-rail entity inspector grouped by category (people, companies, orgs, concepts, …), each row a colored category dot + name (canonical link if present, `↗` for external) + one-line note. Follows the scrollbox invariant in §Layout principles.
-  - Hide-sidebar toggle (reading-focus mode): a button in a dedicated `<header class="topbar">` element above the page wrapper (right-aligned via flex), separate from the search toolbar. Labeled "hide sidebar" / "show sidebar" via two `<span>`s inside the button (`.il-hide` shown by default, `.il-show` swapped in when hidden); `aria-pressed` updated on click. The toggle adds `body.inspector-hidden` to the document (a global reading-mode class, not a container class) and the wide-screen grid reflows from three columns to two so the prose keeps its 50rem measure. **`body.inspector-hidden .rail-right { display: none }` MUST live outside any wide-screen media query** — otherwise the toggle silently does nothing at narrow viewports where the rail is in-flow. Per-session only: never persist via `localStorage`; the sidebar is back by default on each visit.
-  - "Read next" list of source links.
-  - Per-section copy-as-prompt button (hover-revealed on each section heading), targeting the current `.html` artifact path.
-- **HTML-native ≥3:** in-text `<mark>` search **with prev/next nav**; click-entity-to-open / cross-highlight; per-section copy-as-prompt; hide-sidebar reading-focus mode; section scroll-spy if a section rail is present.
-- **Search nav (load-bearing — a match counter without stepping is a footgun):** any search that reports a match count MUST let the reader step through matches. Required: `↑`/`↓` buttons by the input; counter shows "N of M" (current position, not just total); the current match gets a distinct style (e.g. `mark.current` filled with `--accent`) so it stands out from the others; Enter advances, Shift+Enter goes back; buttons auto-disable at 0–1 matches. "3 matches" with no way to reach matches 2 and 3 is broken UX.
-- **Narrative-data sections use cards, not wide tables.** When an editorial section has 3–8 items each carrying several prose fields (e.g. artifact / recipient / outcome), render them as stacked cards — mono header (number + key + tag pill) → prose body → outcome line — not a dense ops table. The editorial stage caps prose at 50rem; a 6-column table of prose data clips on wide screens with the inspector rail open, and `overflow-x: auto` inside an editorial column is a cop-out (horizontal scroll is undiscoverable). The dense ops table primitive belongs in `dashboard`/`comparison`/`developer` shapes where the stage isn't capped.
-- **Cross-link scroll semantics (load-bearing — get the direction wrong and clicking a link hurls the reader away from what they clicked):**
-  - *Prose mention → entity card:* highlight both, then reveal the card by scrolling **the inspector's own scrollbox only** — `card.scrollIntoView({ block: 'nearest' })` (with the inspector as the nearest scroll container) or set `inspector.scrollTop` directly. Never call a scroll that moves the document/prose, and skip the scroll entirely if the card is already within the inspector's visible box. Clicking a prose link must not move the prose.
-  - *Entity card → prose mention:* scroll the **document** to the first `<mark>` with `block: 'center'`; make it a no-op if that mention is already in the viewport (no yank).
-  - The rule of thumb: a click scrolls *the other panel*, never the panel you clicked in.
-- **External links** open `target="_blank" rel="noopener noreferrer"`; internal anchors stay same-window.
-- **Avoid:** artifact-counting stat tiles; left-handle accent bars; category-label section titles; identical-tile card grids; prose measure wider than ~75ch; dashboard-style multi-column-of-tiles; **prose `Evidence:` lines that name sources ("per Bloomberg", "X @HPCwire (score 69)") without linking them** — a plain-text Evidence line when the URLs were available in the source data is a hard miss; it makes the artifact strictly worse than a raw source dump, which links everything for free.
+- **Required primitives:** italic left-aligned thesis pull-quote (no left-handle bar); stacked numbered takeaways (mono numerals, not a tile grid); claim/section cards (arguing headline + mechanism body + **linked** `Evidence:` line); right-rail entity inspector grouped by category; hide-sidebar reading-focus toggle; "read next" list; per-section copy-as-prompt.
+- **HTML-native ≥3:** in-text `<mark>` search with prev/next nav; click-entity cross-highlight; per-section copy-as-prompt; hide-sidebar mode; section scroll-spy.
+- **Avoid:** artifact-counting stat tiles; left-handle accent bars; category-label titles; prose wider than ~75ch; **unlinked `Evidence:` lines when source URLs were available** (strictly worse than a raw source dump).
+- **Detailed contract:** load [`references/shapes/editorial.md`](references/shapes/editorial.md) before authoring/changing an editorial artifact or `examples/editorial.html` — it holds the load-bearing cross-link scroll semantics, search-nav contract, evidence-linking self-check, and the narrative-cards-not-tables rule.
 
 #### `timeline`
 - **Register:** Reading (serif display + serif body; see Density). Mono small-caps for date/kicker lines.
@@ -315,7 +296,7 @@ Explicit user override always wins.
 - **Transcript layout:** chapter rail + speaker-turn list at ≥821px; chapter rail rows use fixed-width `<time>` plus flexible `.ch-title` so wrapped titles align.
 - **Required primitives:** topbar folder tabs, hide-sidebar focus mode, opt-in theme toggle, episode hero, host/guest cards, italic thesis card, numbered takeaways, claim cards with Evidence lines, grouped term inspector, read-next list, speaker turns, chapter rail, out-of-grid colophon footer.
 - **Hard invariants:** briefing and transcript topbars keep identical brand text and toggle slot; folder tabs are plain links with `aria-current="page"` (no ARIA tab roles); transcript has `<h1 class="sr-only">`; sticky rails are bounded independent scrollboxes; footer is outside the grid; never fabricate term URLs.
-- **Detailed contract:** load [`references/podcast-shape.md`](references/podcast-shape.md) before changing `bin/render-podcast`, canonical podcast examples, mobile/topbar behavior, or generated podcast output.
+- **Detailed contract:** load [`references/shapes/podcast.md`](references/shapes/podcast.md) before changing `bin/render-podcast`, canonical podcast examples, mobile/topbar behavior, or generated podcast output.
 
 ## Sub-patterns (within shapes, not standalone shapes)
 
@@ -359,63 +340,47 @@ Reach for the right one *before* writing SVG. The 2026-05-25 omega-3 dashboard s
 
 **Self-check before drawing:** if a label needs leader lines or "smart placement heuristics" to not collide, the primitive is wrong — switch.
 
+Each primitive's full contract (Required / Interaction / Avoid) lives in `references/primitives/<name>.md` — **load that file before implementing or changing the primitive.** The picker above + the one-line "pick when" below are enough to choose; the reference carries the locked details. Reference implementations: `examples/primitives/`.
+
 ### Charts
 
 #### Donut — categorical status mix
-- **Pick when:** 2–5 mutually-exclusive categories where the proportion is more useful at a glance than the absolute counts.
-- **Required:** subject-count in the center (never a category count, never an artifact count); ring track in `--rule-soft` so partial fills don't read as missing data; legend in CSS subgrid so counts and percents align in columns across rows.
-- **Interaction:** click a legend row to isolate that segment (others dim); visible `× clear` appears while a filter is active.
-- **Avoid:** 6+ slivers (use a stacked bar instead); donut-on-its-own as a hero — pair it with the data beneath.
+- **Pick when:** 2–5 mutually-exclusive categories where proportion-at-a-glance beats absolute counts.
+- **Contract:** [`references/primitives/donut.md`](references/primitives/donut.md)
 
 #### Bar — ranked top-N
 - **Pick when:** ≤12 items where order matters and a single magnitude per item is the signal.
-- **Required:** name in its own subgrid column to the left of the bar (never on the bar with a text-shadow); ochre marks the current leader, terracotta the rest; bar / name / value / Δ subgrid aligns across rows; secondary dimension (Δ, age, score) gets its own right-edge column.
-- **Interaction:** sort dropdown at minimum offers value, alpha, and the secondary dimension; bars re-scale to the new leader when sort changes.
-- **Avoid:** text-shadow / outline glow on labels (illegible); per-bar rainbow coloring; bars without a max-width cap.
+- **Contract:** [`references/primitives/bar.md`](references/primitives/bar.md)
 
 #### Sparkline — stat-tile cluster
-- **Pick when:** 2–4 hero metrics where each metric IS the subject (not an artifact count), current value + recent-trend shape is the one-glance read.
-- **Required:** single accent color for the spark line across all tiles; delta carries direction-of-good (ok / accent / muted); latest-point dot is hollow (paper fill, accent stroke) so it reads as a marker, not a glitch; faint area fill (`opacity ~0.08`) is optional weight, not a true area chart.
-- **Interaction:** hover the spark drops a vertical guide + value/time tooltip at the nearest data point.
-- **Avoid:** 4+ tiles (cross into dashboard territory); stat tiles that count the artifact itself; axis tick marks per data point (tooltip carries precision).
+- **Pick when:** 2–4 hero metrics where each metric is the subject; current value + recent-trend shape is the one-glance read.
+- **Contract:** [`references/primitives/sparkline.md`](references/primitives/sparkline.md)
 
 #### Stacked bar — composition over time
-- **Pick when:** categories sum to a meaningful whole each period (success/fail buckets, traffic mix, deal stages); 7–30 periods on the x-axis.
-- **Required:** y-axis recomputes when categories toggle off; severity-ascending bottom-up stack order; per-column tooltip with the day's breakdown + total; chip legend doubles as the filter (clicking removes that category from the stack).
-- **Interaction:** hover any column for the full breakdown tooltip; click chips to remove/add categories.
-- **Avoid:** categories that don't sum cleanly (use grouped bars); fixed y-axis when categories can toggle off.
+- **Pick when:** categories sum to a meaningful whole each period (buckets, traffic mix, deal stages); 7–30 periods.
+- **Contract:** [`references/primitives/stacked-bar.md`](references/primitives/stacked-bar.md)
 
 #### Topology — inline service graph
-- **Pick when:** connections are the point and node count is ≤30 (≤10 sits comfortably inline; 10–30 still works hand-positioned).
-- **Required:** hand-positioned coordinates (force-directed wiggle earns its place at 30+); mono-uppercase node labels; paper-card node fill with a cluster-colored dot (never fill the node with category color — doesn't scale when clusters grow); edges meet rect boundaries (clip via center-offset math); right-rail inspector matching the editorial-shape entity pattern.
-- **Interaction:** click a node to focus its neighborhood (dim others, light direct edges, update inspector); search ochre-highlights matches independently of focus; `× clear focus` resets.
-- **Avoid:** force-directed simulations on small graphs; edges drawn center-to-center poking through node rects; SVG with no surrounding tile chrome.
+- **Pick when:** connections are the point and node count is ≤30 (≤10 inline; 10–30 hand-positioned).
+- **Contract:** [`references/primitives/topology.md`](references/primitives/topology.md)
 
 ### Tables
 
 #### Dense ops table
-- **Pick when:** flat list of records keyed by an identifier; ≥6 rows; filtering / sorting is the central interaction. The instrument-register workhorse.
-- **Required:** mono first column (the identifier); sans middle (the labels); mono right-aligned numerics with `tabular-nums`; status pills carry outline + colored dot + text (color is never the sole signal); footer reports true row count (not the filtered count).
-- **Interaction:** column-header click cycles sort asc → desc → none (always-escapable); pill-filter in toolbar inverts (ink fill, paper text) when active; search across identifier + label fields.
-- **Avoid:** color-only status; footers that lie about dataset size when filtered; sorts with no neutral state.
+- **Pick when:** flat list of records keyed by an identifier; ≥6 rows; filter/sort is the central interaction. The instrument-register workhorse.
+- **Contract:** [`references/primitives/dense-ops-table.md`](references/primitives/dense-ops-table.md)
 
 #### Comparison matrix — items as columns
-- **Pick when:** "X vs Y vs Z" decision matrix with shared criteria; you want the reader to tune weights and see who wins live; 2–5 items, 3–10 criteria.
-- **Required:** items as columns (entities-as-rows would be a dashboard, not this — the axis flip *is* the shape); weight column on the far left with a full-height +/− stepper flanking the input (no native browser spinners); aggregate row normalized to 0–100 (so total-weight changes don't mask relative position); explicit `↑ better` / `↓ better` per-criterion direction; per-row star + ochre tint marks row winner; overall winner in the footer goes terracotta; round-trip `copy as prompt` with visible textarea fallback.
-- **Interaction:** step or type any weight 0–5; per-row and overall winners recompute on every change.
-- **Avoid:** entities-as-rows layout; tiny native spinner buttons; weights without bounds; copy buttons that imply another canonical format (use `copy as recommendation` / `copy as prompt`, not `copy as markdown`).
+- **Pick when:** "X vs Y vs Z" decision matrix with shared criteria and live weight tuning; 2–5 items, 3–10 criteria.
+- **Contract:** [`references/primitives/comparison-matrix.md`](references/primitives/comparison-matrix.md)
 
 #### Annotated diff — code review primitive
-- **Pick when:** reviewing code changes, security findings, or any line-anchored critique where adjacency to the source matters more than a side panel.
-- **Required:** findings sit IN the diff, anchored to the line they touch; severity carried three ways (strip count at the top + left bar on the finding card + colored badge fill — color is never alone); explicit `L<n> · new` / `L<n> · removed` line labels so reviewers know which side they're commenting on; `+`/`−` gutter chars in their own column AND row background tint (two cues); syntax highlighting via local CSS classes only (no Prism, no CDN, no runtime tokenizer); per-finding `copy as prompt` quoting the line context.
-- **Interaction:** click any line number to copy a `file:line` reference (gutter flashes); per-finding copy button round-trips back as a paste-able instruction; `show nits` toggle hides low-priority findings.
-- **Avoid:** findings in a sidebar separated from the lines they discuss; color-only severity; runtime syntax highlighters or CDN dependencies.
+- **Pick when:** code changes / security findings / any line-anchored critique where adjacency to the source beats a side panel.
+- **Contract:** [`references/primitives/annotated-diff.md`](references/primitives/annotated-diff.md)
 
 #### Log stream — chronological event table
-- **Pick when:** the data is a tail of timestamped events with a categorical level; newest-first reading is the default; payloads have structure worth expanding.
-- **Required:** three live-state cues (pulsing dot + LIVE/PAUSED label + button mode-flip) so state reads without sound and survives a screenshot; ochre flash on new rows (~1.2s fade) for peripheral-glance detection; FATAL fills its pill background, other levels are outline-only (visual weight matches operational weight); counts are against full event set (never the filtered view); expanded payload uses the same syntax-token palette as the diff primitive (keys terracotta, strings ochre, numbers note-blue).
-- **Interaction:** multi-select level chips; search across messages; click any row to expand the payload; `⏸ pause tail` freezes scroll and tail state so investigation doesn't lose the spot.
-- **Avoid:** live-only state cues (must read when muted or in screenshots); identical pill styling for FATAL vs ERROR; expanding a row that destroys scroll position.
+- **Pick when:** a tail of timestamped events with a categorical level; newest-first reading; payloads worth expanding.
+- **Contract:** [`references/primitives/log-stream.md`](references/primitives/log-stream.md)
 
 ### Cross-cutting rules (primitives only)
 
@@ -557,9 +522,12 @@ Dark (via prefers-color-scheme):
    REJECTED:     <1-2 shapes considered but wrong, with one-word reasons>
    PRIMITIVES:   <3-5 primitives this shape needs from §Canonical primitives>
    DIMENSIONS:   <which of the 8 dimensions, aiming for ≥4>
+   READ:         <reference files to load now: references/shapes/<shape>.md if one exists, + references/primitives/<name>.md for each chosen primitive>
    ```
 
    Run the auto-pick table from §Shape selection against the real content first; do not invent a shape; do not pick `editorial` for tabular data with filterable categories (that is `dashboard`).
+
+   **Then actually Read the files named in `READ:` before step 3 — this is not optional.** The deep per-shape and per-primitive contracts live in `references/` (loaded on demand, not carried in this skill); the compact inline summaries are enough to *pick* but not to *build correctly*. Building an `editorial` artifact or an unfamiliar primitive from the inline stub alone reintroduces the exact omega-3 / *Magnifica* failure modes the detailed contracts exist to prevent. A shape or primitive with no reference file has its full contract inline — proceed directly.
 
 3. **Plan the instrument:**
    - What's the central interaction? (filter? compare? execute? explore?)
