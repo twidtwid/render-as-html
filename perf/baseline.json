@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-30T10:42:30",
+  "generated_at": "2026-05-31T10:09:16",
   "skill_md": {
     "total_bytes": 50596,
     "total_tokens": 12563,
@@ -243,7 +243,7 @@
         "label": "repo-fixture",
         "fixture": "tests/fixtures/episode.package.json",
         "ok": true,
-        "seconds": 0.0284,
+        "seconds": 0.0328,
         "output_bytes": 68995,
         "turns": 6,
         "bytes_per_turn": 11499.2,
@@ -253,7 +253,7 @@
         "label": "synthetic-20x",
         "fixture": "scaled.package.json",
         "ok": true,
-        "seconds": 0.0289,
+        "seconds": 0.0296,
         "output_bytes": 134935,
         "turns": 120,
         "bytes_per_turn": 1124.5,
@@ -263,14 +263,14 @@
         "label": "lenny-eric-ries-complex",
         "fixture": "lenny-eric-ries.package.json",
         "ok": true,
-        "seconds": 0.0304,
+        "seconds": 0.0298,
         "output_bytes": 252023,
         "turns": 220,
         "bytes_per_turn": 1145.6,
         "stderr": ""
       }
     ],
-    "slowest_seconds": 0.0304,
+    "slowest_seconds": 0.0328,
     "ceiling_seconds": 0.5,
     "all_ok": true,
     "under_ceiling": true

@@ -4,7 +4,7 @@
 >
 > Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935).
 
-**Version 2.6.1** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
+**Version 2.6.2** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
 
 ## Install
 
@@ -38,6 +38,24 @@ My contribution is the opinionated design system and page-shape contracts around
 ## Scope
 
 `render-as-html` is a design system and skill for writing and updating standalone HTML artifacts. It does not fetch URLs, parse arbitrary exports, or crawl repos. The one packaged renderer — `bin/render-podcast` — converts podcastextract's `episode.package.json` into the podcast shape's two-file output, and exists only because that workflow is fully deterministic. Every other shape is produced by the skill agent, not a CLI.
+
+## Architecture
+
+Input → shape routing in `SKILL.md` → one of two render paths → a self-contained HTML file that round-trips back through copy-as-prompt:
+
+```mermaid
+flowchart LR
+    IN["Input<br/>brief · file · URL · episode.json"] --> SK["SKILL.md<br/>pick shape + primitives"]
+    SK -->|"load on demand"| REF["references/<br/>shape + primitive contracts"]
+    SK --> R{"render path"}
+    R -->|"9 agent-authored shapes"| AG["agent writes HTML"]
+    R -->|"podcast (deterministic)"| CLI["bin/render-podcast"]
+    AG --> OUT["self-contained .html<br/>~/Reports/"]
+    CLI --> OUT
+    OUT -->|"copy-as-prompt round-trip"| SK
+```
+
+The two non-obvious moves: the per-shape and per-primitive contracts load **on demand** from `references/` (the always-loaded `SKILL.md` stays a routing index), and the **podcast path is the one deterministic CLI** — every other shape is agent-authored against the design-system contracts.
 
 ## What's in here
 
