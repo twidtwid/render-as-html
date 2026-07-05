@@ -48,7 +48,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  html:not([data-theme="light"]) {
     --paper:       #1a1815;
     --paper-tint:  #221f1a;
     --paper-card:  #211e19;
@@ -63,6 +63,12 @@
     --warn:        #c79a4a;
     --note:        #6f9fd0;
   }
+}
+html[data-theme="dark"] {
+  --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+  --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+  --rule:#38332b; --rule-soft:#2c2820; --accent:#e0794f; --accent-2:#d8a73a;
+  --ok:#5cae6f; --warn:#c79a4a; --note:#6f9fd0;
 }
 
 /* ── RESET ───────────────────────────────────────────────── */
@@ -681,7 +687,7 @@ body.flattened .flatten-toggle { border-color: var(--accent); color: var(--accen
 /* ── INSTRUMENT: hide-sidebar toggle (lives in .topbar) ──── */
 /* Class .inspector-hidden and id #inspector-toggle preserved from v2.1.1
    so in-the-wild artifacts keep working — only the user label changed. */
-#inspector-toggle {
+#inspector-toggle, #theme-toggle {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.04em;
@@ -693,7 +699,17 @@ body.flattened .flatten-toggle { border-color: var(--accent); color: var(--accen
   border-radius: 3px;
   background: var(--paper);
 }
-#inspector-toggle:hover { border-color: var(--accent); color: var(--accent); }
+#inspector-toggle:hover, #theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+#theme-toggle { display:inline-flex; align-items:center; justify-content:center; padding:0.28rem 0.42rem; }
+#theme-toggle svg { display:block; }
+#theme-toggle .ic-sun { display:none; }
+#theme-toggle .ic-moon { display:block; }
+html[data-theme="dark"] #theme-toggle .ic-moon { display:none; }
+html[data-theme="dark"] #theme-toggle .ic-sun { display:block; }
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) #theme-toggle .ic-moon { display:none; }
+  html:not([data-theme="light"]) #theme-toggle .ic-sun { display:block; }
+}
 body.inspector-hidden #inspector-toggle { border-color: var(--accent); color: var(--accent); }
 #inspector-toggle .il-show { display: none; }
 body.inspector-hidden #inspector-toggle .il-hide { display: none; }
@@ -1010,6 +1026,10 @@ body.flattened mark { background: transparent; color: inherit; padding: 0; }
 
 <!-- TOPBAR (dedicated host for the hide-sidebar toggle, separate from the search toolbar) -->
 <header class="topbar">
+  <button id="theme-toggle" aria-label="Toggle light or dark theme" title="Toggle light / dark">
+    <svg class="ic-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <svg class="ic-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/></svg>
+  </button>
   <button id="inspector-toggle" aria-pressed="false" title="Hide the sidebar to focus on reading">
     <span class="il-hide">hide sidebar</span>
     <span class="il-show">show sidebar</span>
@@ -1024,15 +1044,6 @@ body.flattened mark { background: transparent; color: inherit; padding: 0; }
   <button id="search-next" class="search-step" aria-label="Next match" title="Next match (Enter)">↓</button>
   <span id="search-count" aria-live="polite"></span>
   <button id="search-clear" aria-label="Clear search">× clear</button>
-  <label class="flatten-toggle" title="Strip the page to static text — see what disappears">
-    <input type="checkbox" id="flatten-checkbox" aria-label="Flatten test: strip this artifact to static text">
-    flatten test
-  </label>
-</div>
-
-<!-- FLATTEN BANNER (shown only when flatten test is on) -->
-<div id="flatten-banner" role="status">
-  <strong>Flattened to static text.</strong> Find is gone. The entity inspector no longer cross-highlights. Per-section copy-as-prompt is gone. Your accept/reject marks on each claim, your notes, and the live round-trip composer are inert and greyed. <strong>This is exactly the loss the essay is about</strong> — uncheck to restore the instrument.
 </div>
 
 <!-- PROMPT FALLBACK (hidden, filled by copy-as-prompt JS) -->
@@ -1840,30 +1851,21 @@ composerCopy.addEventListener('click', () => {
   });
 });
 
-// ── INSTRUMENT 3: FLATTEN TEST ───────────────────────────────────────────────
-const flattenCb = document.getElementById('flatten-checkbox');
-flattenCb.addEventListener('change', () => {
-  if (flattenCb.checked) {
-    document.body.classList.add('flattened');
-    // kill live find: restore prose to original, drop marks
-    if (typeof searchInput !== 'undefined') searchInput.value = '';
-    currentSearch = '';
-    currentEntityKey = '';
-    clearEntityActive();
-    clearMarks();
-    if (searchCount) searchCount.textContent = '';
-    if (searchClear) searchClear.style.display = 'none';
-    hideSearchNav();
-  } else {
-    document.body.classList.remove('flattened');
-  }
-});
-
 // ── INSTRUMENT: inspector show/hide (focus mode) ─────────────────────────────
 const inspectorToggle = document.getElementById('inspector-toggle');
 inspectorToggle.addEventListener('click', () => {
   const hidden = document.body.classList.toggle('inspector-hidden');
   inspectorToggle.setAttribute('aria-pressed', String(hidden));
+});
+
+// ── INSTRUMENT: sun/moon light-dark toggle (per session; OS default otherwise) ─
+const themeToggle = document.getElementById('theme-toggle');
+themeToggle.addEventListener('click', () => {
+  let cur = document.documentElement.getAttribute('data-theme');
+  if (!cur) cur = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  themeToggle.setAttribute('aria-pressed', String(next === 'dark'));
 });
 
 // ── INIT: build search targets after DOM ready ───────────────────────────────

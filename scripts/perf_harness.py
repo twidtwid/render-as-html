@@ -109,6 +109,11 @@ PRIMITIVE_FILES = {
         "href": "primitives/09-logs.html",
         "contract": r"#### Log stream\b",
     },
+    "scatter": {
+        "file": "examples/primitives/10-scatter.html",
+        "href": "primitives/10-scatter.html",
+        "contract": r"#### Scatter\b",
+    },
 }
 
 # Public episode metadata, synthetic body text. This exercises a recent,

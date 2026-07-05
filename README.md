@@ -59,12 +59,16 @@ The two non-obvious moves: the per-shape and per-primitive contracts load **on d
 
 ## What's in here
 
-- `SKILL.md` — read this first. Page shapes, design system, canonical primitives, copy-as-prompt, the "would this die outside HTML?" bar.
+- `SKILL.md` — read this first. Page shapes, design system, canonical primitives, copy-as-prompt, the "would this die outside HTML?" bar. Each shape and primitive carries a compact inline stub; the full contract loads on demand from `references/`.
+- `DESIGN.md` — the canonical design tokens in the [design.md](https://github.com/google-labs-code/design.md) format. The single source of truth for the palette/type that `SKILL.md` and `index.html` derive from. Internal build input, not a user-tunable knob.
 - `index.html` — the design system as a single file (the live link above).
 - `examples/` — thirteen self-contained artifacts: one per page shape (now including `podcast-transcript.html` for the transcript view), plus a canonical-primitives reference. Browse the [example gallery](https://twidtwid.github.io/render-as-html/examples/).
 - `bin/render-podcast` — Python CLI that consumes podcastify's `episode.package.json` and writes a `podcast-at-a-glance.html` + `annotated-transcript.html` pair matching the canonical examples. Usage: `bin/render-podcast <package.json> [-o OUT_DIR]`.
 - `tests/` — pytest suite (`uv run --with pytest pytest tests/ -v`) plus the fixture both canonical podcast examples render from.
 - `scripts/perf_harness.py` — optimization harness for skill-token load, renderer speed, primitive coverage, and HTML source-document invariants (`uv run python scripts/perf_harness.py --check`).
+- `scripts/lint-artifact.mjs` — runs the mechanical subset of the SKILL pre-save checklist against a *generated* artifact at any path (`node scripts/lint-artifact.mjs <file.html>`). Turns "enforced by me" into "enforced by a tool".
+- `scripts/check-tokens.mjs` — asserts the palette in `SKILL.md` and `index.html` has not drifted from `DESIGN.md` (`node scripts/check-tokens.mjs`).
+- `scripts/review-contracts.mjs` — accessibility / contract lint over the repo's own example HTML.
 - `LICENSE` — MIT.
 
 ## Page shapes
@@ -86,7 +90,7 @@ Pick the shape from content signals. Ten shapes, each with a contract — layout
 
 ## Canonical primitives
 
-The page shapes are built out of nine reusable chart and table primitives. They share one palette, one type system, and one set of interaction rules, so a dashboard and a developer artifact feel like the same system.
+The page shapes are built out of ten reusable chart and table primitives. They share one palette, one type system, and one set of interaction rules, so a dashboard and a developer artifact feel like the same system.
 
 | Primitive | Pick when |
 |---|---|
@@ -95,6 +99,7 @@ The page shapes are built out of nine reusable chart and table primitives. They 
 | `sparkline-cluster` | Direction across many series in a header strip |
 | `stacked-bar` | Composition over time, ≤4 segments |
 | `topology` | Structure or routing matters more than count |
+| `scatter` | Two well-spread dimensions, ≥10 points — the trade-off is the signal, not a ranking |
 | `dense-table` | The reader needs to scan and compare specific rows |
 | `comparison-matrix` | Trade-off across >2 options against shared criteria, items as columns |
 | `annotated-diff` | A change that needs commentary, not just inspection |
@@ -107,6 +112,8 @@ Five rules cut across all of them: one palette, subgrid for cross-row column ali
 ## Optimization guard
 
 Run `uv run python scripts/perf_harness.py --check` before changing the skill contract, examples, primitives, or `bin/render-podcast`. The harness times the podcast renderer on the small fixture, a scaled fixture, and a complex synthetic Lenny's Podcast fixture based on public episode metadata from ["How to build a company that withstands any era"](https://www.lennysnewsletter.com/p/how-to-build-a-company-that-withstands). It also audits primitive registration and the "HTML is the source document" contract.
+
+Two companion linters cover the surfaces the harness can't: `node scripts/check-tokens.mjs` guards the palette against drift between `DESIGN.md`, `SKILL.md`, and `index.html`; and `node scripts/lint-artifact.mjs <file.html>` runs the mechanical pre-save checks against a freshly generated artifact at any path — the agent should run it on its own output before reporting done.
 
 ## The bar
 

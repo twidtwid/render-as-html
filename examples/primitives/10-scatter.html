@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Scatter — two-dimension trade-off</title>
+<meta name="description" content="Scatter primitive for two well-spread dimensions across 10+ points, with median guides, hover detail, and click-to-pin labels.">
+<meta property="og:title" content="Scatter — two-dimension trade-off">
+<meta property="og:description" content="Scatter primitive for two well-spread dimensions across 10+ points, with median guides, hover detail, and click-to-pin labels.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="render-as-html">
+<meta name="twitter:card" content="summary">
+<style>
+  :root {
+    --paper:#faf6ef; --paper-tint:#f3ede1; --paper-card:#fbf7f0;
+    --ink:#1a1815; --ink-soft:#4a443c; --muted:#736d62;
+    --rule:#d9d1c2; --rule-soft:#ece5d6;
+    --accent:#8a3a1a; --accent-2:#c2901a;
+    --ok:#2f7d44; --warn:#9b641d; --note:#2f6fb3;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
+      --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
+      --rule:#38332b; --rule-soft:#2c2820;
+      --accent:#e0794f; --accent-2:#d8a73a;
+      --ok:#5cae6f; --warn:#c79a4a; --note:#6f9fd0;
+    }
+  }
+  html, body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); margin:0; max-width:100%; }
+  body { padding: 32px; font-size: 14px; line-height: 1.5; }
+  .stage { max-width: 720px; margin: 0 auto; }
+  .tile { background: var(--paper-card); border: 1px solid var(--rule); border-radius: 6px; padding: 20px 22px; }
+  .tile-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--rule-soft); padding-bottom: 10px; margin-bottom: 14px; }
+  .tile-title { font-weight: 700; font-size: 13px; color: var(--ink); letter-spacing: 0.01em; }
+  .tile-meta { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; font-size: 12px; flex-wrap: wrap; }
+  .toolbar label { color: var(--muted); display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+  .toolbar .right { margin-left: auto; color: var(--muted); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 11px; }
+  .plot-wrap { position: relative; }
+  svg.scatter { display:block; width: 100%; height: auto; touch-action: none; }
+  .axis-line { stroke: var(--rule); stroke-width: 1; }
+  .guide { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 4; }
+  .guide-label { font-family: var(--font-mono); font-size: 9px; fill: var(--muted); }
+  .axis-label { font-family: var(--font-mono); font-size: 10px; fill: var(--muted); }
+  .axis-title { font-family: var(--font-sans); font-size: 11px; fill: var(--ink-soft); font-weight: 600; }
+  .pt { cursor: pointer; transition: r 0.12s; }
+  .pt:hover, .pt.active { stroke: var(--ink); stroke-width: 1.5; }
+  .pt-label { font-family: var(--font-mono); font-size: 9.5px; fill: var(--ink-soft); pointer-events: none; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); }
+  .legend .mk { width: 11px; height: 11px; display: inline-block; }
+  .tip {
+    position: absolute; pointer-events: none; opacity: 0; transform: translate(-50%, -118%);
+    background: var(--ink); color: var(--paper); font-family: var(--font-mono); font-size: 11px;
+    padding: 5px 8px; border-radius: 4px; white-space: nowrap; z-index: 4; transition: opacity .08s; line-height:1.4;
+  }
+  .tip b { color: var(--accent-2); }
+  @media (max-width: 560px) {
+    body { padding: 18px 12px; }
+    .tile { padding: 16px 14px; }
+    .toolbar label { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="tile">
+    <div class="tile-head">
+      <div class="tile-title">Model cost vs. quality — 12 candidates</div>
+      <div class="tile-meta">cheaper ← x → pricier · worse ↓ y ↑ better</div>
+    </div>
+    <div class="toolbar">
+      <label><input type="checkbox" id="toggleLabels" checked> always-on labels</label>
+      <label><input type="checkbox" id="toggleGuides" checked> median guides</label>
+      <span class="right" id="readout">hover a point for detail</span>
+    </div>
+    <div class="plot-wrap">
+      <svg class="scatter" id="plot" viewBox="0 0 640 420" role="img" aria-label="Scatter plot of model cost against quality score for 12 candidate models"></svg>
+      <div class="tip" id="tip"></div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+</div>
+<script>
+  // Two well-spread dimensions across 12 points — the case scatter is for.
+  // x = blended cost ($/Mtok, log-ish spread), y = quality score (0-100).
+  const data = [
+    { name: 'A-mini',   cost: 0.20, q: 58, group: 'A' },
+    { name: 'A-base',   cost: 0.80, q: 71, group: 'A' },
+    { name: 'A-pro',    cost: 4.50, q: 89, group: 'A' },
+    { name: 'B-flash',  cost: 0.35, q: 64, group: 'B' },
+    { name: 'B-std',    cost: 1.90, q: 82, group: 'B' },
+    { name: 'B-ultra',  cost: 9.00, q: 93, group: 'B' },
+    { name: 'C-7b',     cost: 0.12, q: 49, group: 'C' },
+    { name: 'C-34b',    cost: 0.60, q: 68, group: 'C' },
+    { name: 'C-large',  cost: 3.10, q: 85, group: 'C' },
+    { name: 'D-edge',   cost: 0.05, q: 41, group: 'D' },
+    { name: 'D-cloud',  cost: 2.40, q: 79, group: 'D' },
+    { name: 'D-frontier', cost: 14.0, q: 96, group: 'D' },
+  ];
+  // Color is never the only signal: each group also gets a distinct marker shape.
+  const GROUPS = {
+    A: { color: 'var(--accent)',   shape: 'circle', label: 'Provider A' },
+    B: { color: 'var(--accent-2)', shape: 'square', label: 'Provider B' },
+    C: { color: 'var(--note)',     shape: 'triangle', label: 'Provider C' },
+    D: { color: 'var(--ok)',       shape: 'diamond', label: 'Provider D' },
+  };
+
+  const W = 640, H = 420, M = { t: 18, r: 16, b: 42, l: 46 };
+  const plotW = W - M.l - M.r, plotH = H - M.t - M.b;
+  // Log scale on cost (spans 0.05–14), linear on quality.
+  const xmin = Math.log10(0.04), xmax = Math.log10(16);
+  const ymin = 35, ymax = 100;
+  const sx = v => M.l + (Math.log10(v) - xmin) / (xmax - xmin) * plotW;
+  const sy = v => M.t + (1 - (v - ymin) / (ymax - ymin)) * plotH;
+
+  const median = arr => { const s=[...arr].sort((a,b)=>a-b); const m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+  const medCost = median(data.map(d => d.cost));
+  const medQ = median(data.map(d => d.q));
+
+  const svg = document.getElementById('plot');
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (n, a={}) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
+
+  function marker(shape, cx, cy, r, fill, cls) {
+    if (shape === 'square')   return el('rect', { x: cx-r, y: cy-r, width: r*2, height: r*2, fill, class: cls });
+    if (shape === 'triangle') return el('polygon', { points: `${cx},${cy-r*1.2} ${cx+r*1.1},${cy+r} ${cx-r*1.1},${cy+r}`, fill, class: cls });
+    if (shape === 'diamond')  return el('polygon', { points: `${cx},${cy-r*1.3} ${cx+r*1.2},${cy} ${cx},${cy+r*1.3} ${cx-r*1.2},${cy}`, fill, class: cls });
+    return el('circle', { cx, cy, r, fill, class: cls });
+  }
+
+  const tip = document.getElementById('tip');
+  const readout = document.getElementById('readout');
+
+  function draw() {
+    svg.textContent = '';
+    const showLabels = document.getElementById('toggleLabels').checked;
+    const showGuides = document.getElementById('toggleGuides').checked;
+
+    // axes
+    svg.appendChild(el('line', { x1: M.l, y1: M.t, x2: M.l, y2: M.t+plotH, class: 'axis-line' }));
+    svg.appendChild(el('line', { x1: M.l, y1: M.t+plotH, x2: M.l+plotW, y2: M.t+plotH, class: 'axis-line' }));
+
+    // x ticks (cost, log)
+    [0.05, 0.2, 1, 5, 15].forEach(v => {
+      const x = sx(v);
+      svg.appendChild(el('line', { x1: x, y1: M.t+plotH, x2: x, y2: M.t+plotH+4, class: 'axis-line' }));
+      const t = el('text', { x, y: M.t+plotH+16, 'text-anchor': 'middle', class: 'axis-label' });
+      t.textContent = '$' + v; svg.appendChild(t);
+    });
+    // y ticks (quality)
+    [40, 60, 80, 100].forEach(v => {
+      const y = sy(v);
+      const t = el('text', { x: M.l-8, y: y+3, 'text-anchor': 'end', class: 'axis-label' });
+      t.textContent = v; svg.appendChild(t);
+    });
+    const xt = el('text', { x: M.l+plotW/2, y: H-6, 'text-anchor': 'middle', class: 'axis-title' });
+    xt.textContent = 'blended cost ($/Mtok, log)'; svg.appendChild(xt);
+    const yt = el('text', { x: 13, y: M.t+plotH/2, 'text-anchor': 'middle', class: 'axis-title', transform: `rotate(-90 13 ${M.t+plotH/2})` });
+    yt.textContent = 'quality score'; svg.appendChild(yt);
+
+    // median guides → split the cloud into "cheap+good" etc. quadrants
+    if (showGuides) {
+      const gx = sx(medCost), gy = sy(medQ);
+      svg.appendChild(el('line', { x1: gx, y1: M.t, x2: gx, y2: M.t+plotH, class: 'guide' }));
+      svg.appendChild(el('line', { x1: M.l, y1: gy, x2: M.l+plotW, y2: gy, class: 'guide' }));
+      const gl = el('text', { x: gx+4, y: M.t+10, class: 'guide-label' });
+      gl.textContent = 'median $' + medCost.toFixed(2); svg.appendChild(gl);
+      const gl2 = el('text', { x: M.l+4, y: gy-4, class: 'guide-label' });
+      gl2.textContent = 'median q' + medQ; svg.appendChild(gl2);
+    }
+
+    data.forEach((d, i) => {
+      const cx = sx(d.cost), cy = sy(d.q), g = GROUPS[d.group];
+      const m = marker(g.shape, cx, cy, 6, g.color, 'pt');
+      m.setAttribute('data-i', i);
+      m.setAttribute('tabindex', '0');
+      const title = el('title');
+      title.textContent = `${d.name} — $${d.cost}/Mtok, quality ${d.q}`;
+      m.appendChild(title);
+      const activate = () => {
+        svg.querySelectorAll('.pt').forEach(p => p.classList.remove('active'));
+        m.classList.add('active');
+        const r = svg.getBoundingClientRect();
+        const scale = r.width / W;
+        tip.style.left = (cx * scale) + 'px';
+        tip.style.top = (cy * scale) + 'px';
+        tip.innerHTML = `<b>${d.name}</b> · ${g.label}<br>$${d.cost}/Mtok · quality ${d.q}`;
+        tip.style.opacity = '1';
+        readout.textContent = `${d.name}: $${d.cost}/Mtok, q${d.q}`;
+      };
+      m.addEventListener('mouseenter', activate);
+      m.addEventListener('focus', activate);
+      m.addEventListener('mouseleave', () => { tip.style.opacity = '0'; });
+      m.addEventListener('blur', () => { tip.style.opacity = '0'; });
+      svg.appendChild(m);
+
+      if (showLabels) {
+        // Flip the label to the left of points near the right edge so long names
+        // don't clip off the plot. (For a genuinely dense cloud, turn labels off
+        // and let hover carry identity — see references/primitives/scatter.md.)
+        const flip = cx > M.l + plotW * 0.78;
+        const lbl = el('text', {
+          x: flip ? cx - 9 : cx + 9, y: cy + 3,
+          'text-anchor': flip ? 'end' : 'start', class: 'pt-label',
+        });
+        lbl.textContent = d.name;
+        svg.appendChild(lbl);
+      }
+    });
+  }
+
+  function legend() {
+    const box = document.getElementById('legend');
+    box.innerHTML = '';
+    Object.values(GROUPS).forEach(g => {
+      const sp = document.createElement('span');
+      const mk = `<svg class="mk" viewBox="0 0 12 12">${
+        g.shape === 'square' ? `<rect x="1" y="1" width="10" height="10" fill="${g.color}"/>` :
+        g.shape === 'triangle' ? `<polygon points="6,1 11,11 1,11" fill="${g.color}"/>` :
+        g.shape === 'diamond' ? `<polygon points="6,0 12,6 6,12 0,6" fill="${g.color}"/>` :
+        `<circle cx="6" cy="6" r="5" fill="${g.color}"/>`}</svg>`;
+      sp.innerHTML = mk + g.label;
+      box.appendChild(sp);
+    });
+  }
+
+  document.getElementById('toggleLabels').addEventListener('change', draw);
+  document.getElementById('toggleGuides').addEventListener('change', draw);
+  legend();
+  draw();
+</script>
+</body></html>

@@ -1,27 +1,27 @@
 {
-  "generated_at": "2026-05-31T10:09:16",
+  "generated_at": "2026-06-10T07:24:36",
   "skill_md": {
-    "total_bytes": 50596,
-    "total_tokens": 12563,
-    "always_tokens": 7937,
-    "reference_tokens": 4620,
-    "reference_pct": 36.8,
+    "total_bytes": 49560,
+    "total_tokens": 12298,
+    "always_tokens": 8085,
+    "reference_tokens": 4207,
+    "reference_pct": 34.2,
     "sections": [
-      {
-        "name": "Page shapes (pick before designing)",
-        "tokens": 3236
-      },
       {
         "name": "Design system",
         "tokens": 3043
       },
       {
+        "name": "Page shapes (pick before designing)",
+        "tokens": 2729
+      },
+      {
         "name": "Canonical primitives (charts and tables)",
-        "tokens": 1384
+        "tokens": 1478
       },
       {
         "name": "Rendering process",
-        "tokens": 1179
+        "tokens": 1327
       },
       {
         "name": "Artifact forms",
@@ -63,31 +63,19 @@
     "contracts": [
       {
         "contract": "podcast",
-        "tokens": 477
+        "tokens": 289
       },
       {
         "contract": "editorial",
-        "tokens": 398
+        "tokens": 283
       },
       {
         "contract": "network-map",
-        "tokens": 298
+        "tokens": 253
       },
       {
         "contract": "developer",
-        "tokens": 251
-      },
-      {
-        "contract": "timeline",
-        "tokens": 234
-      },
-      {
-        "contract": "comparison",
-        "tokens": 225
-      },
-      {
-        "contract": "runbook",
-        "tokens": 224
+        "tokens": 238
       },
       {
         "contract": "Log stream \u2014 chronological event table",
@@ -95,15 +83,31 @@
       },
       {
         "contract": "triage-board",
+        "tokens": 217
+      },
+      {
+        "contract": "runbook",
+        "tokens": 211
+      },
+      {
+        "contract": "comparison",
         "tokens": 207
       },
       {
-        "contract": "dashboard",
-        "tokens": 187
+        "contract": "timeline",
+        "tokens": 181
       },
       {
         "contract": "document",
-        "tokens": 176
+        "tokens": 150
+      },
+      {
+        "contract": "dashboard",
+        "tokens": 141
+      },
+      {
+        "contract": "Scatter \u2014 two-dimension trade-off",
+        "tokens": 110
       },
       {
         "contract": "Annotated diff \u2014 code review primitive",
@@ -127,7 +131,7 @@
       },
       {
         "contract": "Topology \u2014 inline service graph",
-        "tokens": 60
+        "tokens": 57
       },
       {
         "contract": "Donut \u2014 categorical status mix",
@@ -230,7 +234,7 @@
       "network-map.html": 38098,
       "podcast-transcript.html": 30760,
       "podcast.html": 32637,
-      "primitives.html": 22522,
+      "primitives.html": 24544,
       "runbook.html": 53953,
       "timeline.html": 38476,
       "triage-board.html": 40242
@@ -243,7 +247,7 @@
         "label": "repo-fixture",
         "fixture": "tests/fixtures/episode.package.json",
         "ok": true,
-        "seconds": 0.0328,
+        "seconds": 0.0293,
         "output_bytes": 68995,
         "turns": 6,
         "bytes_per_turn": 11499.2,
@@ -253,24 +257,24 @@
         "label": "synthetic-20x",
         "fixture": "scaled.package.json",
         "ok": true,
-        "seconds": 0.0296,
-        "output_bytes": 134935,
+        "seconds": 0.029,
+        "output_bytes": 134917,
         "turns": 120,
-        "bytes_per_turn": 1124.5,
+        "bytes_per_turn": 1124.3,
         "stderr": ""
       },
       {
         "label": "lenny-eric-ries-complex",
         "fixture": "lenny-eric-ries.package.json",
         "ok": true,
-        "seconds": 0.0298,
-        "output_bytes": 252023,
+        "seconds": 0.0294,
+        "output_bytes": 252005,
         "turns": 220,
-        "bytes_per_turn": 1145.6,
+        "bytes_per_turn": 1145.5,
         "stderr": ""
       }
     ],
-    "slowest_seconds": 0.0328,
+    "slowest_seconds": 0.0294,
     "ceiling_seconds": 0.5,
     "all_ok": true,
     "under_ceiling": true
@@ -345,11 +349,16 @@
         "has_file": true,
         "has_gallery_link": true,
         "has_contract": true
+      },
+      {
+        "name": "scatter",
+        "file": "examples/primitives/10-scatter.html",
+        "has_file": true,
+        "has_gallery_link": true,
+        "has_contract": true
       }
     ],
-    "candidate_new_primitives": [
-      "scatter"
-    ]
+    "candidate_new_primitives": []
   },
   "source_document": {
     "clean": true,
@@ -374,6 +383,7 @@
       "examples/primitives/07-table-comparison.html": 6,
       "examples/primitives/08-diff.html": 4,
       "examples/primitives/09-logs.html": 3,
+      "examples/primitives/10-scatter.html": 3,
       "examples/primitives.html": 6,
       "examples/runbook.html": 7,
       "examples/timeline.html": 7,
@@ -510,6 +520,11 @@
       "examples/primitives/09-logs.html": [
         "search",
         "filtering",
+        "toggle"
+      ],
+      "examples/primitives/10-scatter.html": [
+        "inline_svg",
+        "sorting",
         "toggle"
       ],
       "examples/primitives.html": [

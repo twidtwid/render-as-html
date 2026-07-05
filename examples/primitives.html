@@ -112,9 +112,9 @@
 <main class="wrap">
 
   <p class="kicker">render-as-html · canonical primitives</p>
-  <h1>Nine bones the whole system is built on.</h1>
+  <h1>Ten bones the whole system is built on.</h1>
   <p class="lede">Charts and tables that show up across the page shapes, locked to the one-truth palette, with their interaction contracts and anti-patterns written down once. Each frame below is the reference implementation — open it standalone, copy it, fork it.</p>
-  <p class="meta">9 primitives · 5 charts · 4 tables · <b>self-contained</b>, zero external requests · WCAG-AA · same palette as every shape</p>
+  <p class="meta">10 primitives · 6 charts · 4 tables · <b>self-contained</b>, zero external requests · WCAG-AA · same palette as every shape</p>
 
   <hr>
 
@@ -128,6 +128,7 @@
     <a href="#table-comparison"><span class="num">07</span>Comparison matrix <span class="group">table</span></a>
     <a href="#diff"><span class="num">08</span>Annotated diff <span class="group">table</span></a>
     <a href="#logs"><span class="num">09</span>Log / event stream <span class="group">table</span></a>
+    <a href="#scatter"><span class="num">10</span>Scatter — trade-off <span class="group">chart</span></a>
   </nav>
 
   <!-- ============================================================ -->
@@ -283,9 +284,26 @@
     </dl>
   </section>
 
+  <!-- ============================================================ -->
+  <section class="prim" id="scatter">
+    <p class="ptag">10 · chart</p>
+    <h2>Scatter — two-dimension trade-off</h2>
+    <p class="blurb">For two genuinely independent dimensions across 10+ points, where the <em>relationship</em> is the signal — cost vs. quality, latency vs. throughput. Median crosshair guides split the cloud into quadrants ("cheap-and-good lives top-left"); marker shape carries identity alongside color so it survives greyscale. The discipline: if the points cluster on one axis, a scatter lies — rank with a bar instead.</p>
+    <div class="frame-wrap">
+      <div class="frame-bar"><span class="live"></span>scatter <span class="src">source: <a href="primitives/10-scatter.html">primitives/10-scatter.html</a></span></div>
+      <iframe src="primitives/10-scatter.html" loading="lazy" title="Scatter — two-dimension trade-off" style="height: 540px;"></iframe>
+    </div>
+    <dl class="contract">
+      <dt>pick when</dt><dd>Two independent, well-spread dimensions across ≥10 points; the trade-off / outliers / quadrants are the signal, not a ranking.</dd>
+      <dt>required</dt><dd>Both axes labeled with units + direction-of-good; log scale when a dimension spans &gt;2 orders of magnitude; median crosshair guides with labeled medians; marker identity carried by <strong>shape AND color</strong>; hover/focus reveals name + both coords with a <code>&lt;title&gt;</code> for assistive tech.</dd>
+      <dt>interaction</dt><dd>Toggle always-on labels (off when dense — hover carries identity); toggle median guides; hover or keyboard-focus a point to pin a readout.</dd>
+      <dt>avoid</dt><dd>Scatter for ranking (that's a bar); always-on labels on a dense cloud (they collide — the omega-3 failure); an unscaled axis crushing a long-tailed dimension into the corner.</dd>
+    </dl>
+  </section>
+
   <hr>
 
-  <p style="font-family: var(--sans); font-size: .95rem; color: var(--ink-soft); max-width: 42rem;">All nine primitives share the one-truth palette and the two-register split — five sit naturally inside the <em>instrument</em>-register shapes (dashboard, comparison, developer, runbook, triage-board, network-map) and the others compose into <em>reading</em>-register shapes when an essay needs a chart or a table. Same tokens, same content-discipline rules.</p>
+  <p style="font-family: var(--sans); font-size: .95rem; color: var(--ink-soft); max-width: 42rem;">All ten primitives share the one-truth palette and the two-register split — five sit naturally inside the <em>instrument</em>-register shapes (dashboard, comparison, developer, runbook, triage-board, network-map) and the others compose into <em>reading</em>-register shapes when an essay needs a chart or a table. Same tokens, same content-discipline rules.</p>
 
   <footer>
     <span>examples/primitives.html · v2.6.2</span>

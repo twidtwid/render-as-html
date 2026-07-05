@@ -208,95 +208,65 @@ Explicit user override always wins.
 ### Shape contracts
 
 #### `dashboard`
-- **Register:** Instrument (sans display + sans body; see Density).
-- **Layout:** max-width 1280px, 1.4fr/1fr two-column dashboard grid, sticky controls row at top
-- **First viewport:** hero with stats tiles + search + chip filters + TL;DR
-- **Required primitives:** search input, toggleable category chips, dense table with mono first column, stats tiles, donut chart inline SVG, status pills, one inline-SVG topology/diagram
-- **Density:** instrument defaults; 4-8px table padding acceptable for the compact variant.
-- **HTML-native ≥3:** live filter, clickable cross-highlights, inline charts, toggles, sortable headers, copy buttons
-- **Avoid:** narrow column, generous whitespace, single-column scroll, generic h2/p/table layout
+- **Register:** Instrument. **Layout:** max-width 1280px, 1.4fr/1fr two-column grid, sticky controls row.
+- **Required:** search, toggleable category chips, dense table (mono first col), stat tiles, inline-SVG donut, status pills, one topology/diagram.
+- **HTML-native ≥3:** live filter, click cross-highlight, inline charts, sortable headers, copy buttons. **Avoid:** narrow centered column, single-column scroll, generic h2/p/table.
+- **Detailed contract:** load [`references/shapes/dashboard.md`](references/shapes/dashboard.md) before building.
 
 #### `document`
-- **Register:** Reading (serif display + serif body, cream paper, terracotta accent; see Density).
-- **Layout:** max-width 880px, single column, sticky TOC sidebar on desktop
-- **First viewport:** title, byline, TL;DR (required), TOC visible
-- **Required primitives:** TL;DR block, sticky TOC sidebar with scroll-spy, footnote pattern, inline dense tables, callouts (note/warn), per-section copy button (hover-revealed on each h2)
-- **Density:** reading defaults.
-- **HTML-native ≥3:** TOC scroll-spy, per-section copy buttons, collapsible appendix, click-to-expand footnotes
-- **Avoid:** dashboard-style multi-column grid, 60+ char line length, corporate "executive summary card" headers
+- **Register:** Reading. **Layout:** max-width 880px, single column, sticky TOC sidebar; prose measure ≤46rem.
+- **Required:** TL;DR block, sticky TOC with scroll-spy, footnote pattern, inline dense tables, note/warn callouts, per-`h2` copy-as-prompt.
+- **HTML-native ≥3:** TOC scroll-spy, per-section copy, collapsible appendix, click-to-expand footnotes. **Avoid:** dashboard multi-column grid, line length >70ch, "executive summary card" headers, category-label titles.
+- **Detailed contract:** load [`references/shapes/document.md`](references/shapes/document.md) before building.
 
 #### `editorial`
-- **Register:** Reading (serif display + serif body, cream paper, terracotta accent; see Density).
-- **Layout:** studio max-width ~1320px; narrow–wide–narrow three-zone — left context rail ~18rem · center prose capped `50rem` (~75ch) · right entity inspector ~18rem. Inspector drops below center <1180px; single column <820px. Both rails follow the sticky-rail/footer/scrollbox invariants in §Layout principles.
-- **First viewport:** kicker + title + italic thesis/bottom-line + start of body. No stat tiles.
-- **Required primitives:** italic left-aligned thesis pull-quote (no left-handle bar); stacked numbered takeaways (mono numerals, not a tile grid); claim/section cards (arguing headline + mechanism body + **linked** `Evidence:` line); right-rail entity inspector grouped by category; hide-sidebar reading-focus toggle; "read next" list; per-section copy-as-prompt.
-- **HTML-native ≥3:** in-text `<mark>` search with prev/next nav; click-entity cross-highlight; per-section copy-as-prompt; hide-sidebar mode; section scroll-spy.
-- **Avoid:** artifact-counting stat tiles; left-handle accent bars; category-label titles; prose wider than ~75ch; **unlinked `Evidence:` lines when source URLs were available** (strictly worse than a raw source dump).
-- **Detailed contract:** load [`references/shapes/editorial.md`](references/shapes/editorial.md) before authoring/changing an editorial artifact or `examples/editorial.html` — it holds the load-bearing cross-link scroll semantics, search-nav contract, evidence-linking self-check, and the narrative-cards-not-tables rule.
+- **Register:** Reading. **Layout:** studio ~1320px, narrow–wide–narrow three-zone — context rail ~18rem · prose ≤50rem (~75ch) · entity inspector ~18rem. Inspector drops <1180px, single column <820px. Rails follow §Layout sticky-rail/footer/scrollbox invariants.
+- **Required:** italic left-aligned thesis pull-quote (no left-handle bar); stacked numbered takeaways (mono numerals, not a tile grid); claim cards (arguing headline + mechanism + **linked** `Evidence:` line); right-rail entity inspector; hide-sidebar focus toggle; "read next" list; per-section copy-as-prompt.
+- **HTML-native ≥3:** in-text `<mark>` search with prev/next nav; click-entity cross-highlight; per-section copy; hide-sidebar mode; scroll-spy. **Avoid:** artifact-counting stat tiles; left-handle bars; category-label titles; prose >75ch; **unlinked `Evidence:` when source URLs were available**.
+- **Detailed contract:** load [`references/shapes/editorial.md`](references/shapes/editorial.md) before building — load-bearing cross-link scroll semantics, search-nav contract, evidence-linking self-check, narrative-cards-not-tables rule.
 
 #### `timeline`
-- **Register:** Reading (serif display + serif body; see Density). Mono small-caps for date/kicker lines.
-- **Layout:** vertical spine on the left (~140px column for date markers + dots), event cards on the right (~720px). Max-width ~1000px.
-- **First viewport:** title + date-range scrubber + search input + most recent N events
-- **Required primitives:** vertical spine line, date-marker dots on the spine, event cards (timestamp/title/body/tags), sticky year/month group headers, jump-to-date picker, per-event copy button
-- **Density:** reading defaults; dense event cards (8-10px padding), 12px gap between events.
-- **HTML-native ≥3:** live text search across events with highlight, date-range filter pills, cluster-collapse (month/year → count), tag-chip filter, per-event "copy as quote"
-- **Avoid:** decorative-CV-style animations, wall of dates with no spine, event cards too wide (reads as document paragraphs)
+- **Register:** Reading; mono small-caps for date/kicker lines. **Layout:** vertical spine left (~140px), event cards right (~720px), max-width ~1000px, sticky year/month group headers.
+- **Required:** spine line + date-marker dots, event cards (timestamp/title/body/tags), sticky group headers, jump-to-date picker, per-event "copy as quote".
+- **HTML-native ≥3:** search across events with `<mark>`, date-range filter pills, cluster-collapse (month/year → count), tag-chip filter, per-event copy. **Avoid:** CV-style animations, wall of dates with no spine, cards so wide they read as paragraphs.
+- **Detailed contract:** load [`references/shapes/timeline.md`](references/shapes/timeline.md) before building.
 
 #### `runbook`
-- **Register:** Instrument (sans display + sans body; see Density).
-- **Layout:** sticky header with "Step X of N" + progress bar; max-width 960px single column; step cards stacked vertically
-- **First viewport:** title + scope/danger callout + progress bar + step 1 visible
-- **Required primitives:** step card with `[number] [checkbox] [title]` + expandable body, code block with per-block copy button (load-bearing), "expected output" collapsible callouts, branch markers ("if X, jump to step Y"), sticky progress bar, "I'm stuck" copy-as-prompt
-- **Density:** instrument defaults; prominent mono code blocks.
-- **HTML-native ≥3:** per-code-block copy button, live progress tracking, "stuck" prompt generator, conditional step visibility
-- **Avoid:** plain numbered list with code blocks, making it look like `document`-shape (this is an *instrument*, not just reading material)
+- **Register:** Instrument, prominent mono code blocks. **Layout:** sticky "Step X of N" + progress bar header; max-width 960px single column; step cards stacked. An *instrument being executed*, not reading material.
+- **Required:** step card `[number][checkbox][title]` + expandable body (header keyboard-operable, `tabindex=0` + keydown); code block with per-block copy (load-bearing); "expected output" collapsibles; branch markers; sticky progress bar; "I'm stuck" copy-as-prompt.
+- **HTML-native ≥3:** per-code-block copy (visible fallback, never offscreen), live progress tracking, "stuck" prompt generator, conditional step bodies. **Avoid:** plain numbered list with code blocks; looking like `document` shape.
+- **Detailed contract:** load [`references/shapes/runbook.md`](references/shapes/runbook.md) before building.
 
 #### `comparison`
-- **Register:** Instrument (sans display + sans body; see Density).
-- **Layout:** items as **columns** (the axis flip vs dashboard), criteria as **rows**. Sticky header row with item names. Max-width 1280px.
-- **First viewport:** title + TL;DR + matrix with weight column on left, aggregate-winner row on bottom
-- **Required primitives:** column-header item cards, criterion rows with per-item values, winner highlighting per row (background tint + ★), weight inputs per criterion, aggregate-score footer that live-recomputes, color-coded value scale (red→amber→green) for numerics
-- **Density:** instrument defaults; dense cells (6-10px padding).
-- **HTML-native ≥3:** live weight tuning recomputes winners, column sort by aggregate, "must-have" criterion toggle, "copy as recommendation" prompt
-- **Avoid:** dashboard-style layout (entities as rows). The axis flip *is* the shape.
+- **Register:** Instrument. **Layout:** items as **columns**, criteria as **rows** (the axis flip vs dashboard); sticky item-name header row; weight column left; aggregate-winner row bottom; max-width 1280px.
+- **Required:** column-header item cards, criterion rows with per-item values, per-row winner highlight (tint + ★), weight inputs (full-height +/− stepper), live-recomputing aggregate footer, red→amber→green numeric scale (paired with text), copy-as-recommendation.
+- **HTML-native ≥3:** live weight tuning recomputes winners, column sort by aggregate, "must-have" criterion toggle, copy-as-recommendation. **Avoid:** dashboard layout (entities as rows) — the axis flip *is* the shape.
+- **Detailed contract:** load [`references/shapes/comparison.md`](references/shapes/comparison.md) before building.
 
 #### `network-map`
-- **Register:** Instrument (sans display + sans body; see Density).
-- **Layout:** big graph canvas center (60-70% width), entity-detail right rail (~280px), filter chips top
-- **First viewport:** the graph fitted to viewport, filter chips above, "click for details" hint
-- **Required primitives:** SVG canvas with positioned nodes (hand-positioned or small vanilla force-directed sim), edges, node sizing by importance, cluster color-coding, right-rail entity card updating on click, top filter chips, search to focus, click-node-to-focus (dim others, highlight direct edges)
-- **Density:** instrument defaults; packed node labels and edge metadata.
-- **HTML-native ≥3:** click-to-focus, hover-edge-highlight, search-to-focus, cluster toggle, shortest-path finder
-- **Focus-state invariant:** search-to-focus and click-to-focus must write the same focused-node state. Both paths dim non-neighbors, highlight direct edges, and update the right-rail inspector; a search result that only highlights the SVG while leaving stale inspector text is broken.
-- **Avoid:** rendering as a table of names with "connections: X, Y, Z" — that's a dashboard. The graph IS the primary view.
+- **Register:** Instrument. **Layout:** big graph canvas center (60–70%), entity-detail right rail (~280px), filter chips top. The graph IS the primary view.
+- **Required:** SVG canvas with positioned nodes (hand-positioned ≤30; vanilla force-directed only at 30+), edges, node sizing by importance, cluster color-coding (paired with label/shape), right-rail entity card updating on click, top filter chips, search-to-focus, click-node-to-focus (dim others, highlight direct edges).
+- **Focus-state invariant (load-bearing):** search-to-focus and click-to-focus write the *same* focused-node state — both dim non-neighbors, light direct edges, update the inspector; a `× clear focus` resets.
+- **HTML-native ≥3:** click-to-focus, hover-edge-highlight, search-to-focus, cluster toggle, shortest-path. **Avoid:** a table of names with a connections column (that's a dashboard).
+- **Detailed contract:** load [`references/shapes/network-map.md`](references/shapes/network-map.md) before building.
 
 #### `triage-board`
-- **Register:** Instrument (sans display + sans body; see Density).
-- **Layout:** title + brief instruction + 3-5 column boards horizontally (e.g. Now / Next / Later / Cut). Cards inside columns. Sticky export bar at bottom.
-- **Required primitives:** column headers with live count, draggable cards (HTML5 DnD, vanilla — no React-DnD), per-card one-line rationale text input, pre-sorted suggested distribution at load, sticky copy/export + "copy as prompt" bar, undo
-- **Density:** instrument defaults; cards 80-120px tall, columns 240-320px wide.
-- **HTML-native ≥3:** drag-between-columns, live column counts, copy-as-prompt exporting final assignments, undo, filter/search across all cards
-- **Avoid:** vertical lists with status badges (that's a dashboard). The horizontal layout WITH drag IS the shape.
+- **Register:** Instrument. **Layout:** title + brief instruction + 3–5 horizontal column boards (Now/Next/Later/Cut), cards inside columns, sticky export bar at bottom. The horizontal layout WITH drag IS the shape.
+- **Required:** column headers with live count, draggable cards (HTML5 DnD, **vanilla — no framework**), per-card one-line rationale input, pre-sorted suggested distribution at load, sticky copy/export + copy-as-prompt bar, undo. Provide a touch fallback (move buttons/`<select>`) under ~700px.
+- **HTML-native ≥3:** drag-between-columns, live column counts, copy-as-prompt exporting assignments, undo, filter/search across cards. **Avoid:** vertical lists with status badges (dashboard); a framework drag library.
+- **Detailed contract:** load [`references/shapes/triage-board.md`](references/shapes/triage-board.md) before building.
 
 #### `developer`
-- **Register:** Instrument (sans display + sans body; see Density).
-- **Layout:** title + PR/commit metadata strip + risk callouts at top + annotated diff body + summary footer. Max-width 1280px. Optional left rail with "files changed" nav.
-- **First viewport:** PR summary, severity-coded findings count (critical / warning / nit), top risk callout
-- **Required primitives:** syntax-highlighted code with local CSS classes, per-file diffs with `+`/`−` line gutters in green/red soft tints, inline margin annotations on specific lines, severity-coded finding cards, files-changed navigator, copy-link-to-finding buttons
-- **Density:** instrument defaults; mono at 13px for code.
-- **HTML-native ≥3:** syntax-highlighted code without relying on an external renderer, severity-color findings, jump-to-file, click-to-copy individual findings, side-by-side before/after
-- **Avoid:** generic document with code blocks (that's `document`). The annotated diff + severity findings IS the shape.
+- **Register:** Instrument, mono 13px for code. **Layout:** title + PR/commit metadata strip + risk callouts + annotated diff body + summary footer; max-width 1280px; optional files-changed left rail. The annotated diff + severity findings IS the shape.
+- **Required:** syntax highlighting via **local CSS classes** (no CDN/Prism), per-file diffs with `+`/`−` gutter tints, inline margin annotations anchored to lines (not a sidebar), severity-coded finding cards (severity carried 3 ways, never color-only), files-changed nav, copy-link-to-finding.
+- **HTML-native ≥3:** local-CSS syntax highlighting, severity-color findings + "show nits" toggle, jump-to-file, click-to-copy a finding, side-by-side before/after. **Avoid:** generic document with code blocks (that's `document`); findings in a sidebar; runtime tokenizers.
+- **Detailed contract:** load [`references/shapes/developer.md`](references/shapes/developer.md) before building.
 
 #### `podcast`
-- **Register:** Hybrid. Briefing uses Reading register for the thesis and compact Instrument register elsewhere; transcript is Instrument.
-- **Input:** `episode.package.json` from podcastify/podcast-transformer. The renderer reads episode metadata, `bottom_line`, `takeaways[]`, `claims[]`, `terms[]`, `chapters[]`, `turns[]`, `links[]` / `read_next[]`, and `outputs.*`. Unknown fields are ignored.
-- **Output:** two sibling source documents linked by topbar folder tabs: `podcast-at-a-glance.html` and `annotated-transcript.html`. Both include the blank data favicon, summary social metadata, no image-card metadata by default, and the full package JSON in `<script type="application/json" id="episode-data">`.
-- **Briefing layout:** three-zone studio at ≥1181px: episode/people rail, thesis→takeaways→claims center, terms/read-next inspector. Two-column collapse under 1181px, single column under 821px.
-- **Transcript layout:** chapter rail + speaker-turn list at ≥821px; chapter rail rows use fixed-width `<time>` plus flexible `.ch-title` so wrapped titles align.
-- **Required primitives:** topbar folder tabs, hide-sidebar focus mode, opt-in theme toggle, episode hero, host/guest cards, italic thesis card, numbered takeaways, claim cards with Evidence lines, grouped term inspector, read-next list, speaker turns, chapter rail, out-of-grid colophon footer.
-- **Hard invariants:** briefing and transcript topbars keep identical brand text and toggle slot; folder tabs are plain links with `aria-current="page"` (no ARIA tab roles); transcript has `<h1 class="sr-only">`; sticky rails are bounded independent scrollboxes; footer is outside the grid; never fabricate term URLs.
-- **Detailed contract:** load [`references/shapes/podcast.md`](references/shapes/podcast.md) before changing `bin/render-podcast`, canonical podcast examples, mobile/topbar behavior, or generated podcast output.
+- **Register:** Hybrid (briefing thesis Reading, rest compact Instrument; transcript Instrument). **Input:** `episode.package.json` from podcastify/podcast-transformer (deterministic — produced by `bin/render-podcast`, not hand-authored). **Output:** two sibling docs linked by topbar folder tabs — `podcast-at-a-glance.html` + `annotated-transcript.html`.
+- **Required:** topbar folder tabs, hide-sidebar focus mode, opt-in theme toggle, episode hero, host/guest cards, italic thesis card, numbered takeaways, claim cards with Evidence lines, grouped term inspector, read-next list, speaker turns, chapter rail, out-of-grid colophon footer.
+- **Hard invariants:** identical topbar brand + toggle slot across both docs; folder tabs are plain links with `aria-current="page"` (no ARIA tab roles); transcript has `<h1 class="sr-only">`; sticky rails are bounded scrollboxes; footer outside the grid; never fabricate term URLs.
+- **Detailed contract:** load [`references/shapes/podcast.md`](references/shapes/podcast.md) before changing `bin/render-podcast`, the canonical podcast examples, mobile/topbar behavior, or generated podcast output.
 
 ## Sub-patterns (within shapes, not standalone shapes)
 
@@ -316,7 +286,7 @@ Interaction patterns that show up across multiple shapes — use where they fit:
 
 ## Canonical primitives (charts and tables)
 
-Nine primitives that show up across the page shapes. Same one-truth palette as every shape, with locked interaction contracts so a `dashboard` donut, a `comparison` matrix, and a `developer` diff all feel like one system. The reference implementations live at [`examples/primitives.html`](examples/primitives.html) (one file per primitive under `examples/primitives/`); the gallery itself is also a render-as-html artifact (`document` shape).
+Ten primitives that show up across the page shapes. Same one-truth palette as every shape, with locked interaction contracts so a `dashboard` donut, a `comparison` matrix, and a `developer` diff all feel like one system. The reference implementations live at [`examples/primitives.html`](examples/primitives.html) (one file per primitive under `examples/primitives/`); the gallery itself is also a render-as-html artifact (`document` shape).
 
 These are primitives, not shapes. They compose **inside** a shape's contract; pick the shape first, then reach for the primitives the content calls for.
 
@@ -328,7 +298,7 @@ Reach for the right one *before* writing SVG. The 2026-05-25 omega-3 dashboard s
 |---|---|---|
 | ≤12 items, one magnitude per | **bar** (ranked top-N) | scatter, donut |
 | Few points clustered tight on one or both axes | **bar** (ranked) | scatter — labels will collide |
-| Two well-spread dimensions, ≥10 points | **scatter** (implied — not currently a primitive, build inline) | bar (loses one dim) |
+| Two well-spread dimensions, ≥10 points | **scatter** | bar (loses one dim) |
 | 2–5 categories summing to a meaningful whole | **donut** | pie (no semantic edge) |
 | 6+ categories summing to a whole, possibly over time | **stacked bar** | donut (slivers), pie |
 | Time series, 2–4 hero metrics, trend-shape matters | **sparkline** (stat-tile cluster) | bar per period |
@@ -363,6 +333,10 @@ Each primitive's full contract (Required / Interaction / Avoid) lives in `refere
 #### Topology — inline service graph
 - **Pick when:** connections are the point and node count is ≤30 (≤10 inline; 10–30 hand-positioned).
 - **Contract:** [`references/primitives/topology.md`](references/primitives/topology.md)
+
+#### Scatter — two-dimension trade-off
+- **Pick when:** two genuinely independent, well-spread dimensions across ≥10 points where the *relationship* (trade-off, outliers, quadrants) is the signal — not a ranking. If points cluster tight on either axis or there are ≤8, labels collide: rank with `bar` instead (the 2026-05-25 omega-3 failure).
+- **Contract:** [`references/primitives/scatter.md`](references/primitives/scatter.md)
 
 ### Tables
 
@@ -522,12 +496,12 @@ Dark (via prefers-color-scheme):
    REJECTED:     <1-2 shapes considered but wrong, with one-word reasons>
    PRIMITIVES:   <3-5 primitives this shape needs from §Canonical primitives>
    DIMENSIONS:   <which of the 8 dimensions, aiming for ≥4>
-   READ:         <reference files to load now: references/shapes/<shape>.md if one exists, + references/primitives/<name>.md for each chosen primitive>
+   READ:         <reference files to load now: references/shapes/<shape>.md (every shape has one) + references/primitives/<name>.md for each chosen primitive>
    ```
 
    Run the auto-pick table from §Shape selection against the real content first; do not invent a shape; do not pick `editorial` for tabular data with filterable categories (that is `dashboard`).
 
-   **Then actually Read the files named in `READ:` before step 3 — this is not optional.** The deep per-shape and per-primitive contracts live in `references/` (loaded on demand, not carried in this skill); the compact inline summaries are enough to *pick* but not to *build correctly*. Building an `editorial` artifact or an unfamiliar primitive from the inline stub alone reintroduces the exact omega-3 / *Magnifica* failure modes the detailed contracts exist to prevent. A shape or primitive with no reference file has its full contract inline — proceed directly.
+   **Then actually Read the files named in `READ:` before step 3 — this is not optional.** Every shape (`references/shapes/<shape>.md`) and every primitive (`references/primitives/<name>.md`) has a detailed contract loaded on demand, not carried in this skill; the compact inline stubs above are enough to *pick* and scaffold but NOT to *build correctly*. Building any shape or an unfamiliar primitive from the inline stub alone reintroduces the exact omega-3 / *Magnifica* failure modes the detailed contracts exist to prevent.
 
 3. **Plan the instrument:**
    - What's the central interaction? (filter? compare? execute? explore?)
@@ -540,17 +514,25 @@ Dark (via prefers-color-scheme):
    - **Shape**: I picked one from the contract list (`dashboard` / `document` / `editorial` / `timeline` / `runbook` / `comparison` / `network-map` / `triage-board` / `developer` / `podcast`). I did not invent a shape.
    - **HTML-native features ≥3**: I can name at least three, specifically, in this artifact. *Not* "it has nice CSS" — concrete interactions: search-with-nav, click-entity-to-highlight, copy-as-prompt, sortable headers, scroll-spy, drag-to-bucket, etc.
    - **Information dimensions ≥4** out of the 8 listed in §The 8 information dimensions.
-   - **Flatten test**: I mentally stripped all JS and SVG. What disappeared? If only a hover state changed, this is styled prose, not an artifact — redesign.
+   - **Flatten test (author self-check, NOT a shipped control)**: I mentally stripped all JS and SVG. What disappeared? If only a hover state changed, this is styled prose, not an artifact — redesign. Do NOT ship a "flatten test" toggle in the delivered artifact — it's a meta-gimmick, not a reader feature.
    - **Content discipline**: no artifact-counting hero stats ("12 sections found"), no left-handle accent bars, no category-label section titles ("Overview" / "Key Points"), no whole-block search highlighting, no copy-as-markdown button when copy-as-prompt is the right primitive.
    - **Mobile/browser sanity**: at ~375px, body has no horizontal scroll, visible inputs/selects/textareas are at least 16px, wide tables/SVGs scroll inside their own container, and console has no artifact-caused errors.
    - **Copy-as-prompt loop**: every copy-as-prompt action names the current `.html` file, delimits raw state data when state is complex, writes the visible textarea before attempting clipboard access, and has a visible fallback.
    - **For URL renders ≥5,000 words**: I pulled the full source via curl + parsed structure + ran a synthesis subagent. I did NOT render off a WebFetch summary.
    - **File size sanity** for long-form renders: file is ≥30KB (under that on long-form input means I almost certainly skipped features).
 
-   None of this is enforced by a harness — it is enforced by me, before I touch Write. Skipping the checklist is how v1 *Magnifica Humanitas* shipped.
+   The *judgment* items (shape fit, headlines that argue, flatten test) are enforced by me before I touch Write — skipping them is how v1 *Magnifica Humanitas* shipped. The *mechanical* items (self-containment, favicon, social-card meta, ≥3 HTML-native features, copy-as-prompt naming + state delimiting, clipboard guard, no copy-as-markdown, no `<artifact.html>` placeholder, SVG sizing, long-form floor) are now also checkable by a tool — run it in step 7.
 6. **Write to `~/Reports/<YYYY-MM-DD>-<slug>.html`**
-7. **`open` the file** so it pops in browser when the environment allows it
-8. **Report back:** path, size, list of HTML-native features
+7. **Lint the output — hard gate:** run `node <this-skill-dir>/scripts/lint-artifact.mjs <output.html>` (add `--longform` for ≥5,000-word source renders). Fix every `✗ FAIL` before reporting done; `⚠` warnings are judgment calls. Beyond the mechanical checklist, the linter now **compiles every inline `<script>`** — a single stray brace is a `SyntaxError` that kills the whole script and silently deadens every toggle/search/copy — and asserts **every `getElementById`/`querySelector('#id')` target exists** (a control wired to nothing). **Copy the `<script>` block verbatim from `examples/<shape>.html`; never hand-retype or minify it** — that is how the 2026-07-04 dead-script shipped. Loading the file and clicking each control once is still worth it: the linter catches dead scripts, a click catches dead wiring.
+8. **Publish (when asked) — og:image is part of the contract.** Generate the social card, then lint in published mode (which now *requires* og:image):
+   ```bash
+   node <this-skill-dir>/bin/og-card.mjs <output.html> --inject      # writes <stem>.og.png, injects og:image/twitter:image, twitter:card=summary_large_image
+   node <this-skill-dir>/scripts/lint-artifact.mjs --published <output.html>
+   report-portal.py add <output.html> --overwrite && report-portal.py publish <slug>   # copies <stem>.og.png → og-card.png in the slug dir
+   ```
+   Then curl the public URL and confirm `og-card.png` returns 200.
+9. **`open` the file** so it pops in browser when the environment allows it
+10. **Report back:** path, size, HTML-native features, and (if published) the public URL
 
 ## Credits
 

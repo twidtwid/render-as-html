@@ -64,8 +64,12 @@ def test_primitives_have_gallery_files_and_contracts():
     h = _load_harness()
     audit = h.analyze_primitives()
     assert audit["clean"], "primitive audit violations: " + "; ".join(audit["violations"])
-    assert len(audit["primitives"]) == 9
-    assert "scatter" in audit["candidate_new_primitives"]
+    assert len(audit["primitives"]) == 10
+    # scatter was promoted from candidate to a registered primitive (file + gallery
+    # link + contract), so it must no longer show up as a candidate.
+    assert "scatter" not in audit["candidate_new_primitives"]
+    assert any(p["name"] == "scatter" and p["has_file"] and p["has_gallery_link"] and p["has_contract"]
+               for p in audit["primitives"])
 
 
 def test_source_document_contract_is_clean():
