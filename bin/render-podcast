@@ -228,6 +228,17 @@ def esc(s: str | None) -> str:
     return html.escape(s or "", quote=True)
 
 
+_SAFE_URL_SCHEMES = ("http://", "https://", "mailto:")
+
+
+def safe_url(url: str | None) -> str:
+    """Only http(s)/mailto URLs may become live hrefs. Anything else
+    (javascript:, data:, vbscript:, protocol-relative tricks) renders as
+    plain text instead of a link."""
+    u = (url or "").strip()
+    return u if u.lower().startswith(_SAFE_URL_SCHEMES) else ""
+
+
 def fmt_duration(seconds: int | None) -> str:
     if not seconds:
         return ""
@@ -277,7 +288,7 @@ CATEGORY_ORDER = ["person", "organization", "company", "concept", "tool", "book"
 
 def render_term(term: dict) -> str:
     name = esc(term.get("term") or term.get("name"))
-    url = term.get("url")
+    url = safe_url(term.get("url"))
     if url:
         name_html = f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">{name}<span class="ext">↗</span></a>'
     else:
@@ -394,7 +405,7 @@ body.inspector-hidden .chapter-rail { display: none; }
     podcast_title = ep.get("podcast_title") or ""
     episode_number = ep.get("episode_number")
     duration_str = fmt_duration(ep.get("duration_seconds"))
-    episode_url = ep.get("episode_url") or ""
+    episode_url = safe_url(ep.get("episode_url"))
 
     sub_parts: list[str] = []
     if podcast_title:
@@ -541,7 +552,7 @@ def render_briefing(package_path: Path, pkg: dict | None = None, style_block: st
     hosts = ep.get("hosts") or []
     guests = ep.get("guests") or []
     description = (ep.get("description") or "").strip()
-    episode_url = ep.get("episode_url") or ""
+    episode_url = safe_url(ep.get("episode_url"))
     bottom_line = pkg.get("bottom_line") or ep.get("bottom_line") or ""
     bundle_slug = package_path.parent.parent.name
 
@@ -601,11 +612,17 @@ def render_briefing(package_path: Path, pkg: dict | None = None, style_block: st
     )
     for link in (pkg.get("links") or pkg.get("read_next") or [])[:4]:
         label = esc(link.get("label") or link.get("url"))
-        url = esc(link.get("url") or "#")
         note = esc(link.get("note") or "")
-        next_items.append(
-            f'<li><a href="{url}" target="_blank" rel="noopener noreferrer"><span class="label">{label}<span class="next-note">{note}</span></span><span class="arrow">↗</span></a></li>'
-        )
+        raw = safe_url(link.get("url") or "")
+        if raw:
+            url = esc(raw)
+            next_items.append(
+                f'<li><a href="{url}" target="_blank" rel="noopener noreferrer"><span class="label">{label}<span class="next-note">{note}</span></span><span class="arrow">↗</span></a></li>'
+            )
+        else:
+            next_items.append(
+                f'<li><span class="label">{label}<span class="next-note">{note}</span></span></li>'
+            )
     next_list_html = "\n        ".join(next_items)
 
     # OG meta — keep short
@@ -749,7 +766,15 @@ def main(argv: list[str] | None = None) -> int:
     out_dir = (args.output_dir or package_path.parent).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    pkg = load_package(package_path)
+    try:
+        pkg = load_package(package_path)
+    except json.JSONDecodeError as e:
+        print(f"invalid JSON in {package_path}: {e}", file=sys.stderr)
+        return 1
+    if not isinstance(pkg, dict) or "episode" not in pkg:
+        print(f"package missing top-level 'episode' object: {package_path}", file=sys.stderr)
+        return 1
+
     style_block = load_template_style()
     briefing_path = out_dir / "podcast-at-a-glance.html"
     transcript_path = out_dir / "annotated-transcript.html"

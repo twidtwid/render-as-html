@@ -11,6 +11,7 @@ and that the a11y gotchas we've already burned a PR fixing don't regress
 """
 from __future__ import annotations
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -134,3 +135,49 @@ def test_briefing_renders_fixture_terms_and_read_next_links(tmp_path):
     assert 'Figma<span class="ext">↗</span>' in html
     assert 'Why workflows beat apps' in html
     assert 'https://example.invalid/workflows-beat-apps' in html
+
+
+def test_malformed_json_fails_cleanly(tmp_path, capsys):
+    rp = _load_renderer()
+    bad = tmp_path / "bad.json"
+    bad.write_text("not json", encoding="utf-8")
+    rc = rp.main([str(bad), "-o", str(tmp_path)])
+    assert rc == 1
+    captured = capsys.readouterr()
+    assert "invalid JSON" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_missing_episode_key_fails_cleanly(tmp_path, capsys):
+    rp = _load_renderer()
+    noep = tmp_path / "noep.json"
+    noep.write_text("{}", encoding="utf-8")
+    rc = rp.main([str(noep), "-o", str(tmp_path)])
+    assert rc == 1
+    captured = capsys.readouterr()
+    assert "'episode'" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_javascript_urls_are_not_linked(tmp_path):
+    rp = _load_renderer()
+    pkg = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    pkg["terms"][1]["url"] = "javascript:alert(1)"
+    pkg["read_next"][0]["url"] = "JAVASCRIPT:alert(1)"
+    pkg["episode"]["episode_url"] = "data:text/html,x"
+    tainted = tmp_path / "tainted.json"
+    tainted.write_text(json.dumps(pkg), encoding="utf-8")
+
+    rc = rp.main([str(tainted), "-o", str(tmp_path)])
+    assert rc == 0
+    for name in ("podcast-at-a-glance.html", "annotated-transcript.html"):
+        html_lower = (tmp_path / name).read_text(encoding="utf-8").lower()
+        assert 'href="javascript' not in html_lower, f"{name}: javascript: URL became a live href"
+        assert 'href="data:text/html' not in html_lower, f"{name}: data: URL became a live href"
+
+
+def test_https_urls_still_linked(tmp_path):
+    rp = _load_renderer()
+    rp.main([str(FIXTURE), "-o", str(tmp_path)])
+    briefing = (tmp_path / "podcast-at-a-glance.html").read_text(encoding="utf-8")
+    assert 'href="https://example.invalid' in briefing
