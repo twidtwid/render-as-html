@@ -17,6 +17,7 @@
 
 import fs from "node:fs";
 import vm from "node:vm";
+import { REQUIRED_META, FEATURES, EXTERNAL_RESOURCE, hasMeta, attrValue, hasAccessibleName } from "./lib/html-checks.mjs";
 
 const argv = process.argv.slice(2);
 const opts = { longform: false, reference: false, json: false, published: false, files: [] };
@@ -32,63 +33,11 @@ if (!opts.files.length) { usage(); process.exit(2); }
 
 const LONGFORM_FLOOR = 30_000;
 
-const REQUIRED_META = [
-  ["name", "description"],
-  ["property", "og:title"],
-  ["property", "og:description"],
-  ["property", "og:type"],
-  ["property", "og:site_name"],
-  ["name", "twitter:card"],
-];
-
-// Same feature vocabulary as perf_harness.py's _HTML_NATIVE_FEATURES.
-const FEATURES = {
-  search: /type=["']search["']/i,
-  inline_svg: /<svg\b/i,
-  table: /<table\b/i,
-  copy_as_prompt: /copy as prompt|copyPrompt|prompt-output/i,
-  sorting: /data-sort|aria-sort=/i,
-  filtering: /data-filter|class=["'][^"']*\bchip\b/i,
-  local_storage: /localStorage/i,
-  drag: /\bdraggable\b|dragstart|dragover|drop\(/i,
-  toggle: /aria-pressed|type=["']checkbox["']/i,
-  textarea: /<textarea\b/i,
-  cross_highlight: /scrollIntoView|IntersectionObserver|classList\.(?:add|toggle)\(/i,
-};
-
-// Resource-LOADING external refs only. Anchor href="https://" is navigation, allowed.
-const EXTERNAL_RESOURCE = [
-  /<script[^>]+src=['"]https?:/i,
-  /<link[^>]+href=['"]https?:/i,
-  /<img[^>]+src=['"]https?:/i,
-  /<source[^>]+src=['"]https?:/i,
-  /@import\s+['"]?https?:/i,
-  /url\(\s*['"]?https?:/i,
-  /fetch\(\s*['"]https?:/i,
-];
-
 function usage() {
   process.stderr.write(
     "usage: node scripts/lint-artifact.mjs [--longform] [--reference] [--published] [--json] <file.html> [more.html ...]\n" +
     "  --reference   single-primitive reference pages: skip the >=3 HTML-native feature floor (all other checks still run)\n",
   );
-}
-
-function hasMeta(html, attr, value) {
-  const rx = new RegExp(`<meta\\b[^>]*${attr}=["']${value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'][^>]*>`, "i");
-  return rx.test(html);
-}
-
-function attrValue(tag, attr) {
-  return tag.match(new RegExp(`\\b${attr}=["']([^"']*)["']`, "i"))?.[1] || "";
-}
-
-function hasAccessibleName(html, tag) {
-  if (/\baria-label=|\baria-labelledby=|\btitle=/.test(tag)) return true;
-  const id = attrValue(tag, "id");
-  if (!id) return false;
-  const forRx = new RegExp(`<label\\b[^>]*\\bfor=["']${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'][^>]*>`, "i");
-  return forRx.test(html);
 }
 
 function lintOne(file) {

@@ -279,3 +279,47 @@ def test_lint_artifact_catches_querySelectorAll_dead_control(tmp_path):
     r = _run("scripts/lint-artifact.mjs", str(bad))
     assert r.returncode == 1
     assert "#phantom" in r.stdout
+
+
+# --- JS/Python vocabulary parity (scripts/lib/html-checks.mjs vs perf_harness.py) --
+
+def test_js_python_vocabulary_parity():
+    """The JS lib (scripts/lib/html-checks.mjs) and the Python harness carry
+    the same REQUIRED_META and feature vocabulary. A change to one without
+    the other silently weakens a gate — fail loudly instead."""
+    import json
+    r = _run("-e",
+        "import('./scripts/lib/html-checks.mjs').then(m => console.log(JSON.stringify({"
+        "meta: m.REQUIRED_META,"
+        "features: Object.fromEntries(Object.entries(m.FEATURES).map(([k,v]) => [k, v.source]))"
+        "})))")
+    assert r.returncode == 0, r.stderr
+    js = json.loads(r.stdout)
+
+    from importlib.machinery import SourceFileLoader
+    import importlib.util, sys
+    loader = SourceFileLoader("perf_harness", str(REPO / "scripts" / "perf_harness.py"))
+    spec = importlib.util.spec_from_loader("perf_harness", loader)
+    h = importlib.util.module_from_spec(spec)
+    sys.modules["perf_harness"] = h
+    loader.exec_module(h)
+
+    assert [list(x) for x in h._REQUIRED_META] == js["meta"]
+    assert set(h._HTML_NATIVE_FEATURES) == set(js["features"])
+
+    # Normalization: Python's raw strings are delimited with `"`, so any `"`
+    # inside a character class must be written `\"` to satisfy the tokenizer
+    # even though a raw string keeps the backslash literally in the pattern
+    # (e.g. r"[\"']" -> the two-char sequence \" followed by '). JS regex
+    # literals need no such escape (quotes aren't special inside `/.../`), so
+    # its `.source` has a bare `"`. Both compile to the identical regex
+    # (`\"` and `"` are equivalent inside a character class), so this is the
+    # same escaping-artifact category as JS `\/` vs Python `/` — strip the
+    # redundant backslash-before-quote before comparing, do not change either
+    # implementation to satisfy the test.
+    def normalize(pattern):
+        return pattern.replace('\\"', '"')
+
+    for key, py_pattern in h._HTML_NATIVE_FEATURES.items():
+        assert normalize(py_pattern) == normalize(js["features"][key]), (
+            f"feature '{key}' diverged:\n  py: {py_pattern}\n  js: {js['features'][key]}")

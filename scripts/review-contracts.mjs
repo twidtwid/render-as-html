@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { REQUIRED_META, hasMeta, attrValue, hasAccessibleName } from "./lib/html-checks.mjs";
 
 const root = process.cwd();
 const htmlFiles = [
@@ -26,24 +27,6 @@ function lineNumber(text, index) {
   return text.slice(0, index).split("\n").length;
 }
 
-function hasMeta(html, attr, value) {
-  const rx = new RegExp(`<meta\\b[^>]*${attr}=["']${value}["'][^>]*>`, "i");
-  return rx.test(html);
-}
-
-function attrValue(tag, attr) {
-  const rx = new RegExp(`\\b${attr}=["']([^"']*)["']`, "i");
-  return tag.match(rx)?.[1] || "";
-}
-
-function hasAccessibleName(html, tag) {
-  if (/\baria-label=|\baria-labelledby=|\btitle=/.test(tag)) return true;
-  const id = attrValue(tag, "id");
-  if (!id) return false;
-  const forRx = new RegExp(`<label\\b[^>]*\\bfor=["']${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'][^>]*>`, "i");
-  return forRx.test(html);
-}
-
 for (const file of htmlFiles) {
   const html = read(file);
 
@@ -53,16 +36,10 @@ for (const file of htmlFiles) {
   if (!hasMeta(html, "name", "viewport")) {
     fail(file, "missing viewport meta");
   }
-  if (!hasMeta(html, "name", "description")) {
-    fail(file, "missing description meta");
-  }
-  for (const property of ["og:title", "og:description", "og:type", "og:site_name"]) {
-    if (!hasMeta(html, "property", property)) {
-      fail(file, `missing ${property} meta`);
+  for (const [attr, value] of REQUIRED_META) {
+    if (!hasMeta(html, attr, value)) {
+      fail(file, `missing ${value} meta`);
     }
-  }
-  if (!hasMeta(html, "name", "twitter:card")) {
-    fail(file, "missing twitter:card meta");
   }
   if (!/<link\b[^>]*\brel=["']icon["'][^>]*\bhref=["']data:,["'][^>]*>/i.test(html)) {
     fail(file, "missing blank data favicon link");
