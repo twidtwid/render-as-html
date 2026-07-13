@@ -118,11 +118,27 @@ Update the sync comment in `lint-artifact.mjs:43` to keep saying the vocabularie
 
 Re-run the per-file counts and diff against `/tmp/features-before.json`. Counts will drop (that's the point). Requirements:
 
-- Every file in `examples/*.html` that is a shape example, and `index.html`, must still count **≥3**.
-- `examples/primitives/*.html` are single-primitive reference pages — some may legitimately sit at exactly 3; below 3 is a STOP (see below).
-- Run `node scripts/lint-artifact.mjs index.html examples/*.html examples/primitives/*.html` → must be `0 fail`.
+- Every **shape artifact** in `examples/*.html`, and the root `index.html`, must still count **≥3**.
+- `examples/primitives/*.html` are single-primitive reference pages, linted with `--reference` (floor skipped).
+- **Gallery/index pages are reference surfaces, not artifacts (ruling added during execution, 2026-07-12).** The first run correctly dropped `examples/index.html` 5→0 and `examples/primitives.html` 6→1. The reviewer inspected both: `examples/index.html` contains zero `<script>`/`<button>`/`<input>` elements (a pure static link gallery) and `examples/primitives.html` likewise carries no interactive markup — its single remaining hit came from the phrase "copy as prompt" in contract prose. They were clearing the floor purely on phantom prose matches, which is precisely the false-pass class this plan closes. **Do not add markup to them and do not weaken a pattern**; instead move both into the `--reference` lint set (see step 3a).
 
 Include the before/after count table in your final report.
+
+### Step 3a: Reclassify the two gallery pages as reference surfaces
+
+In the `Makefile`'s `lint-examples` target (added by plan 002), split the globs so the two gallery pages lint with `--reference`:
+
+```makefile
+lint-examples:
+	node scripts/lint-artifact.mjs index.html $(filter-out examples/index.html examples/primitives.html,$(wildcard examples/*.html))
+	node scripts/lint-artifact.mjs --reference examples/index.html examples/primitives.html examples/primitives/*.html
+```
+
+(If the `$(filter-out …)` form proves awkward, an explicit list of the 13 shape examples is equally acceptable — the requirement is that the two gallery pages get `--reference` and every shape artifact keeps the full gate.)
+
+`Makefile` is therefore IN SCOPE for this change only.
+
+**Verify**: `make check` → all gates green, and the lint output shows the shape artifacts under the full gate (each ≥3) with the gallery + primitive pages under `--reference`.
 
 **Verify**: lint-all-examples `0 fail`; `uv run python scripts/perf_harness.py --check --no-report` → exit 0 (feature drops appear as warnings only if any shape example goes under 3 — which would also be a STOP).
 
