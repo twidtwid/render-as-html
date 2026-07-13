@@ -1,19 +1,19 @@
 {
   "skill_md": {
-    "total_bytes": 50868,
-    "total_tokens": 12621,
+    "total_bytes": 46832,
+    "total_tokens": 11617,
     "sections": [
-      {
-        "name": "Design system",
-        "tokens": 3043
-      },
       {
         "name": "Page shapes (pick before designing)",
         "tokens": 2729
       },
       {
+        "name": "Design system",
+        "tokens": 2021
+      },
+      {
         "name": "Rendering process",
-        "tokens": 1650
+        "tokens": 1668
       },
       {
         "name": "Canonical primitives (charts and tables)",
@@ -141,7 +141,7 @@
     "oversized_contracts": []
   },
   "references": {
-    "total_tokens": 9629,
-    "file_count": 20
+    "total_tokens": 10860,
+    "file_count": 21
   }
 }

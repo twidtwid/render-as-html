@@ -383,20 +383,16 @@ Slightly warm and non-corporate, but keep public artifacts professional by defau
 - Use cheap verification gates during normal generation: no external requests, no body horizontal scroll at ~375px, visible form controls ≥16px on phones, tables/graphs inside internal scroll containers, copy-as-prompt names the current HTML path and writes the textarea before clipboard attempt. Reserve full multi-page/gallery audits for changes to this repo or the design system.
 - For private/internal artifacts where speed matters more than portability, ask before using a shared local CSS/JS runtime instead of inlining all boilerplate. Self-contained remains the default for public or shareable artifacts.
 
-### Layout principles
+### Layout, density, and interactivity (detailed contract on demand)
 
-- **Max-width 1280px** on dashboards, 880px on documents, fluid below
-- **Multi-column grids** for parallel content, NOT sequential h2 sections
-- **Sticky top nav** with section anchors for docs >5 sections
-- **Filter bar** when content is filterable — vanilla JS, no framework
-- **Mobile is a hard requirement, not an afterthought.** Test by resizing browser to ~375px before saving — and also test the *intermediate* widths (~1100px, ~950px), where multi-zone layouts break worst. Cards stack to single column under ~700px, sticky nav collapses gracefully, touch targets ≥32px, horizontal scroll forbidden on body (tables in scroll containers OK), font sizes adjust down 1-2px.
-- **Sticky-rail collapse invariant (any multi-zone shape — editorial, dashboard, document, network-map):** a `position: sticky` rail with a viewport-tall `height` is only safe while it owns a grid column. A sticky element keeps its own scroll box and paint layer even after the grid collapses, so if it stays sticky once its column is gone it renders *on top of* the prose. **Default to mobile-first:** rail is plain in-flow at base; attach `position: sticky` + the grid column together inside the wide `@media (min-width: …)` rule, so the failure state is unreachable by construction. Only if you went desktop-first must you reset to `position: static; height: auto` at every breakpoint the column is lost. A sticky *top/bottom bar* (full-width, no fixed height) is always safe — the hazard is exclusively a tall sticky *side rail* in a collapsing grid. **Footer corollary:** keep the page footer *outside* the grid that contains a sticky rail (a sibling after the grid container, not a `grid-column: 1/-1` child) — the rail's containing block is the grid, so an in-grid footer gets painted over by the still-pinned rail at scroll-bottom. **Scrollbox corollary:** any sticky side rail whose content can exceed the viewport MUST be a bounded scrollbox (`max-height: calc(100dvh - <top>); overflow-y: auto; overscroll-behavior: contain`) added in the same rule that makes it sticky — otherwise content past the fold is unreachable and any programmatic scroll-to-item is forced to drag the whole document. A click that cross-links between panels scrolls *the other* panel (minimally, `block:'nearest'`/no-op-if-visible), never the panel that was clicked. Verify at the breakpoint boundaries *and* at the very bottom of a long page, not just the extremes.
-
-### Density
-
-- **Reading register:** 17–18px serif body, line-height 1.6, prose measure capped at `46rem` (~70ch) even when chrome is wider. Section gap ~2.5rem. Real horizontal rules between sections, not boxed borders.
-- **Instrument register:** 14–15px sans body, line-height 1.5, table cell padding `8px 10px`, packed. Stat tiles allowed *only* when the metric is the subject (see Content discipline, in "The bar").
-- Headlines line-height 1.2 in both.
+Compact rules: max-width 1280px instrument / 880px reading; mobile is a hard
+requirement (~375px, no body horizontal scroll); every filter has a visible
+clear; real controls for real actions; every copy button has a visible
+textarea fallback; sticky side rails are mobile-first and bounded.
+**Before building any multi-zone layout, sticky rail, in-text search, or
+filter UI: Read `references/design.md` — it carries the full contract
+(sticky-rail collapse invariant, density metrics, `<mark>` search rules).
+Building from this stub alone reintroduces documented failure modes.**
 
 ### Typography
 
@@ -414,10 +410,6 @@ Application is determined by the shape's register, never chosen by the user or s
 |---|---|---|---|---|---|
 | **Reading** | `document`, `editorial`, `timeline` | serif, 700, tight tracking | serif | 17–18px / 1.6 | metadata, timestamps, numerals |
 | **Instrument** | `dashboard`, `comparison`, `developer`, `runbook`, `triage-board`, `network-map` | sans, 700 | sans | 14–15px / 1.5 | numerics, code, IDs |
-
-- Mono is metadata/numerics/code in both registers. `font-variant-numeric: tabular-nums` on all tables and numeric columns.
-- Reading register may use mono small-caps for kicker/eyebrow lines (e.g. `SAN FRANCISCO · 14 MAY 2021`).
-- Instrument register uses serif sparingly or not at all (e.g. a single pull-quote), never for dense tabular content.
 
 ### Color
 
@@ -458,16 +450,6 @@ Dark (via prefers-color-scheme):
 - **`--accent-2` (ochre) is a fill, not a text color on `--paper`.** Ochre text/glyphs on cream are ~2.7:1 (fail). Affirmative elements put `--accent-2` in the *background* and use `--ink` (not white) as the foreground — white-on-ochre is ~2.9:1 (fail), ink-on-ochre is ~6:1 (pass). A toggled glyph (e.g. a filled ★) may use ochre only when its state is also carried by shape/`aria-pressed`, never by color alone.
 - High contrast; no gray-on-gray. Color is never the only signal — pair it with text, icon, or shape so the artifact survives colorblind viewing.
 
-### Interactivity
-
-**Every filter needs a visible clear path.** If clicking activates a filter, clicking again has to deactivate it (toggle), and a visible "× clear" affordance has to appear while the filter is active. Never rely on double-click, escape, or "click outside" to reset. Those gestures are undiscoverable.
-
-**Use real controls for real actions.** When something needs to be toggleable, editable, pickable, or clickable, use a control that looks like one: `<input type="checkbox">`, `<input type="range">`, `<select>`, `<button>`. Don't invent gestures on decorative elements ("click this pill", "shift-click this badge", "double-tap this card"). Pills and badges and stat tiles read as static information; making them interactive is invisible and inscrutable. If a pill needs editing, put a real checkbox or button next to it. The pill stays read-only.
-
-**Every copy button needs a fallback.** `navigator.clipboard.writeText()` can fail in local files, hardened browsers, iframes, and permission-restricted contexts. If copy fails, place the exact text in a visible `<textarea>`, focus it, and select it.
-
-**In-text `<mark>` search.** When search filters content, mark the actual occurrences with `<mark>` and scroll to the first match. Never highlight an entire block because the term appears somewhere inside it; the visible part of a long block often does not contain the term. Cache original text (e.g. `data-original`) so clearing search restores cleanly.
-
 ### Anti-patterns
 
 - Still exactly three faces (serif, sans, mono); no fourth
@@ -496,7 +478,7 @@ Dark (via prefers-color-scheme):
    REJECTED:     <1-2 shapes considered but wrong, with one-word reasons>
    PRIMITIVES:   <3-5 primitives this shape needs from §Canonical primitives>
    DIMENSIONS:   <which of the 8 dimensions, aiming for ≥4>
-   READ:         <reference files to load now: references/shapes/<shape>.md (every shape has one) + references/primitives/<name>.md for each chosen primitive>
+   READ:         <reference files to load now: references/shapes/<shape>.md (every shape has one) + references/primitives/<name>.md for each chosen primitive + references/design.md for any multi-zone/sticky-rail/search-heavy build>
    ```
 
    Run the auto-pick table from §Shape selection against the real content first; do not invent a shape; do not pick `editorial` for tabular data with filterable categories (that is `dashboard`).
