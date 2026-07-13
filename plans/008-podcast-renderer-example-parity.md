@@ -81,11 +81,16 @@ Near the top of `bin/render-podcast` (after the imports), add `VERSION = "2.6.3"
 
 **Verify**: `node scripts/check-versions.mjs` → clean; `bin/render-podcast tests/fixtures/episode.package.json -o /tmp/rp-parity && grep -c "v$(grep '^version:' SKILL.md | awk '{print $2}')" /tmp/rp-parity/podcast-at-a-glance.html` → ≥1.
 
-### Step 2: Make the dark-block swap fail loudly instead of silently no-op
+### Step 2: Make the dark-block contract fail loudly (AMENDED after execution discovery, 2026-07-12)
 
-In `transform_style_block()` (:219-224): before replacing, assert the exact `DARK_MEDIA_BLOCK` string is present in the style block; if not, `raise RuntimeError("examples/podcast.html dark-mode block has drifted from bin/render-podcast's DARK_MEDIA_BLOCK — update both together")`. Same pattern for any other string-equality replacement in that function.
+**Execution finding**: the original premise was already false when this plan was written — `examples/podcast.html` no longer contains any `@media (prefers-color-scheme: dark)` block; it authors `body.dark { … }` directly (deliberate: inline comment in the example says `prefers-color-scheme` surprised users on dark-OS setups). The renderer's media→class swap has therefore been a silent no-op on every render, and the render only works because the example happens to carry the exact `DARK_CLASS_BLOCK` already. Reviewer ruling: the example is authoritative; the swap is dead code.
 
-**Verify**: `uv run --with pytest pytest tests/test_render_podcast.py -q` → all pass (the fixture render exercises the swap). Manual negative: temporarily edit one character of `DARK_MEDIA_BLOCK`, re-run one test, confirm the RuntimeError fires with the message, revert.
+Amended instructions for `bin/render-podcast`:
+1. Delete the `DARK_MEDIA_BLOCK` constant and the media→class replacement branch in `transform_style_block()`.
+2. Keep `DARK_CLASS_BLOCK` as the parity reference. In `transform_style_block()`, assert `DARK_CLASS_BLOCK in style_block`; if absent, `raise RuntimeError("examples/podcast.html no longer carries the body.dark block bin/render-podcast expects — update DARK_CLASS_BLOCK and the example together")`.
+3. Update the comment above the constants (currently describes the v2.2.0 swap behavior) to describe the new invariant.
+
+**Verify**: `uv run --with pytest pytest tests/test_render_podcast.py -q` → all pass (the fixture render exercises the assertion). Manual negative: temporarily edit one character of `DARK_CLASS_BLOCK`, re-run one test, confirm the RuntimeError fires with the message, revert.
 
 ### Step 3: Add a structural parity test (renderer output vs canonical example)
 

@@ -9,7 +9,7 @@ All quality gates were green at planning time: `uv run --with pytest pytest test
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 001 | Release v2.6.3: version sync + CHANGELOG + check-versions gate + gallery/README drift fixes | P1 | S | — | DONE (278d7c3; 11th version site examples/primitives.html found+fixed during execution) |
-| 002 | CI workflow + `make check` single entry point + package.json engines + review-contracts tests | P1 | S | 001 | IN PROGRESS (step-1 STOP surfaced 6 pre-existing lint false positives; gate adjustments authorized as step 1a) |
+| 002 | CI workflow + `make check` single entry point + package.json engines + review-contracts tests | P1 | S | 001 | DONE (cbb0e93; incl. authorized step-1a lint-gate scoping: --reference flag + button-context copy-as-prompt trigger) |
 | 003 | og-card.mjs hardening: browser discovery, safe temp dir, honest `--inject`, tests | P2 | S | — | DONE (cc5ff8b) |
 | 004 | render-podcast input hardening: clean error contract + href scheme allow-list + tests | P2 | S | — | DONE (e31a9ea) |
 | 005 | Perf harness honest metrics: references/ as the deferred load, slim committed baseline | P2 | S | — | DONE (382a6a9) |
