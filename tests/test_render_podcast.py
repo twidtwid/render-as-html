@@ -181,3 +181,125 @@ def test_https_urls_still_linked(tmp_path):
     rp.main([str(FIXTURE), "-o", str(tmp_path)])
     briefing = (tmp_path / "podcast-at-a-glance.html").read_text(encoding="utf-8")
     assert 'href="https://example.invalid' in briefing
+
+
+def test_rendered_briefing_structurally_matches_canonical_example(tmp_path):
+    """examples/podcast.html is the visual contract (renderer docstring).
+    The renderer re-authors the body in Python, so enforce that the load-
+    bearing structural hooks of the canonical example all appear in real
+    output — divergence here means gallery and reality have split."""
+    import re
+    rp = _load_renderer()
+    rp.main([str(FIXTURE), "-o", str(tmp_path)])
+    rendered = (tmp_path / "podcast-at-a-glance.html").read_text(encoding="utf-8")
+    example = (REPO / "examples" / "podcast.html").read_text(encoding="utf-8")
+
+    # Every id= the canonical example wires up must exist in rendered output
+    # (renderer may add extras like #theme-toggle; the example is the floor).
+    example_ids = set(re.findall(r'\bid="([^"]+)"', example)) - {"episode-data"}
+    rendered_ids = set(re.findall(r'\bid="([^"]+)"', rendered))
+    missing = example_ids - rendered_ids
+    assert not missing, f"canonical ids absent from rendered output: {sorted(missing)}"
+
+    # Every class the example's OWN <style> block targets must be used by the
+    # rendered body too (shared stylesheet, re-authored body — dead classes in
+    # rendered output mean structural drift).
+    style = example[example.find("<style>"):example.find("</style>")]
+    styled_classes = set(re.findall(r"\.([a-z][a-z0-9-]{2,})\b", style))
+    rendered_classes = set(re.findall(r'class="([^"]+)"', rendered))
+    rendered_class_tokens = set(t for cs in rendered_classes for t in cs.split())
+    dead = {c for c in styled_classes if c not in rendered_class_tokens}
+    # Allowlist: state classes toggled by JS at runtime + transcript-only chrome.
+    allowed_dead = {
+        # JS-toggled state classes — never present on initial render.
+        "dark", "inspector-hidden",
+        # Applied by the renderer only to the current view's folder tab;
+        # matched via the combined "folder-tab active" token check, but kept
+        # here defensively per the plan's original allowlist.
+        "active",
+        # Term-category dot variant (.term-row .dot.article): dot_class() emits
+        # it only when the package has book/article terms; the fixture has none
+        # (Concepts/People/Tools only). Data-dependent, not structural drift.
+        "article",
+        # Regex artifact, not a selector: "editorial.html" inside a CSS comment
+        # in the example's <style> matches the \.token pattern.
+        "html",
+    }
+    dead -= allowed_dead
+    assert not dead, f"classes styled by the shared stylesheet but absent from rendered briefing: {sorted(dead)}"
+
+
+def test_rendered_transcript_structurally_matches_canonical_example(tmp_path):
+    """Mirror of the briefing parity test for the transcript pair:
+    examples/podcast-transcript.html's ids are the floor for
+    annotated-transcript.html, and every class its <style> targets must be
+    live in real output. Its stylesheet is a verbatim superset that also
+    carries all briefing-view rules (the pair shares one stylesheet family),
+    so class liveness is checked against BOTH rendered files — briefing-only
+    classes are enforced via the sibling file instead of being grandfathered
+    into a 40-entry allowlist."""
+    import re
+    rp = _load_renderer()
+    rp.main([str(FIXTURE), "-o", str(tmp_path)])
+    rendered = (tmp_path / "annotated-transcript.html").read_text(encoding="utf-8")
+    briefing = (tmp_path / "podcast-at-a-glance.html").read_text(encoding="utf-8")
+    example = (REPO / "examples" / "podcast-transcript.html").read_text(encoding="utf-8")
+
+    # Every id= the canonical transcript example wires up must exist in the
+    # rendered transcript (chapter anchors included — the fixture episode
+    # mirrors the canonical fictional episode by design).
+    example_ids = set(re.findall(r'\bid="([^"]+)"', example)) - {"episode-data"}
+    rendered_ids = set(re.findall(r'\bid="([^"]+)"', rendered))
+    missing = example_ids - rendered_ids
+    assert not missing, f"canonical ids absent from rendered transcript: {sorted(missing)}"
+
+    # Class liveness across the rendered pair (shared stylesheet family).
+    style = example[example.find("<style>"):example.find("</style>")]
+    styled_classes = set(re.findall(r"\.([a-z][a-z0-9-]{2,})\b", style))
+    rendered_class_tokens = set(
+        t
+        for page in (rendered, briefing)
+        for cs in re.findall(r'class="([^"]+)"', page)
+        for t in cs.split()
+    )
+    dead = {c for c in styled_classes if c not in rendered_class_tokens}
+    allowed_dead = {
+        # JS-toggled state classes — never present on initial render.
+        "dark", "inspector-hidden",
+        # Data-dependent: .turn .speaker.continued is emitted only when the
+        # same speaker has consecutive turns; the fixture alternates speakers
+        # and chapter breaks reset the speaker label.
+        "continued",
+        # Data-dependent term-category dot variant (.term-row .dot.article):
+        # emitted only for book/article terms; fixture has none.
+        "article",
+        # Regex artifact, not a selector: ".html" filename mentions inside CSS
+        # comments match the \.token pattern.
+        "html",
+    }
+    dead -= allowed_dead
+    assert not dead, f"classes styled by the transcript stylesheet but absent from rendered pair: {sorted(dead)}"
+
+
+def test_common_overrides_target_only_live_selectors(tmp_path):
+    """Every class/id selector token in COMMON_OVERRIDES must be used as an
+    actual class=/id= token somewhere in the rendered pair. An override
+    targeting nothing is graft rot. (Deliberately does NOT count a token
+    appearing inside the inline <style> as live — COMMON_OVERRIDES is itself
+    embedded there, which would make the check vacuous.)"""
+    import re
+    rp = _load_renderer()
+    rp.main([str(FIXTURE), "-o", str(tmp_path)])
+    override_tokens = set(re.findall(r"[.#]([a-zA-Z][\w-]*)", rp.COMMON_OVERRIDES))
+    assert override_tokens, "COMMON_OVERRIDES should contain selector tokens"
+
+    live_tokens = set()
+    for name in ("podcast-at-a-glance.html", "annotated-transcript.html"):
+        page = (tmp_path / name).read_text(encoding="utf-8")
+        live_tokens |= set(
+            t for cs in re.findall(r'class="([^"]+)"', page) for t in cs.split()
+        )
+        live_tokens |= set(re.findall(r'\bid="([^"]+)"', page))
+
+    dead = override_tokens - live_tokens
+    assert not dead, f"COMMON_OVERRIDES selectors targeting nothing in rendered output: {sorted(dead)}"

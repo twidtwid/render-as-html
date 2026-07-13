@@ -18,6 +18,9 @@ import os
 import sys
 from pathlib import Path
 
+# Must match SKILL.md frontmatter — enforced by scripts/check-versions.mjs
+VERSION = "2.6.3"
+
 # Resolve the template path against the repo root (this script lives in <repo>/bin/).
 # Allows the CLI to work from any cwd and from any clone location, with an env
 # escape hatch (`RENDER_AS_HTML_REPO`) for callers that want to point at a
@@ -49,18 +52,13 @@ def episode_data_island(pkg: dict) -> str:
     data = data.replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
     return f'<script type="application/json" id="episode-data">{data}</script>'
 
-# Replace the v2.2.0 example's @media (prefers-color-scheme: dark) block with
-# a body.dark class so light is the default and dark is opt-in via a toggle.
-DARK_MEDIA_BLOCK = """@media (prefers-color-scheme: dark) {
-  :root {
-    --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
-    --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
-    --rule:#38332b; --rule-soft:#2c2820;
-    --accent:#e0794f; --accent-2:#d8a73a;
-    --ok:#5cae6f; --note:#6f9fd0;
-  }
-}"""
-
+# Parity reference: examples/podcast.html authors dark mode directly as an
+# opt-in body.dark block (light default, toggle persists via localStorage) —
+# it no longer uses @media (prefers-color-scheme: dark). The renderer no
+# longer rewrites anything; transform_style_block() asserts this exact block
+# is present in the example's <style> so palette drift fails loudly instead
+# of shipping silently-diverged output. Update this constant and the example
+# together.
 DARK_CLASS_BLOCK = """body.dark {
   --paper:#1a1815; --paper-tint:#221f1a; --paper-card:#211e19;
   --ink:#f0eee8; --ink-soft:#c9c3b6; --muted:#9a948a;
@@ -217,9 +215,13 @@ THEME_TOGGLE_JS = """
 
 
 def transform_style_block(style_block: str, extra_css: str = "") -> str:
-    """Strip the prefers-color-scheme media query and graft on opt-in dark + theme-toggle CSS."""
-    if DARK_MEDIA_BLOCK in style_block:
-        style_block = style_block.replace(DARK_MEDIA_BLOCK, DARK_CLASS_BLOCK, 1)
+    """Assert the example's opt-in dark block is intact, then graft on theme-toggle CSS."""
+    if DARK_CLASS_BLOCK not in style_block:
+        raise RuntimeError(
+            "examples/podcast.html no longer carries the body.dark block "
+            "bin/render-podcast expects — update DARK_CLASS_BLOCK and the "
+            "example together"
+        )
     # Inject the theme-toggle CSS (and any extra) just before </style>
     return style_block.replace("</style>", THEME_TOGGLE_CSS + extra_css + "\n</style>", 1)
 
@@ -511,7 +513,7 @@ body.inspector-hidden .chapter-rail { display: none; }
 </div>
 
 <footer class="colophon">
-  <span class="path">~/Reports/{esc(package_path.parent.parent.name)}/annotated-transcript.html · podcast shape · v2.6.3 · transcript view</span>
+  <span class="path">~/Reports/{esc(package_path.parent.parent.name)}/annotated-transcript.html · podcast shape · v{VERSION} · transcript view</span>
   <a href="podcast-at-a-glance.html">← back to briefing</a>
 </footer>
 
@@ -537,8 +539,8 @@ def render_briefing(package_path: Path, pkg: dict | None = None, style_block: st
     # Local overrides:
     # - Topbar brand: v2.2.0 example caps at 18rem with nowrap+ellipsis (made
     #   sense for fictional short title; cuts off real podcast titles awkwardly).
-    # - Theme: drop the prefers-color-scheme media query, switch to opt-in
-    #   body.dark + toggle button (light is default).
+    # - Theme: the example already authors opt-in body.dark (light default);
+    #   the renderer just adds the toggle button + its CSS/JS.
     # Briefing-only: inspector column appears at ≥1181px, so the toggle is dead
     # UI from 821–1180px too. (COMMON_OVERRIDES already hides it ≤820 for both views.)
     briefing_overrides = COMMON_OVERRIDES + "\n@media (max-width: 1180px) { #inspector-toggle { display: none; } }\n"
@@ -724,7 +726,7 @@ def render_briefing(package_path: Path, pkg: dict | None = None, style_block: st
 
 <!-- COLOPHON -->
 <footer class="colophon">
-  <span class="path">~/Reports/{esc(bundle_slug)}/podcast-at-a-glance.html · podcast shape · v2.6.3</span>
+  <span class="path">~/Reports/{esc(bundle_slug)}/podcast-at-a-glance.html · podcast shape · v{VERSION}</span>
   <a href="https://github.com/twidtwid/render-as-html" target="_blank" rel="noopener noreferrer">rendered with render-as-html</a>
 </footer>
 
