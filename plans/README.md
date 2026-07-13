@@ -14,7 +14,7 @@ All quality gates were green at planning time: `uv run --with pytest pytest test
 | 004 | render-podcast input hardening: clean error contract + href scheme allow-list + tests | P2 | S | — | DONE (e31a9ea) |
 | 005 | Perf harness honest metrics: references/ as the deferred load, slim committed baseline | P2 | S | — | DONE (382a6a9) |
 | 006 | Tighten feature-floor vocabulary, dead-control scan, hex matching in the QA gates | P2 | M | 005 | TODO |
-| 007 | SKILL.md §Design system progressive disclosure → references/design.md | P3 | M | 005 | TODO |
+| 007 | SKILL.md §Design system progressive disclosure → references/design.md | P3 | M | 005 | DONE (70dfe42; 1,004-tok reduction — plan projected ≥1.2k, in-scope content only weighed ~1,022; accepted) |
 | 008 | render-podcast ↔ canonical-example parity enforcement + VERSION constant | P3 | M | 001, 004 | TODO |
 | 009 | Single-source the HTML-check vocabulary (shared JS lib + JS/Python parity test) | P3 | M | 002, 006 | TODO |
 
