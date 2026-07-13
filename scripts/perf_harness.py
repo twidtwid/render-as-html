@@ -9,7 +9,9 @@ in CI, so this harness tracks the measurable *proxies* for it, plus a regression
 guard on the CLI and the publish-correctness invariants:
 
   1. skill_md      — SKILL.md token load by ## section + per-shape/per-primitive
-                     #### contract; always-needed vs on-demand-reference split.
+                     #### contract. SKILL.md is loaded in full on every invocation;
+                     the deferred load is references/*.md (see `references` below),
+                     fetched per-shape/per-primitive via the preflight READ.
   2. boilerplate   — % of each shape artifact's <style> that is boilerplate shared
                      across shapes (proxy for how much the agent re-derives).
   3. output_sizes  — byte size of every examples/*.html.
@@ -152,10 +154,10 @@ def _clean_path(p: Path) -> str:
 # 1. SKILL.md token load
 # ---------------------------------------------------------------------------
 
-# Sections that fire on every render regardless of shape (the always-loaded tax)
-# vs sections that are per-shape / per-primitive reference material a single run
-# only partially touches.
-_REFERENCE_SECTIONS = {"Page shapes (pick before designing)", "Canonical primitives (charts and tables)"}
+# Sections that carry the per-shape / per-primitive #### contracts (used only to
+# find the largest contracts within an always-loaded SKILL.md, not to split
+# always-loaded vs deferred — every section here loads on every invocation).
+_CONTRACT_SECTIONS = {"Page shapes (pick before designing)", "Canonical primitives (charts and tables)"}
 
 
 def analyze_skill() -> dict:
@@ -165,23 +167,18 @@ def analyze_skill() -> dict:
     # Split on top-level "## " headings (keep the heading with its body).
     parts = re.split(r"\n(?=## )", text)
     sections = []
-    always = reference = 0
     for part in parts:
         m = re.match(r"## (.+)", part)
         name = m.group(1).strip() if m else "(frontmatter)"
         t = tok(part)
         sections.append({"name": name, "tokens": t})
-        if name in _REFERENCE_SECTIONS:
-            reference += t
-        else:
-            always += t
 
-    # Per-#### contract sizes within the two reference sections (shapes + primitives).
+    # Per-#### contract sizes within the shape/primitive sections.
     contracts = []
     for part in parts:
         m = re.match(r"## (.+)", part)
         name = m.group(1).strip() if m else ""
-        if name not in _REFERENCE_SECTIONS:
+        if name not in _CONTRACT_SECTIONS:
             continue
         subs = re.split(r"\n(?=#### )", part)
         for sub in subs:
@@ -195,13 +192,23 @@ def analyze_skill() -> dict:
     return {
         "total_bytes": len(text.encode("utf-8")),
         "total_tokens": total,
-        "always_tokens": always,
-        "reference_tokens": reference,
-        "reference_pct": round(100 * reference / total, 1) if total else 0,
         "sections": sorted(sections, key=lambda s: -s["tokens"]),
         "contracts": sorted(contracts, key=lambda c: -c["tokens"]),
         "oversized_contracts": oversized,
     }
+
+
+# ---------------------------------------------------------------------------
+# 1b. references/ token load (the actual deferred, per-shape/primitive load)
+# ---------------------------------------------------------------------------
+
+def analyze_references() -> dict:
+    """references/*.md is fetched per-shape/per-primitive via the preflight READ —
+    this is the real on-demand load, as opposed to SKILL.md which loads in full
+    on every invocation."""
+    files = sorted((REPO / "references").glob("**/*.md"))
+    total = sum(tok(p.read_text(encoding="utf-8")) for p in files)
+    return {"total_tokens": total, "file_count": len(files)}
 
 
 # ---------------------------------------------------------------------------
@@ -636,6 +643,7 @@ def build_report(extra_fixture: Path | None = None) -> dict:
     return {
         "generated_at": _dt.datetime.now().isoformat(timespec="seconds"),
         "skill_md": analyze_skill(),
+        "references": analyze_references(),
         "boilerplate": analyze_boilerplate(),
         "output_sizes": analyze_sizes(),
         "cli": analyze_cli(extra_fixture),
@@ -683,6 +691,7 @@ def warnings(report: dict) -> list[str]:
 
 def to_markdown(report: dict, baseline: dict | None) -> str:
     s, bp, cli = report["skill_md"], report["boilerplate"], report["cli"]
+    refs = report["references"]
     prim, src = report["primitives"], report["source_document"]
     L = ["# render-as-html perf harness", f"_generated {report['generated_at']}_", ""]
     delta = ""
@@ -693,7 +702,8 @@ def to_markdown(report: dict, baseline: dict | None) -> str:
     L += [
         "## SKILL.md context load (per-invocation input tax)",
         f"- total: **{s['total_tokens']:,} tok** ({s['total_bytes']:,} B){delta}",
-        f"- always-loaded: {s['always_tokens']:,} tok · on-demand reference: {s['reference_tokens']:,} tok ({s['reference_pct']}%)",
+        f"- always-loaded (all of SKILL.md): {s['total_tokens']:,} tok",
+        f"- deferred to references/ (loaded per-shape/primitive on demand): {refs['total_tokens']:,} tok across {refs['file_count']} files",
         "- largest contracts:",
     ]
     L += [f"    - {c['contract']}: {c['tokens']} tok" for c in s["contracts"][:6]]
@@ -744,7 +754,8 @@ def main(argv=None) -> int:
 
     if args.update_baseline:
         BASELINE.parent.mkdir(parents=True, exist_ok=True)
-        BASELINE.write_text(json.dumps(report, indent=2) + "\n")
+        slim = {"skill_md": report["skill_md"], "references": report["references"]}
+        BASELINE.write_text(json.dumps(slim, indent=2) + "\n")
         print(f"baseline written: {BASELINE}")
         return 0
 
