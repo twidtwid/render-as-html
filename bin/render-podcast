@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 # Must match SKILL.md frontmatter — enforced by scripts/check-versions.mjs
-VERSION = "2.6.3"
+VERSION = "2.7.0"
 
 # Resolve the template path against the repo root (this script lives in <repo>/bin/).
 # Allows the CLI to work from any cwd and from any clone location, with an env

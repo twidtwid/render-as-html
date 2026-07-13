@@ -11,3 +11,6 @@ __pycache__/
 
 # Generated per-run perf reports (perf/baseline.json IS committed; reports are not)
 perf/reports/
+
+# Agent worktrees (harness-created, never ship)
+.claude/worktrees/
