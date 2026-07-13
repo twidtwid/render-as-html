@@ -151,3 +151,81 @@ def test_check_versions_clean():
     must carry the same string."""
     r = _run("scripts/check-versions.mjs")
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+# --- review-contracts.mjs -----------------------------------------------------
+
+def test_review_contracts_clean():
+    """The repo-wide contract/a11y linter must pass on the committed tree.
+    It scans index.html + examples/**/*.html."""
+    r = _run("scripts/review-contracts.mjs")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "review contracts passed" in r.stdout
+
+
+def test_review_contracts_nonzero_on_bad_tree(tmp_path):
+    """Negative case: review-contracts resolves everything from cwd, so run it
+    from a synthetic tree missing required files. It dies on the SKILL.md read
+    before reaching the per-file meta checks (uncaught ENOENT), so the contract
+    we can assert is "bad tree => nonzero exit" — which is what CI needs."""
+    (tmp_path / "examples").mkdir()
+    (tmp_path / "examples" / "primitives").mkdir()
+    (tmp_path / "index.html").write_text(
+        '<!doctype html><html><head><title>t</title></head><body></body></html>'
+    )
+    r = subprocess.run(
+        [NODE, str(REPO / "scripts" / "review-contracts.mjs")],
+        cwd=tmp_path, capture_output=True, text=True,
+    )
+    assert r.returncode == 1
+
+
+# --- lint-artifact.mjs gate scoping (artifact vs reference page) ---------------
+
+def test_lint_artifact_reference_flag_skips_feature_floor():
+    """Single-primitive reference pages showcase one feature in isolation;
+    --reference skips ONLY the >=3 feature floor. 02-bar.html must fail
+    without the flag and pass with it (all other checks still run)."""
+    without = _run("scripts/lint-artifact.mjs", "examples/primitives/02-bar.html")
+    assert without.returncode == 1
+    assert "HTML-native feature" in without.stdout
+    with_flag = _run("scripts/lint-artifact.mjs", "--reference", "examples/primitives/02-bar.html")
+    assert with_flag.returncode == 0, with_flag.stdout + with_flag.stderr
+
+
+_META_HEAD = (
+    '<!doctype html><html lang="en"><head>'
+    '<meta name="viewport" content="width=device-width, initial-scale=1">'
+    '<link rel="icon" href="data:,">'
+    '<meta name="description" content="x">'
+    '<meta property="og:title" content="x">'
+    '<meta property="og:description" content="x">'
+    '<meta property="og:type" content="article">'
+    '<meta property="og:site_name" content="x">'
+    '<meta name="twitter:card" content="summary">'
+    '</head><body>'
+)
+
+
+def test_lint_artifact_copy_prompt_trigger_needs_a_control(tmp_path):
+    """A prose mention of "copy as prompt" is not a control and must not demand
+    the BEGIN/END state delimiter; an actual <button>copy as prompt</button>
+    without the delimiter must still fail."""
+    prose = tmp_path / "prose.html"
+    prose.write_text(
+        _META_HEAD
+        + '<p>hits "copy as prompt," and pastes a paragraph</p>'
+        + '<svg></svg><input type="search"><table></table></body></html>'
+    )
+    r = _run("scripts/lint-artifact.mjs", str(prose))
+    assert r.returncode == 0, r.stdout + r.stderr
+
+    button = tmp_path / "button.html"
+    button.write_text(
+        _META_HEAD
+        + '<button>Copy as prompt</button>'
+        + '<svg></svg><input type="search"><table></table></body></html>'
+    )
+    r = _run("scripts/lint-artifact.mjs", str(button))
+    assert r.returncode == 1
+    assert "BEGIN/END ARTIFACT STATE DATA" in r.stdout

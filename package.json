@@ -1,0 +1,6 @@
+{
+  "name": "render-as-html",
+  "private": true,
+  "description": "Design-system skill for self-contained HTML artifacts. Node scripts are stdlib-only by design — no dependencies, no lockfile.",
+  "engines": { "node": ">=18" }
+}

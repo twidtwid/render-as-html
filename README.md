@@ -112,7 +112,7 @@ Five rules cut across all of them: one palette, subgrid for cross-row column ali
 
 ## Optimization guard
 
-Run `uv run python scripts/perf_harness.py --check` before changing the skill contract, examples, primitives, or `bin/render-podcast`. The harness times the podcast renderer on the small fixture, a scaled fixture, and a complex synthetic Lenny's Podcast fixture based on public episode metadata from ["How to build a company that withstands any era"](https://www.lennysnewsletter.com/p/how-to-build-a-company-that-withstands). It also audits primitive registration and the "HTML is the source document" contract.
+Run `make check` before changing the skill contract, examples, primitives, or `bin/render-podcast` — it runs the pytest suite, the perf harness, and the three Node linters; CI runs the same command on every push. The harness times the podcast renderer on the small fixture, a scaled fixture, and a complex synthetic Lenny's Podcast fixture based on public episode metadata from ["How to build a company that withstands any era"](https://www.lennysnewsletter.com/p/how-to-build-a-company-that-withstands). It also audits primitive registration and the "HTML is the source document" contract.
 
 Two companion linters cover the surfaces the harness can't: `node scripts/check-tokens.mjs` guards the palette against drift between `DESIGN.md`, `SKILL.md`, and `index.html`; and `node scripts/lint-artifact.mjs <file.html>` runs the mechanical pre-save checks against a freshly generated artifact at any path — the agent should run it on its own output before reporting done.
 

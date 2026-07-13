@@ -19,9 +19,10 @@ import fs from "node:fs";
 import vm from "node:vm";
 
 const argv = process.argv.slice(2);
-const opts = { longform: false, json: false, published: false, files: [] };
+const opts = { longform: false, reference: false, json: false, published: false, files: [] };
 for (const a of argv) {
   if (a === "--longform") opts.longform = true;
+  else if (a === "--reference") opts.reference = true;
   else if (a === "--json") opts.json = true;
   else if (a === "--published") opts.published = true;
   else if (a === "-h" || a === "--help") { usage(); process.exit(0); }
@@ -68,7 +69,8 @@ const EXTERNAL_RESOURCE = [
 
 function usage() {
   process.stderr.write(
-    "usage: node scripts/lint-artifact.mjs [--longform] [--published] [--json] <file.html> [more.html ...]\n",
+    "usage: node scripts/lint-artifact.mjs [--longform] [--reference] [--published] [--json] <file.html> [more.html ...]\n" +
+    "  --reference   single-primitive reference pages: skip the >=3 HTML-native feature floor (all other checks still run)\n",
   );
 }
 
@@ -126,12 +128,22 @@ function lintOne(file) {
   }
 
   // --- HTML-native feature floor (the load-bearing 'is this an artifact' test) ---
+  // --reference skips ONLY this check: single-primitive reference pages
+  // legitimately showcase one feature in isolation.
   const features = Object.entries(FEATURES).filter(([, rx]) => rx.test(html)).map(([k]) => k);
-  if (features.length < 3)
+  if (!opts.reference && features.length < 3)
     fails.push(`only ${features.length} HTML-native feature(s) detected (${features.join(", ") || "none"}); need ≥3 — this reads as styled prose, not an artifact`);
 
   // --- copy-as-prompt contract ---
-  const hasCopyPrompt = /(copyAsPrompt|copyPrompt|copyRecommendation|generateStuckPrompt|prompt-output|copy as prompt)/i.test(html);
+  // Trigger on the JS identifiers of a real control, or on "copy as prompt"
+  // INSIDE a <button> element (mirrors review-contracts.mjs's button-context
+  // alternative). A bare prose/<dd> mention of the phrase is not a control
+  // and must not demand the state delimiter.
+  const buttonSaysCopyPrompt = [...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/gi)]
+    .some((m) => /copy as prompt/i.test(m[1]));
+  const hasCopyPrompt =
+    /(copyAsPrompt|copyPrompt|copyRecommendation|generateStuckPrompt|prompt-output)/i.test(html) ||
+    buttonSaysCopyPrompt;
   if (/<artifact\.html>/.test(html))
     fails.push("copy-as-prompt names the placeholder <artifact.html> instead of the real file path");
   if (hasCopyPrompt && !/BEGIN ARTIFACT STATE DATA/.test(html))
