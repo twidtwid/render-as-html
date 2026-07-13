@@ -39,6 +39,7 @@ Files and their version sites (all verified at commit `e0278cb`):
 - `examples/podcast-transcript.html:600` — `<span class="path">~/Reports/tests/annotated-transcript.html · podcast shape · v2.6.2 · transcript view</span>`
 - `bin/render-podcast:503` — f-string colophon `… · podcast shape · v2.6.2 · transcript view`
 - `bin/render-podcast:710` — f-string colophon `… · podcast shape · v2.6.2`
+- `examples/primitives.html:309` — footer `<span>examples/primitives.html · v2.6.2</span>` (added during execution: the original plan enumerated ten sites; the executor's STOP correctly surfaced this eleventh)
 
 Doc drift sites:
 
@@ -83,7 +84,7 @@ Recent release-note prose already exists in commit subjects (`git log --oneline 
 ## Scope
 
 **In scope** (the only files you should modify/create):
-- `SKILL.md` (line 3 only), `README.md` (line 7 + one new bullet), `index.html` (3 version/date strings), `examples/index.html` (lines 82 and 84), `examples/podcast.html` (line 624), `examples/podcast-transcript.html` (line 600), `bin/render-podcast` (2 version strings)
+- `SKILL.md` (line 3 only), `README.md` (line 7 + one new bullet), `index.html` (3 version/date strings), `examples/index.html` (lines 82 and 84), `examples/podcast.html` (line 624), `examples/podcast-transcript.html` (line 600), `examples/primitives.html` (line 309, footer version only), `bin/render-podcast` (2 version strings)
 - `CHANGELOG.md` (create)
 - `scripts/check-versions.mjs` (create)
 - `tests/test_linters.py` (append one test)
@@ -109,7 +110,7 @@ Stdlib-only Node ESM, modeled on `scripts/check-tokens.mjs` (same repo-root reso
 
 1. Read `SKILL.md`, extract the canonical version from the frontmatter line matching `/^version:\s*(\d+\.\d+\.\d+)\s*$/m`. If absent, print an error and exit 2.
 2. For each of these files, assert the file content includes the canonical version string (as `2.6.3` or `v2.6.3` — search for the bare `X.Y.Z` substring):
-   `README.md`, `index.html`, `examples/index.html`, `examples/podcast.html`, `examples/podcast-transcript.html`, `bin/render-podcast`.
+   `README.md`, `index.html`, `examples/index.html`, `examples/podcast.html`, `examples/podcast-transcript.html`, `examples/primitives.html`, `bin/render-podcast`.
 3. Additionally assert **no stale version remains**: for each file above plus `SKILL.md`, flag any regex match of `/\bv?\d+\.\d+\.\d+\b/` that looks like a render-as-html version (matches `2.` major) and differs from canonical. Exclude URLs (skip matches inside `http…` substrings) — `index.html` and examples contain external links but no other dotted versions at plan time; if this exclusion proves too fiddly, checking "canonical present in each file + no `2.6.2` anywhere once bumped" is an acceptable simpler implementation, as long as the checker fails when any listed file lacks the canonical version.
 4. Print per-file OK/STALE lines; exit 1 on any failure, else print `check-versions: clean.`
 
