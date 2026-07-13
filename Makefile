@@ -22,6 +22,10 @@ versions:
 contracts:
 	node scripts/review-contracts.mjs
 
+# Shape artifacts get the full gate (incl. the >=3 HTML-native feature floor).
+# examples/index.html and examples/primitives.html are gallery/reference surfaces
+# (static link lists, no interactive markup) — they lint with --reference, which
+# skips ONLY the feature floor, like examples/primitives/*.html.
 lint-examples:
-	node scripts/lint-artifact.mjs index.html examples/*.html
-	node scripts/lint-artifact.mjs --reference examples/primitives/*.html
+	node scripts/lint-artifact.mjs index.html $(filter-out examples/index.html examples/primitives.html,$(wildcard examples/*.html))
+	node scripts/lint-artifact.mjs --reference examples/index.html examples/primitives.html examples/primitives/*.html

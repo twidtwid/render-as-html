@@ -24,7 +24,9 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const strict = process.argv.includes("--strict");
 
 const read = (rel) => fs.readFileSync(path.join(REPO, rel), "utf8");
-const hexes = (text) => new Set((text.match(/#[0-9a-fA-F]{6}\b/g) || []).map((h) => h.toLowerCase()));
+// Matches shorthand (#fff), shorthand+alpha (#ffff), 6-digit, and 8-digit alpha
+// hexes — a 6-digit-only pattern let non-6-digit tokens drift invisibly.
+const hexes = (text) => new Set((text.match(/#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/g) || []).map((h) => h.toLowerCase()));
 
 // --- canonical: hexes inside DESIGN.md's frontmatter (between the first two ---) ---
 const design = read("DESIGN.md");

@@ -229,3 +229,53 @@ def test_lint_artifact_copy_prompt_trigger_needs_a_control(tmp_path):
     r = _run("scripts/lint-artifact.mjs", str(button))
     assert r.returncode == 1
     assert "BEGIN/END ARTIFACT STATE DATA" in r.stdout
+
+
+# --- tightened feature vocabulary: markup/behavior only, never prose words -----
+
+def test_lint_artifact_prose_mentions_dont_count(tmp_path):
+    """The feature floor is the load-bearing "is this a real artifact" test, so a
+    detector must match MARKUP or BEHAVIORAL JS — never a prose word. This page
+    says "search", "filter", "toggle", "sort", "highlight" and declares a CSS
+    filter:, but has zero interactive markup. Under the old word-matching
+    vocabulary it cleared the floor with 5 phantom features; it must now FAIL."""
+    prose = tmp_path / "phantom.html"
+    prose.write_text(
+        _META_HEAD
+        + "<style>p{filter:blur(0)}</style>"
+        + "<p>You can search the archive, filter by team, toggle dark mode, "
+        + "sort the sorted results, and we highlight the important bits.</p>"
+        + "</body></html>"
+    )
+    r = _run("scripts/lint-artifact.mjs", str(prose))
+    assert r.returncode == 1
+    assert "HTML-native feature" in r.stdout
+
+
+def test_lint_artifact_catches_compound_selector_dead_control(tmp_path):
+    """querySelector('#a .b') — the old pattern's closing-quote anchor made the
+    whole call invisible, so a dead compound reference shipped unchecked."""
+    bad = tmp_path / "compound.html"
+    bad.write_text(
+        _META_HEAD
+        + '<svg></svg><input type="search"><table></table>'
+        + "<script>document.querySelector('#ghost .row');</script>"
+        + "</body></html>"
+    )
+    r = _run("scripts/lint-artifact.mjs", str(bad))
+    assert r.returncode == 1
+    assert "#ghost" in r.stdout
+
+
+def test_lint_artifact_catches_querySelectorAll_dead_control(tmp_path):
+    """querySelectorAll was not scanned at all by the old pattern."""
+    bad = tmp_path / "qsa.html"
+    bad.write_text(
+        _META_HEAD
+        + '<svg></svg><input type="search"><table></table>'
+        + "<script>document.querySelectorAll('#phantom');</script>"
+        + "</body></html>"
+    )
+    r = _run("scripts/lint-artifact.mjs", str(bad))
+    assert r.returncode == 1
+    assert "#phantom" in r.stdout

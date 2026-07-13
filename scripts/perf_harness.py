@@ -557,17 +557,17 @@ _REQUIRED_META = [
 ]
 
 _HTML_NATIVE_FEATURES = {
-    "search": r"type=[\"']search[\"']|\bsearch\b",
+    "search": r"type=[\"']search[\"']",
     "inline_svg": r"<svg\b",
     "table": r"<table\b",
     "copy_as_prompt": r"copy as prompt|copyPrompt|prompt-output",
-    "sorting": r"\bsort(?:able|ing)?\b|data-sort",
-    "filtering": r"\bfilter(?:ed|ing)?\b|chip\b",
+    "sorting": r"data-sort|aria-sort=",
+    "filtering": r"data-filter|class=[\"'][^\"']*\bchip\b",
     "local_storage": r"localStorage",
     "drag": r"\bdraggable\b|dragstart|dragover|drop\(",
-    "toggle": r"aria-pressed|type=[\"']checkbox[\"']|\btoggle\b",
+    "toggle": r"aria-pressed|type=[\"']checkbox[\"']",
     "textarea": r"<textarea\b",
-    "cross_highlight": r"highlight|scrollIntoView|IntersectionObserver|scroll-spy|scrollspy",
+    "cross_highlight": r"scrollIntoView|IntersectionObserver|classList\.(?:add|toggle)\(",
 }
 
 

@@ -43,17 +43,17 @@ const REQUIRED_META = [
 
 // Same feature vocabulary as perf_harness.py's _HTML_NATIVE_FEATURES.
 const FEATURES = {
-  search: /type=["']search["']|\bsearch\b/i,
+  search: /type=["']search["']/i,
   inline_svg: /<svg\b/i,
   table: /<table\b/i,
   copy_as_prompt: /copy as prompt|copyPrompt|prompt-output/i,
-  sorting: /\bsort(?:able|ing)?\b|data-sort/i,
-  filtering: /\bfilter(?:ed|ing)?\b|chip\b/i,
+  sorting: /data-sort|aria-sort=/i,
+  filtering: /data-filter|class=["'][^"']*\bchip\b/i,
   local_storage: /localStorage/i,
   drag: /\bdraggable\b|dragstart|dragover|drop\(/i,
-  toggle: /aria-pressed|type=["']checkbox["']|\btoggle\b/i,
+  toggle: /aria-pressed|type=["']checkbox["']/i,
   textarea: /<textarea\b/i,
-  cross_highlight: /highlight|scrollIntoView|IntersectionObserver|scroll-spy|scrollspy/i,
+  cross_highlight: /scrollIntoView|IntersectionObserver|classList\.(?:add|toggle)\(/i,
 };
 
 // Resource-LOADING external refs only. Anchor href="https://" is navigation, allowed.
@@ -185,10 +185,13 @@ function lintOne(file) {
   });
 
   // --- dead-control guard: every getElementById/querySelector('#id') must resolve ---
+  // Covers querySelectorAll and compound selectors whose LEADING token is an id
+  // (no closing-quote anchor, so '#chart .bar' still yields `chart`).
+  // Dynamic ids — getElementById(varName) — remain unverifiable by a static scan.
   const idAttrs = new Set([...html.matchAll(/\bid\s*=\s*["']([^"']+)["']/g)].map(m => m[1]));
   const referenced = new Set();
   for (const m of scriptSrc.matchAll(/getElementById\(\s*['"]([^'"]+)['"]\s*\)/g)) referenced.add(m[1]);
-  for (const m of scriptSrc.matchAll(/querySelector\(\s*['"]#([A-Za-z][\w-]*)['"]\s*\)/g)) referenced.add(m[1]);
+  for (const m of scriptSrc.matchAll(/querySelector(?:All)?\(\s*['"]#([A-Za-z][\w-]*)/g)) referenced.add(m[1]);
   for (const id of referenced)
     if (!idAttrs.has(id)) fails.push(`JS references #${id} but no element has id="${id}" → that control is wired to nothing (dead)`);
 
