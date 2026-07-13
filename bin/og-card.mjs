@@ -9,6 +9,12 @@
 // Writes <artifact-dir>/og-card.png (report-portal auto-detects this sibling).
 // With --inject, also rewrites the artifact <head>: adds og:image=og-card.png,
 // twitter:image=og-card.png, and upgrades twitter:card to summary_large_image.
+//
+// Browser discovery: set OG_CARD_CHROME to a browser binary to override the
+// built-in candidate probe (useful off macOS or in CI).
+//
+// --no-screenshot: for tests/CI — skips browser resolution and the screenshot
+// entirely but still performs --inject. Not part of the publish contract.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -17,6 +23,7 @@ import os from 'node:os';
 
 const file = process.argv[2];
 const inject = process.argv.includes('--inject');
+const noScreenshot = process.argv.includes('--no-screenshot');
 if (!file) { console.error('usage: og-card.mjs <artifact.html> [--inject]'); process.exit(2); }
 let html = fs.readFileSync(file, 'utf8');
 const pick = (rx, d = '') => (html.match(rx)?.[1] ?? d).trim();
@@ -46,25 +53,78 @@ p{font-size:30px;line-height:1.4;color:${muted};max-width:1000px}
 <div class="foot">${esc(desc).slice(0, 120)}</div>
 </body></html>`;
 
-const tmp = path.join(os.tmpdir(), 'og-card-' + path.basename(file) + '.html');
-fs.writeFileSync(tmp, card);
 // Per-artifact name so a shared reports dir doesn't collide (report-portal
 // copies this to og-card.png inside each published slug dir).
 const stem = path.basename(file).replace(/\.html?$/i, '');
 const out = path.join(path.dirname(path.resolve(file)), `${stem}.og.png`);
-const chrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-execFileSync(chrome, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
-  '--window-size=1200,630', `--screenshot=${out}`, `file://${tmp}`], { stdio: 'ignore' });
-fs.unlinkSync(tmp);
-console.log('wrote ' + out);
+
+function findChrome() {
+  if (process.env.OG_CARD_CHROME) return process.env.OG_CARD_CHROME;
+  const candidates = [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+    '/usr/bin/google-chrome',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  const pathDirs = (process.env.PATH || '').split(path.delimiter);
+  for (const bin of ['google-chrome', 'chromium', 'chromium-browser']) {
+    for (const dir of pathDirs) {
+      const full = path.join(dir, bin);
+      if (fs.existsSync(full)) return full;
+    }
+  }
+  return null;
+}
+
+if (!noScreenshot) {
+  const chrome = findChrome();
+  if (!chrome) {
+    console.error('og-card: no Chrome/Chromium found — set OG_CARD_CHROME to a browser binary');
+    process.exit(1);
+  }
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'og-card-'));
+  const tmp = path.join(tmpDir, path.basename(file) + '.html');
+  fs.writeFileSync(tmp, card);
+  try {
+    execFileSync(chrome, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--force-device-scale-factor=1',
+      '--window-size=1200,630', `--screenshot=${out}`, `file://${tmp}`], { stdio: 'ignore' });
+    console.log('wrote ' + out);
+  } catch (e) {
+    console.error('og-card: screenshot failed: ' + e.message);
+    process.exitCode = 1;
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+  if (process.exitCode === 1) process.exit(1);
+}
 
 if (inject) {
   if (!/property=["']og:image["']/i.test(html)) {
     const tags = `<meta property="og:image" content="og-card.png">\n<meta name="twitter:image" content="og-card.png">\n`;
+    const before = html;
     // upgrade twitter:card to large image
     html = html.replace(/<meta\s+name=["']twitter:card["']\s+content=["'][^"']*["']\s*>/i,
       '<meta name="twitter:card" content="summary_large_image">');
     html = html.replace(/(<meta\s+name=["']twitter:card["'][^>]*>)/i, `$1\n${tags.trim()}`);
+    if (html === before) {
+      // No twitter:card tag existed, so both replaces were no-ops. Fall back
+      // to inserting a fresh twitter:card plus the image tags right after
+      // </title> (or after <head…> if no <title> is present).
+      const fallback = `<meta name="twitter:card" content="summary_large_image">\n${tags.trim()}`;
+      if (/<\/title>/i.test(html)) {
+        html = html.replace(/<\/title>/i, `</title>\n${fallback}`);
+      } else if (/<head[^>]*>/i.test(html)) {
+        html = html.replace(/<head[^>]*>/i, `$&\n${fallback}`);
+      } else {
+        console.error('og-card: could not find </title> or <head> to inject into — aborting');
+        process.exit(1);
+      }
+    }
     fs.writeFileSync(file, html);
     console.log('injected og:image + twitter:image into ' + path.basename(file) + '; twitter:card → summary_large_image');
   } else {
