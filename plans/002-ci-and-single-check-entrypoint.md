@@ -55,7 +55,8 @@ The repo ships six working quality gates — pytest, `perf_harness.py --check`, 
 - `.github/workflows/ci.yml` (create)
 - `Makefile` (create)
 - `package.json` (create)
-- `tests/test_linters.py` (append review-contracts tests)
+- `scripts/lint-artifact.mjs` (two surgical changes authorized after the step-1 STOP — see step 1a)
+- `tests/test_linters.py` (append review-contracts + lint-adjustment tests)
 - `README.md` (point the "Optimization guard" section at `make check`)
 - `plans/README.md` (status row)
 
@@ -73,13 +74,18 @@ The repo ships six working quality gates — pytest, `perf_harness.py --check`, 
 
 ## Steps
 
-### Step 1: Establish that all examples pass lint-artifact TODAY
+### Step 1: Establish the lint-artifact baseline over committed examples
 
 Run: `node scripts/lint-artifact.mjs index.html examples/*.html examples/primitives/*.html`
 
-Expected: every file PASS (24 files: index.html + 13 in examples/ + 10 in examples/primitives/ — note `examples/index.html` is included by the glob). Warnings (`⚠`) are fine; any `✗ FAIL` on a committed file is a **STOP condition** — report which file/check fails and go no further, because baking a red gate into CI would block all future merges on a pre-existing issue the operator hasn't decided on.
+**Execution finding (first dispatch, 2026-07-12):** 6 of 25 files fail on the committed tree. The reviewer investigated and ruled both failure classes gate defects, not content defects: (a) `examples/podcast.html:521` and `examples/primitives.html:247,264` merely *mention* "copy as prompt" in prose/contract text — the linter's `hasCopyPrompt` trigger matches bare prose and then demands the BEGIN/END state delimiter of a control that doesn't exist; (b) `examples/primitives/{02-bar,03-sparkline,04-stacked-bar,05-topology}.html` fail the ≥3 feature floor, which is scoped to full artifacts — the perf harness's own floor check deliberately applies only to shape examples (`scripts/perf_harness.py:616-621`), so single-primitive reference pages were never meant to meet it. Step 1a applies the authorized gate adjustments.
 
-**Verify**: output ends `24 file(s) · 24 pass · 0 fail`, exit 0.
+### Step 1a: Two surgical adjustments to `scripts/lint-artifact.mjs` (authorized)
+
+1. **Tighten the copy-as-prompt trigger** (line ~134). Replace the bare-prose alternative with control-context matching, mirroring `review-contracts.mjs:132`'s approach: match identifiers (`copyAsPrompt|copyPrompt|copyRecommendation|generateStuckPrompt|prompt-output`) or "copy as prompt" only inside a `<button…>…</button>` element — a prose `<p>`/`<dd>` mention must NOT trigger the delimiter requirement.
+2. **Add a `--reference` flag** (parsed like `--longform`) that skips ONLY the ≥3 feature-floor check; every other check (meta, favicon, self-containment, copy-as-prompt, clipboard guard, dead-script, dead-control, SVG sizing) still runs. Document it in `usage()` as "single-primitive reference pages".
+
+**Verify**: `node scripts/lint-artifact.mjs index.html examples/*.html` → `15 file(s) · 15 pass · 0 fail`; `node scripts/lint-artifact.mjs --reference examples/primitives/*.html` → `10 file(s) · 10 pass · 0 fail`. Also confirm the placeholder/delimiter negative tests still pass: `uv run --with pytest pytest tests/test_linters.py -q`.
 
 ### Step 2: Create `Makefile`
 
