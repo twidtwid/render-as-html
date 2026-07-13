@@ -4,7 +4,7 @@
 >
 > Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935).
 
-**Version 2.6.2** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
+**Version 2.6.3** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
 
 ## Install
 
@@ -64,6 +64,7 @@ The two non-obvious moves: the per-shape and per-primitive contracts load **on d
 - `index.html` — the design system as a single file (the live link above).
 - `examples/` — thirteen self-contained artifacts: one per page shape (now including `podcast-transcript.html` for the transcript view), plus a canonical-primitives reference. Browse the [example gallery](https://twidtwid.github.io/render-as-html/examples/).
 - `bin/render-podcast` — Python CLI that consumes podcastify's `episode.package.json` and writes a `podcast-at-a-glance.html` + `annotated-transcript.html` pair matching the canonical examples. Usage: `bin/render-podcast <package.json> [-o OUT_DIR]`.
+- `bin/og-card.mjs` — renders a 1200×630 social-card PNG from an artifact's own title/description/design tokens via headless Chrome, and with `--inject` writes `og:image`/`twitter:image` into the artifact `<head>` (`node bin/og-card.mjs <artifact.html> --inject`). Required by the publish flow in `SKILL.md` step 8.
 - `tests/` — pytest suite (`uv run --with pytest pytest tests/ -v`) plus the fixture both canonical podcast examples render from.
 - `scripts/perf_harness.py` — optimization harness for skill-token load, renderer speed, primitive coverage, and HTML source-document invariants (`uv run python scripts/perf_harness.py --check`).
 - `scripts/lint-artifact.mjs` — runs the mechanical subset of the SKILL pre-save checklist against a *generated* artifact at any path (`node scripts/lint-artifact.mjs <file.html>`). Turns "enforced by me" into "enforced by a tool".

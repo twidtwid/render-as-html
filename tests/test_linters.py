@@ -141,3 +141,13 @@ def test_lint_artifact_longform_floor(tmp_path):
     flagged = _run("scripts/lint-artifact.mjs", "--longform", str(small))
     assert flagged.returncode == 1
     assert "long-form floor" in flagged.stdout
+
+
+# --- check-versions.mjs -------------------------------------------------------
+
+def test_check_versions_clean():
+    """SKILL.md frontmatter is the canonical version; every release surface
+    (README, index.html, gallery + podcast example footers, bin/render-podcast)
+    must carry the same string."""
+    r = _run("scripts/check-versions.mjs")
+    assert r.returncode == 0, r.stdout + r.stderr
