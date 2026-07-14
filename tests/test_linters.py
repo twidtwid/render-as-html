@@ -323,3 +323,44 @@ def test_js_python_vocabulary_parity():
     for key, py_pattern in h._HTML_NATIVE_FEATURES.items():
         assert normalize(py_pattern) == normalize(js["features"][key]), (
             f"feature '{key}' diverged:\n  py: {py_pattern}\n  js: {js['features'][key]}")
+
+
+# --- the gallery pages are artifacts, not static lists -------------------------
+
+def test_gallery_pages_pass_the_full_artifact_gate():
+    """examples/index.html and examples/primitives.html used to clear the >=3
+    feature floor on phantom prose matches ("search"/"filter"/"toggle" as WORDS)
+    while containing zero interactive markup. They now carry real controls —
+    live search, register/kind chips, cross-highlighting — and must pass the
+    FULL gate (no --reference escape hatch)."""
+    r = _run("scripts/lint-artifact.mjs", "examples/index.html", "examples/primitives.html")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert r.stdout.count("PASS") == 2
+    # Each must clear the floor on real, markup-anchored detectors.
+    for feat in ("search", "filtering", "toggle", "cross_highlight"):
+        assert feat in r.stdout, f"{feat} should be detected in the rebuilt galleries"
+
+
+def test_review_contracts_copy_prompt_trigger_is_per_button(tmp_path):
+    """review-contracts.mjs used a `<button[\\s\\S]*?copy as prompt` regex that
+    spanned unrelated elements: any button anywhere + a prose mention of the
+    phrase later on the page falsely demanded the BEGIN/END state delimiter.
+    The trigger is now a per-button scan (matching lint-artifact.mjs)."""
+    tree = tmp_path / "examples"
+    (tree / "primitives").mkdir(parents=True)
+    page = (
+        _META_HEAD
+        + '<button type="button">Clear</button>'          # an unrelated control
+        + '<p>the contract requires <code>copy as prompt</code> with a fallback</p>'  # prose only
+        + '<svg></svg><table></table><input type="search" aria-label="s">'
+        + '</body></html>'
+    )
+    (tmp_path / "index.html").write_text(page)
+    (tmp_path / "examples" / "runbook.html").write_text(page)
+    r = subprocess.run(
+        [NODE, str(REPO / "scripts" / "review-contracts.mjs")],
+        cwd=tmp_path, capture_output=True, text=True,
+    )
+    assert "copy-as-prompt output must delimit" not in (r.stdout + r.stderr), (
+        "a prose mention after an unrelated button must not trigger the delimiter rule"
+    )

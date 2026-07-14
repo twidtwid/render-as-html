@@ -2,6 +2,20 @@
 
 Newest first. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 2.7.1 — 2026-07-14
+
+The gallery eats its own cooking.
+
+v2.7.0's tightened feature floor exposed something embarrassing: `examples/index.html` and `examples/primitives.html` — the two pages that *showcase* interactive artifacts — contained zero `<script>`, `<button>`, or `<input>` elements. They had been clearing the "≥3 HTML-native features" bar purely because the words "search," "filter," and "toggle" appeared in their prose. They were reclassified as reference surfaces as a stopgap. Now they're actual instruments:
+
+- **Example gallery**: live search across every shape/title/description with in-place `<mark>` highlighting, multi-select register chips (reading / instrument / briefing / sub-pattern / reference), a live count that always reports against all 12, a visible clear on every filter, and an empty state. 0 → 4 real HTML-native features.
+- **Primitives reference**: search across all ten contracts (pick-when / required / interaction / avoid), chart-vs-table chips, a scroll-spy that marks the primitive you're reading in the contents, live count, visible clear, empty state. 1 → 5 real features.
+- **The `--reference` carve-out is gone for both.** Every page under `examples/` now faces the full artifact gate; only the single-primitive frames in `examples/primitives/` (which showcase one feature in isolation by design) still skip the floor. A test locks this in.
+
+Also fixed: `review-contracts.mjs`'s copy-as-prompt trigger used a regex that spanned unrelated elements (`<button…[anything]…copy as prompt…</button>`), so any button plus a prose mention of the phrase anywhere later on the page falsely demanded the state delimiter. It's now a per-button scan, matching `lint-artifact.mjs`. This surfaced the moment the primitives page gained its first button — the fix ships with a regression test. Stale "Nine canonical primitives" in that page's meta description corrected to Ten.
+
+Every control was verified by driving the real pages in a headless browser, not just by passing the linter.
+
 ## 2.7.0 — 2026-07-13
 
 Eight audit-driven improvement plans, executed and reviewed. Nothing in the artifact contract changed; the quality gates around it got materially stricter, and the always-loaded context got smaller.

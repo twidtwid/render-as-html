@@ -54,6 +54,41 @@
     font-family:var(--mono);font-size:.72rem;color:var(--muted);
     display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
   footer a{color:var(--accent);text-decoration:none}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+  /* --- filter bar --- */
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin:0 0 1.4rem}
+  .search-wrap{position:relative;flex:1 1 16rem;min-width:12rem}
+  input[type=search]{width:100%;font-family:var(--sans);font-size:16px;color:var(--ink);
+    background:var(--paper-card);border:1px solid var(--rule);border-radius:6px;
+    padding:.5rem 2rem .5rem .7rem;-webkit-appearance:none;appearance:none}
+  input[type=search]:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  input[type=search]::-webkit-search-cancel-button{display:none}
+  #clear-search{position:absolute;right:.3rem;top:50%;transform:translateY(-50%);
+    display:none;background:none;border:0;cursor:pointer;color:var(--muted);
+    font-family:var(--mono);font-size:1rem;line-height:1;padding:.3rem .4rem;min-width:32px;min-height:32px}
+  #clear-search:hover{color:var(--accent)}
+  body.searching #clear-search{display:block}
+  .chips{display:flex;flex-wrap:wrap;gap:.4rem}
+  .chip{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--ink-soft);background:var(--paper-card);border:1px solid var(--rule);
+    border-radius:999px;padding:.42rem .7rem;cursor:pointer;min-height:32px}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .chip[aria-pressed=true]{background:var(--accent-2);border-color:var(--accent-2);color:var(--ink);font-weight:700}
+  #clear-filters{display:none;font-family:var(--mono);font-size:.7rem;color:var(--accent);
+    background:none;border:0;cursor:pointer;padding:.42rem .3rem;min-height:32px}
+  body.filtered #clear-filters{display:inline-block}
+  .count{font-family:var(--mono);font-size:.74rem;color:var(--muted);margin:0 0 1rem}
+  .count b{color:var(--accent-2)}
+  a.card[hidden]{display:none}
+  mark{background:var(--accent-2);color:var(--ink);border-radius:2px;padding:0 .1em}
+  .empty{display:none;font-family:var(--sans);font-size:.95rem;color:var(--ink-soft);
+    border:1px dashed var(--rule);border-radius:10px;padding:1.6rem;text-align:center}
+  body.no-results .empty{display:block}
+  body.no-results .grid{display:none}
+
   @media (max-width:768px){
     a.card{min-height:44px}
     .wrap{padding:2.5rem 1.1rem 4rem}
@@ -67,21 +102,127 @@
   <p class="lede">Twelve self-contained artifacts — one per document type the skill produces, plus a canonical-primitives reference — and every one is about render-as-html itself or <a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">@trq212's "The Unreasonable Effectiveness of HTML."</a> A gallery that documents the system by being built in it.</p>
   <p class="meta">12 examples · <b>self-contained</b>, zero external requests · WCAG-AA · mobile-tested</p>
   <hr>
-  <div class="grid">
-    <a class="card" href="dashboard.html"><span class="tag">dashboard · instrument</span><div class="ct">Shape coverage</div><p class="cd">The skill's own 9 shapes + 5 sub-patterns as a dense table — register split, dimensions, passes-the-bar — with live filter, sortable headers, a register donut, copy-as-prompt.</p></a>
-    <a class="card" href="document.html"><span class="tag">document · reading</span><div class="ct">The Unreasonable Effectiveness of HTML</div><p class="cd">A briefing on @trq212's thesis and how render-as-html operationalizes it — sticky TOC, open footnotes, a sortable shapes table, and a live "is your doc an instrument?" scorer.</p></a>
-    <a class="card" href="timeline.html"><span class="tag">timeline · reading</span><div class="ct">From idea to one truth — a build log</div><p class="cd">render-as-html's real idea→ship history on a date spine: live event search, tag-chip filters, week cluster-collapse, per-event copy-as-quote.</p></a>
-    <a class="card" href="runbook.html"><span class="tag">runbook · instrument</span><div class="ct">Author an artifact that passes the bar</div><p class="cd">The procedure for producing a good render-as-html artifact: sticky progress, steps expanded by default, per-block code copy, a redesign branch, an "I'm stuck" prompt.</p></a>
-    <a class="card" href="comparison.html"><span class="tag">comparison · instrument</span><div class="ct">Where should the artifact live?</div><p class="cd">The article's core argument as a matrix — HTML vs PDF vs Notion vs Doc vs Markdown — items as columns, live weight tuning, a must-have toggle, copy-as-recommendation.</p></a>
-    <a class="card" href="network-map.html"><span class="tag">network-map · instrument</span><div class="ct">The render-as-html concept graph</div><p class="cd">Shapes, sub-patterns, principles, and lineage (the article, html-anything) as an SVG graph: click-to-focus, hover-edge-highlight, search-to-focus, cluster toggles.</p></a>
-    <a class="card" href="triage-board.html"><span class="tag">triage-board · instrument</span><div class="ct">Roadmap triage</div><p class="cd">Where the skill goes next — candidate improvements dragged across Now / Next / Later / Cut (with a touch move-picker), live counts, rationale notes, copy-as-prompt.</p></a>
-    <a class="card" href="developer.html"><span class="tag">developer · instrument</span><div class="ct">PR: the one-truth design system</div><p class="cd">An annotated-diff + severity-findings writeup of render-as-html's real PR — files-changed nav, local syntax highlighting, click-to-copy findings.</p></a>
-    <a class="card" href="editorial.html"><span class="tag">editorial · reading</span><div class="ct">Why the file you keep should be pokeable</div><p class="cd">An essay that demonstrates its own thesis: take a position on each claim, watch it compose a round-trip prompt live, then hit "flatten" to see what dies.</p></a>
-    <a class="card" href="podcast.html"><span class="tag">podcast · briefing</span><div class="ct">The instrument you keep — fictional episode</div><p class="cd">An imagined podcast about render-as-html itself, rendered as a briefing — bottom line, takeaways, claims, term inspector, hide-sidebar focus mode, independently scrollable rails. Consumes the podcastextract JSON contract.</p></a>
-    <a class="card" href="checklist.html"><span class="tag">checklist · sub-pattern</span><div class="ct">Pre-ship review</div><p class="cd">render-as-html's own pre-ship criteria — star + note per item, sticky live count, batch copy-as-prompt with a visible textarea fallback.</p></a>
-    <a class="card" href="primitives.html"><span class="tag">primitives · reference</span><div class="ct">Ten canonical chart and table primitives</div><p class="cd">The bones the page shapes are built on — donut, ranked bar, sparkline cluster, stacked bar, topology, dense table, comparison matrix, annotated diff, log stream, scatter — each with contract, when-to-pick, and anti-patterns.</p></a>
+
+  <div class="controls">
+    <div class="search-wrap">
+      <label class="sr-only" for="gallery-search">Search the examples</label>
+      <input type="search" id="gallery-search" placeholder="Search shapes, titles, features…" autocomplete="off">
+      <button id="clear-search" type="button" aria-label="Clear search" title="Clear search">×</button>
+    </div>
+    <div class="chips" role="group" aria-label="Filter by register">
+      <button class="chip" type="button" data-filter="reading" aria-pressed="false">reading</button>
+      <button class="chip" type="button" data-filter="instrument" aria-pressed="false">instrument</button>
+      <button class="chip" type="button" data-filter="briefing" aria-pressed="false">briefing</button>
+      <button class="chip" type="button" data-filter="sub-pattern" aria-pressed="false">sub-pattern</button>
+      <button class="chip" type="button" data-filter="reference" aria-pressed="false">reference</button>
+    </div>
+    <button id="clear-filters" type="button">× clear all</button>
   </div>
-  <footer><span>examples/index.html · v2.7.0</span><span>render-as-html · <a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">the unreasonable effectiveness of HTML</a></span></footer>
+  <p class="count" id="count"><b>12</b> of 12 examples</p>
+
+  <div class="grid">
+    <a class="card" data-shape="dashboard" data-register="instrument" href="dashboard.html"><span class="tag">dashboard · instrument</span><div class="ct">Shape coverage</div><p class="cd">The skill's own 9 shapes + 5 sub-patterns as a dense table — register split, dimensions, passes-the-bar — with live filter, sortable headers, a register donut, copy-as-prompt.</p></a>
+    <a class="card" data-shape="document" data-register="reading" href="document.html"><span class="tag">document · reading</span><div class="ct">The Unreasonable Effectiveness of HTML</div><p class="cd">A briefing on @trq212's thesis and how render-as-html operationalizes it — sticky TOC, open footnotes, a sortable shapes table, and a live "is your doc an instrument?" scorer.</p></a>
+    <a class="card" data-shape="timeline" data-register="reading" href="timeline.html"><span class="tag">timeline · reading</span><div class="ct">From idea to one truth — a build log</div><p class="cd">render-as-html's real idea→ship history on a date spine: live event search, tag-chip filters, week cluster-collapse, per-event copy-as-quote.</p></a>
+    <a class="card" data-shape="runbook" data-register="instrument" href="runbook.html"><span class="tag">runbook · instrument</span><div class="ct">Author an artifact that passes the bar</div><p class="cd">The procedure for producing a good render-as-html artifact: sticky progress, steps expanded by default, per-block code copy, a redesign branch, an "I'm stuck" prompt.</p></a>
+    <a class="card" data-shape="comparison" data-register="instrument" href="comparison.html"><span class="tag">comparison · instrument</span><div class="ct">Where should the artifact live?</div><p class="cd">The article's core argument as a matrix — HTML vs PDF vs Notion vs Doc vs Markdown — items as columns, live weight tuning, a must-have toggle, copy-as-recommendation.</p></a>
+    <a class="card" data-shape="network-map" data-register="instrument" href="network-map.html"><span class="tag">network-map · instrument</span><div class="ct">The render-as-html concept graph</div><p class="cd">Shapes, sub-patterns, principles, and lineage (the article, html-anything) as an SVG graph: click-to-focus, hover-edge-highlight, search-to-focus, cluster toggles.</p></a>
+    <a class="card" data-shape="triage-board" data-register="instrument" href="triage-board.html"><span class="tag">triage-board · instrument</span><div class="ct">Roadmap triage</div><p class="cd">Where the skill goes next — candidate improvements dragged across Now / Next / Later / Cut (with a touch move-picker), live counts, rationale notes, copy-as-prompt.</p></a>
+    <a class="card" data-shape="developer" data-register="instrument" href="developer.html"><span class="tag">developer · instrument</span><div class="ct">PR: the one-truth design system</div><p class="cd">An annotated-diff + severity-findings writeup of render-as-html's real PR — files-changed nav, local syntax highlighting, click-to-copy findings.</p></a>
+    <a class="card" data-shape="editorial" data-register="reading" href="editorial.html"><span class="tag">editorial · reading</span><div class="ct">Why the file you keep should be pokeable</div><p class="cd">An essay that demonstrates its own thesis: take a position on each claim, watch it compose a round-trip prompt live, then hit "flatten" to see what dies.</p></a>
+    <a class="card" data-shape="podcast" data-register="briefing" href="podcast.html"><span class="tag">podcast · briefing</span><div class="ct">The instrument you keep — fictional episode</div><p class="cd">An imagined podcast about render-as-html itself, rendered as a briefing — bottom line, takeaways, claims, term inspector, hide-sidebar focus mode, independently scrollable rails. Consumes the podcastextract JSON contract.</p></a>
+    <a class="card" data-shape="checklist" data-register="sub-pattern" href="checklist.html"><span class="tag">checklist · sub-pattern</span><div class="ct">Pre-ship review</div><p class="cd">render-as-html's own pre-ship criteria — star + note per item, sticky live count, batch copy-as-prompt with a visible textarea fallback.</p></a>
+    <a class="card" data-shape="primitives" data-register="reference" href="primitives.html"><span class="tag">primitives · reference</span><div class="ct">Ten canonical chart and table primitives</div><p class="cd">The bones the page shapes are built on — donut, ranked bar, sparkline cluster, stacked bar, topology, dense table, comparison matrix, annotated diff, log stream, scatter — each with contract, when-to-pick, and anti-patterns.</p></a>
+  </div>
+  <p class="empty" id="empty">No example matches that. <button id="empty-clear" type="button" style="background:none;border:0;color:var(--accent);cursor:pointer;font:inherit;text-decoration:underline">Clear the filters</button> to see all twelve.</p>
+  <footer><span>examples/index.html · v2.7.1</span><span>render-as-html · <a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">the unreasonable effectiveness of HTML</a></span></footer>
 </main>
+
+<script>
+// Gallery as instrument: live search + register chips, cross-highlighting the
+// matched text in place. The counts always report against the full set of 12 —
+// filters hide cards, they never lie about how many exist.
+const cards = [...document.querySelectorAll('a.card')];
+const search = document.getElementById('gallery-search');
+const clearSearch = document.getElementById('clear-search');
+const clearFilters = document.getElementById('clear-filters');
+const emptyClear = document.getElementById('empty-clear');
+const countEl = document.getElementById('count');
+const chips = [...document.querySelectorAll('.chip')];
+const TOTAL = cards.length;
+
+// Cache the original TEXT (not markup) of every markable element so clearing a
+// search restores cleanly and we never regex-rewrite serialized HTML.
+const markable = [];
+for (const card of cards) {
+  for (const el of card.querySelectorAll('.ct, .cd, .tag')) {
+    el.dataset.original = el.textContent;
+    markable.push(el);
+  }
+}
+
+// Rebuild an element's text with <mark> around each match, using real DOM nodes.
+function markMatches(el, term) {
+  const text = el.dataset.original;
+  el.textContent = '';
+  if (!term) { el.textContent = text; return; }
+  const lower = text.toLowerCase();
+  let i = 0, at;
+  while ((at = lower.indexOf(term, i)) !== -1) {
+    if (at > i) el.appendChild(document.createTextNode(text.slice(i, at)));
+    const m = document.createElement('mark');
+    m.textContent = text.slice(at, at + term.length);
+    el.appendChild(m);
+    i = at + term.length;
+  }
+  el.appendChild(document.createTextNode(text.slice(i)));
+}
+
+function activeRegisters() {
+  return chips.filter(c => c.getAttribute('aria-pressed') === 'true').map(c => c.dataset.filter);
+}
+
+function apply() {
+  const term = search.value.trim().toLowerCase();
+  const regs = activeRegisters();
+  let shown = 0;
+
+  for (const card of cards) {
+    const haystack = (card.dataset.shape + ' ' + card.dataset.register + ' ' + card.textContent).toLowerCase();
+    const hitsTerm = !term || haystack.includes(term);
+    const hitsReg = regs.length === 0 || regs.includes(card.dataset.register);
+    const visible = hitsTerm && hitsReg;
+    card.hidden = !visible;
+    if (visible) shown++;
+  }
+  for (const el of markable) markMatches(el, term);
+
+  document.body.classList.toggle('searching', term.length > 0);
+  document.body.classList.toggle('filtered', term.length > 0 || regs.length > 0);
+  document.body.classList.toggle('no-results', shown === 0);
+  countEl.innerHTML = '<b>' + shown + '</b> of ' + TOTAL + ' example' + (TOTAL === 1 ? '' : 's')
+    + (regs.length ? ' · ' + regs.join(' + ') : '');
+}
+
+function resetAll() {
+  search.value = '';
+  for (const c of chips) c.setAttribute('aria-pressed', 'false');
+  apply();
+  search.focus();
+}
+
+search.addEventListener('input', apply);
+clearSearch.addEventListener('click', () => { search.value = ''; apply(); search.focus(); });
+clearFilters.addEventListener('click', resetAll);
+emptyClear.addEventListener('click', resetAll);
+for (const chip of chips) {
+  chip.addEventListener('click', () => {
+    chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    apply();
+  });
+}
+search.addEventListener('keydown', e => { if (e.key === 'Escape') { search.value = ''; apply(); } });
+apply();
+</script>
 </body>
 </html>

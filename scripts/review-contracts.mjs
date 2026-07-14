@@ -106,7 +106,17 @@ for (const file of htmlFiles) {
   if (/<artifact\.html>/.test(html)) {
     fail(file, "copy-as-prompt must name the concrete HTML file, not <artifact.html>");
   }
-  if (/(copyAsPrompt|copyPrompt|copyRecommendation|generateStuckPrompt|copyBtn|promptOut|<button\b[\s\S]*?copy as prompt[\s\S]*?<\/button>)/.test(html) && !/BEGIN ARTIFACT STATE DATA/.test(html)) {
+  // Trigger on the JS identifiers of a real control, or on "copy as prompt"
+  // inside a SINGLE <button> element. The old `<button[\s\S]*?copy as prompt`
+  // form spanned unrelated elements, so a prose mention anywhere after any
+  // button on the page falsely demanded the state delimiter. Matches
+  // lint-artifact.mjs's per-button scan.
+  const buttonSaysCopyPrompt = [...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/gi)]
+    .some((m) => /copy as prompt/i.test(m[1]));
+  const hasCopyPrompt =
+    /(copyAsPrompt|copyPrompt|copyRecommendation|generateStuckPrompt|copyBtn|promptOut)/.test(html) ||
+    buttonSaysCopyPrompt;
+  if (hasCopyPrompt && !/BEGIN ARTIFACT STATE DATA/.test(html)) {
     fail(file, "copy-as-prompt output must delimit artifact state as data");
   }
 }

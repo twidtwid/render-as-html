@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:,">
 <title>render-as-html — canonical primitives</title>
-<meta name="description" content="Nine canonical chart and table primitives — one-truth palette, contracts, when-to-pick rules, anti-patterns.">
+<meta name="description" content="Ten canonical chart and table primitives — one-truth palette, contracts, when-to-pick rules, anti-patterns.">
 <meta property="og:title" content="render-as-html — canonical primitives">
-<meta property="og:description" content="Nine canonical chart and table primitives — one-truth palette, contracts, when-to-pick rules, anti-patterns.">
+<meta property="og:description" content="Ten canonical chart and table primitives — one-truth palette, contracts, when-to-pick rules, anti-patterns.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="render-as-html">
 <meta name="twitter:card" content="summary">
@@ -51,6 +51,45 @@
   .toc a:hover { color: var(--accent); }
   .toc a .num { font-family: var(--mono); color: var(--muted); margin-right: .6rem; font-size: .8rem; }
   .toc a .group { font-family: var(--mono); font-size: .7rem; color: var(--accent-2); text-transform: uppercase; letter-spacing: .08em; margin-left: .5rem; }
+  /* scroll-spy: the primitive you're reading is marked in the contents */
+  .toc a.current { color: var(--accent); font-weight: 700; border-bottom-color: var(--accent); }
+  .toc a[hidden] { display: none; }
+
+  /* --- filter bar --- */
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: 1.6rem 0 1rem; }
+  .search-wrap { position: relative; flex: 1 1 16rem; min-width: 12rem; }
+  input[type=search] {
+    width: 100%; font-family: var(--sans); font-size: 16px; color: var(--ink);
+    background: var(--paper-card); border: 1px solid var(--rule); border-radius: 6px;
+    padding: .5rem 2rem .5rem .7rem; -webkit-appearance: none; appearance: none;
+  }
+  input[type=search]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+  input[type=search]::-webkit-search-cancel-button { display: none; }
+  #clear-search {
+    position: absolute; right: .3rem; top: 50%; transform: translateY(-50%);
+    display: none; background: none; border: 0; cursor: pointer; color: var(--muted);
+    font-family: var(--mono); font-size: 1rem; line-height: 1; padding: .3rem .4rem; min-width: 32px; min-height: 32px;
+  }
+  #clear-search:hover { color: var(--accent); }
+  body.searching #clear-search { display: block; }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .chip {
+    font-family: var(--mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--ink-soft); background: var(--paper-card); border: 1px solid var(--rule);
+    border-radius: 999px; padding: .42rem .7rem; cursor: pointer; min-height: 32px;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .chip[aria-pressed=true] { background: var(--accent-2); border-color: var(--accent-2); color: var(--ink); font-weight: 700; }
+  #clear-filters { display: none; font-family: var(--mono); font-size: .7rem; color: var(--accent); background: none; border: 0; cursor: pointer; padding: .42rem .3rem; min-height: 32px; }
+  body.filtered #clear-filters { display: inline-block; }
+  .count { font-family: var(--mono); font-size: .74rem; color: var(--muted); margin: 0 0 1rem; }
+  .count b { color: var(--accent-2); }
+  section.prim[hidden] { display: none; }
+  section.prim[hidden] + hr { display: none; }
+  .empty { display: none; font-family: var(--sans); font-size: .95rem; color: var(--ink-soft); border: 1px dashed var(--rule); border-radius: 10px; padding: 1.6rem; text-align: center; }
+  body.no-results .empty { display: block; }
 
   section.prim { margin-top: 4rem; scroll-margin-top: 1rem; }
   section.prim .ptag { font-family: var(--mono); text-transform: uppercase; letter-spacing: .12em; font-size: .7rem; color: var(--accent-2); margin: 0 0 .35rem; }
@@ -118,21 +157,35 @@
 
   <hr>
 
+  <div class="controls">
+    <div class="search-wrap">
+      <label class="sr-only" for="prim-search">Search the primitives</label>
+      <input type="search" id="prim-search" placeholder="Search primitives, contracts, anti-patterns…" autocomplete="off">
+      <button id="clear-search" type="button" aria-label="Clear search" title="Clear search">×</button>
+    </div>
+    <div class="chips" role="group" aria-label="Filter by kind">
+      <button class="chip" type="button" data-filter="chart" aria-pressed="false">chart</button>
+      <button class="chip" type="button" data-filter="table" aria-pressed="false">table</button>
+    </div>
+    <button id="clear-filters" type="button">× clear all</button>
+  </div>
+  <p class="count" id="count"><b>10</b> of 10 primitives</p>
+
   <nav class="toc" aria-label="Table of contents">
-    <a href="#donut"><span class="num">01</span>Donut <span class="group">chart</span></a>
-    <a href="#bar"><span class="num">02</span>Bar — ranked top-N <span class="group">chart</span></a>
-    <a href="#sparkline"><span class="num">03</span>Sparkline cluster <span class="group">chart</span></a>
-    <a href="#stacked"><span class="num">04</span>Stacked bar over time <span class="group">chart</span></a>
-    <a href="#topology"><span class="num">05</span>Topology graph <span class="group">chart</span></a>
-    <a href="#table-ops"><span class="num">06</span>Dense ops table <span class="group">table</span></a>
-    <a href="#table-comparison"><span class="num">07</span>Comparison matrix <span class="group">table</span></a>
-    <a href="#diff"><span class="num">08</span>Annotated diff <span class="group">table</span></a>
-    <a href="#logs"><span class="num">09</span>Log / event stream <span class="group">table</span></a>
-    <a href="#scatter"><span class="num">10</span>Scatter — trade-off <span class="group">chart</span></a>
+    <a data-toc="donut" href="#donut"><span class="num">01</span>Donut <span class="group">chart</span></a>
+    <a data-toc="bar" href="#bar"><span class="num">02</span>Bar — ranked top-N <span class="group">chart</span></a>
+    <a data-toc="sparkline" href="#sparkline"><span class="num">03</span>Sparkline cluster <span class="group">chart</span></a>
+    <a data-toc="stacked" href="#stacked"><span class="num">04</span>Stacked bar over time <span class="group">chart</span></a>
+    <a data-toc="topology" href="#topology"><span class="num">05</span>Topology graph <span class="group">chart</span></a>
+    <a data-toc="table-ops" href="#table-ops"><span class="num">06</span>Dense ops table <span class="group">table</span></a>
+    <a data-toc="table-comparison" href="#table-comparison"><span class="num">07</span>Comparison matrix <span class="group">table</span></a>
+    <a data-toc="diff" href="#diff"><span class="num">08</span>Annotated diff <span class="group">table</span></a>
+    <a data-toc="logs" href="#logs"><span class="num">09</span>Log / event stream <span class="group">table</span></a>
+    <a data-toc="scatter" href="#scatter"><span class="num">10</span>Scatter — trade-off <span class="group">chart</span></a>
   </nav>
 
   <!-- ============================================================ -->
-  <section class="prim" id="donut">
+  <section class="prim" data-group="chart" data-num="01" id="donut">
     <p class="ptag">01 · chart</p>
     <h2>Donut — categorical status mix</h2>
     <p class="blurb">A one-glance "shape of the population" summary that pairs above a dense table. The legend doubles as a cross-highlight filter — clicking a row isolates that segment and surfaces a visible <code>× clear</code> control.</p>
@@ -149,7 +202,7 @@
   </section>
 
   <!-- ============================================================ -->
-  <section class="prim" id="bar">
+  <section class="prim" data-group="chart" data-num="02" id="bar">
     <p class="ptag">02 · chart</p>
     <h2>Bar — ranked top-N</h2>
     <p class="blurb">Used when the question is "which N are biggest, and by how much." Bar length carries magnitude; the name lives in its own subgrid column to the left so long identifiers stay legible. Ochre marks the current leader; terracotta the rest.</p>
@@ -166,7 +219,7 @@
   </section>
 
   <!-- ============================================================ -->
-  <section class="prim" id="sparkline">
+  <section class="prim" data-group="chart" data-num="03" id="sparkline">
     <p class="ptag">03 · chart</p>
     <h2>Sparkline — stat-tile cluster</h2>
     <p class="blurb">2–4 hero metrics, each with its current value, its delta vs. a prior period, and the shape of its recent trend. Tile cluster sits above the dense table; the sparkline carries direction-of-trend without becoming a separate chart.</p>
@@ -183,7 +236,7 @@
   </section>
 
   <!-- ============================================================ -->
-  <section class="prim" id="stacked">
+  <section class="prim" data-group="chart" data-num="04" id="stacked">
     <p class="ptag">04 · chart</p>
     <h2>Stacked bar — composition over time</h2>
     <p class="blurb">When you need total volume <em>and</em> category mix across periods in one figure. Bars carry the trend; segment colors carry the mix. The legend is a chip filter that re-stacks bars when you remove a category — so dropping <code>Success</code> lets you see the failure rhythm.</p>
@@ -200,7 +253,7 @@
   </section>
 
   <!-- ============================================================ -->
-  <section class="prim" id="topology">
+  <section class="prim" data-group="chart" data-num="05" id="topology">
     <p class="ptag">05 · chart</p>
     <h2>Topology — inline service graph</h2>
     <p class="blurb">When connections are the point and the node count is ≤30. Hand-positioned coordinates (force-directed simulations earn their place at 30+ nodes); straight edges meet rect boundaries; click-to-focus dims everything outside the neighborhood.</p>
@@ -217,7 +270,7 @@
   </section>
 
   <!-- ============================================================ -->
-  <section class="prim" id="table-ops">
+  <section class="prim" data-group="table" data-num="06" id="table-ops">
     <p class="ptag">06 · table</p>
     <h2>Dense ops table</h2>
     <p class="blurb">The instrument-register workhorse: scan results, inventories, port lists. Mono first column for identifiers, sortable headers, status pills carrying outline + dot + label (so colorblind viewers still parse via shape and text), footer rows with provenance.</p>
@@ -234,7 +287,7 @@
   </section>
 
   <!-- ============================================================ -->
-  <section class="prim" id="table-comparison">
+  <section class="prim" data-group="table" data-num="07" id="table-comparison">
     <p class="ptag">07 · table</p>
     <h2>Comparison matrix — items as columns</h2>
     <p class="blurb">The axis flip <em>is</em> the shape. Items get columns; criteria get rows; a weight column on the far left tunes the aggregate live. Star marks the per-row winner; the aggregate row marks the overall. The +/− stepper is full-height so weight tuning is one click, not a fiddly spinner.</p>
@@ -251,7 +304,7 @@
   </section>
 
   <!-- ============================================================ -->
-  <section class="prim" id="diff">
+  <section class="prim" data-group="table" data-num="08" id="diff">
     <p class="ptag">08 · table</p>
     <h2>Annotated diff — code review primitive</h2>
     <p class="blurb">Findings sit <em>in</em> the diff, anchored to the line they touch — not in a sidebar that loses spatial context. Severity travels three ways (left bar + badge fill + strip count) so the signal survives colorblind viewing. Syntax highlighting is a tiny set of local CSS classes — no Prism, no CDN.</p>
@@ -268,7 +321,7 @@
   </section>
 
   <!-- ============================================================ -->
-  <section class="prim" id="logs">
+  <section class="prim" data-group="table" data-num="09" id="logs">
     <p class="ptag">09 · table</p>
     <h2>Log stream — chronological event table</h2>
     <p class="blurb">When events arrive in real time, not when you're auditing a static set. Different from the dense ops table: rows are chronological, levels carry urgency, expand-on-click reveals the structured payload, and the table itself is a scrollable container with a live-tail indicator.</p>
@@ -285,7 +338,7 @@
   </section>
 
   <!-- ============================================================ -->
-  <section class="prim" id="scatter">
+  <section class="prim" data-group="chart" data-num="10" id="scatter">
     <p class="ptag">10 · chart</p>
     <h2>Scatter — two-dimension trade-off</h2>
     <p class="blurb">For two genuinely independent dimensions across 10+ points, where the <em>relationship</em> is the signal — cost vs. quality, latency vs. throughput. Median crosshair guides split the cloud into quadrants ("cheap-and-good lives top-left"); marker shape carries identity alongside color so it survives greyscale. The discipline: if the points cluster on one axis, a scatter lies — rank with a bar instead.</p>
@@ -305,10 +358,90 @@
 
   <p style="font-family: var(--sans); font-size: .95rem; color: var(--ink-soft); max-width: 42rem;">All ten primitives share the one-truth palette and the two-register split — five sit naturally inside the <em>instrument</em>-register shapes (dashboard, comparison, developer, runbook, triage-board, network-map) and the others compose into <em>reading</em>-register shapes when an essay needs a chart or a table. Same tokens, same content-discipline rules.</p>
 
+  <p class="empty" id="empty">No primitive matches that. <button id="empty-clear" type="button" style="background:none;border:0;color:var(--accent);cursor:pointer;font:inherit;text-decoration:underline">Clear the filters</button> to see all ten.</p>
+
   <footer>
-    <span>examples/primitives.html · v2.7.0</span>
+    <span>examples/primitives.html · v2.7.1</span>
     <span>render-as-html · <a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">the unreasonable effectiveness of HTML</a></span>
   </footer>
 </main>
+
+<script>
+// The primitives reference as an instrument: search across every contract
+// (pick-when / required / interaction / avoid), chart-vs-table chips, and a
+// scroll-spy that marks the primitive you're reading in the contents.
+// Counts always report against all 10 — filters hide sections, they never lie
+// about how many primitives exist.
+const sections = [...document.querySelectorAll('section.prim')];
+const tocLinks = [...document.querySelectorAll('.toc a[data-toc]')];
+const search = document.getElementById('prim-search');
+const clearSearch = document.getElementById('clear-search');
+const clearFilters = document.getElementById('clear-filters');
+const emptyClear = document.getElementById('empty-clear');
+const countEl = document.getElementById('count');
+const chips = [...document.querySelectorAll('.chip')];
+const TOTAL = sections.length;
+
+// Search haystack per primitive: heading + blurb + the whole contract text.
+const haystacks = new Map();
+for (const sec of sections) {
+  haystacks.set(sec.id, (sec.dataset.group + ' ' + sec.textContent).toLowerCase().replace(/\s+/g, ' '));
+}
+
+function activeGroups() {
+  return chips.filter(c => c.getAttribute('aria-pressed') === 'true').map(c => c.dataset.filter);
+}
+
+function apply() {
+  const term = search.value.trim().toLowerCase();
+  const groups = activeGroups();
+  const visible = new Set();
+
+  for (const sec of sections) {
+    const hitsTerm = !term || haystacks.get(sec.id).includes(term);
+    const hitsGroup = groups.length === 0 || groups.includes(sec.dataset.group);
+    const show = hitsTerm && hitsGroup;
+    sec.hidden = !show;
+    if (show) visible.add(sec.id);
+  }
+  for (const a of tocLinks) a.hidden = !visible.has(a.dataset.toc);
+
+  document.body.classList.toggle('searching', term.length > 0);
+  document.body.classList.toggle('filtered', term.length > 0 || groups.length > 0);
+  document.body.classList.toggle('no-results', visible.size === 0);
+  countEl.innerHTML = '<b>' + visible.size + '</b> of ' + TOTAL + ' primitive' + (TOTAL === 1 ? '' : 's')
+    + (groups.length ? ' · ' + groups.join(' + ') : '');
+}
+
+function resetAll() {
+  search.value = '';
+  for (const c of chips) c.setAttribute('aria-pressed', 'false');
+  apply();
+  search.focus();
+}
+
+search.addEventListener('input', apply);
+clearSearch.addEventListener('click', () => { search.value = ''; apply(); search.focus(); });
+clearFilters.addEventListener('click', resetAll);
+emptyClear.addEventListener('click', resetAll);
+for (const chip of chips) {
+  chip.addEventListener('click', () => {
+    chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+    apply();
+  });
+}
+search.addEventListener('keydown', e => { if (e.key === 'Escape') { search.value = ''; apply(); } });
+
+// Scroll-spy: mark the primitive currently in view in the contents.
+const spy = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    const link = tocLinks.find(a => a.dataset.toc === entry.target.id);
+    if (link) link.classList.toggle('current', entry.isIntersecting);
+  }
+}, { rootMargin: '-25% 0px -60% 0px' });
+for (const sec of sections) spy.observe(sec);
+
+apply();
+</script>
 </body>
 </html>
