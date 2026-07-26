@@ -1040,7 +1040,7 @@
       <a href="#the-claim">The artifact is the file, not an export</a>
       <a href="#flatten-test">The flatten test is the whole bar</a>
       <a href="#round-trip">Copy-as-prompt closes the edit loop</a>
-      <a href="#shapes">Nine shapes, two registers</a>
+      <a href="#shapes">Twelve shapes, three registers</a>
       <a href="#dimensions">Eight dimensions and progressive disclosure</a>
       <a href="#strange-loop">The strange loop, and what to take from it</a>
     </nav>
@@ -1065,7 +1065,7 @@
         <li>HTML is not an export layer over a "real" document. It can <em>be</em> the document — the thing you read, edit, sort, filter, and hand to a colleague.</li>
         <li>The test for whether something deserves to be an HTML artifact is brutal and singular: flatten it to plain text and ask what dies. If only styling dies, it was prose.</li>
         <li>Copy-as-prompt is the load-bearing feature. It turns a viewer into an editing surface: mutate state in the browser, copy a precise instruction, paste it back, regenerate the file.</li>
-        <li>Nine content-matched shapes and two registers (reading vs. instrument) keep the artifact from collapsing into the same SaaS dashboard every time.</li>
+        <li>Twelve content-matched shapes and three registers (reading, instrument, hybrid) keep the artifact from collapsing into the same SaaS dashboard every time.</li>
         <li>The design system is built in its own system — a single self-contained HTML file that is its own gallery. The strange loop is the proof.</li>
       </ul>
     </div>
@@ -1077,7 +1077,7 @@
         <li><a href="#the-claim">The artifact is the file, not an export</a></li>
         <li><a href="#flatten-test">The flatten test is the whole bar</a></li>
         <li><a href="#round-trip">Copy-as-prompt closes the edit loop</a></li>
-        <li><a href="#shapes">Nine shapes, two registers</a></li>
+        <li><a href="#shapes">Twelve shapes, three registers</a></li>
         <li><a href="#dimensions">Eight dimensions and progressive disclosure</a></li>
         <li><a href="#strange-loop">The strange loop, and what to take from it</a></li>
       </ol>
@@ -1124,14 +1124,14 @@
         Surface the subject, not the artifact's own production. "23 restaurants on file, 2021–2026" orients the reader. "Found 6 claims · 12 sections · 2,200 words" counts the rendering process and is slop. Headlines argue a position; they are not category labels. A body that restates its headline in more words is visibly lazy.
       </div>
 
-      <p>The same discipline forces the shape decision <em>before</em> design. Prose-heavy briefing read paragraph-to-paragraph? <code>document</code>. Tabular ops data that wants filtering? <code>dashboard</code>. A sequential procedure being executed, not read? <code>runbook</code>. Picking the bones first is what stops every artifact from converging on the same identical-tile SaaS layout. The nine shapes below are sortable by how interactive they inherently are; filter to the register you're working in.</p>
+      <p>The same discipline forces the shape decision <em>before</em> design. Prose-heavy briefing read paragraph-to-paragraph? <code>document</code>. Tabular ops data that wants filtering? <code>dashboard</code>. A sequential procedure being executed, not read? <code>runbook</code>. Picking the bones first is what stops every artifact from converging on the same identical-tile SaaS layout. The twelve shapes below are sortable by how interactive they inherently are; filter to the register you're working in.</p>
 
       <div class="table-tools">
         <input type="text" id="tbl-filter" class="table-filter"
                placeholder="Filter shapes (e.g. reading, instrument, drag, graph)…"
                aria-label="Filter the page-shapes table by text">
         <button type="button" id="tbl-clear" class="table-clear" aria-label="Clear table filter">× clear</button>
-        <span class="table-count" id="tbl-count" aria-live="polite">9 of 9 shapes</span>
+        <span class="table-count" id="tbl-count" aria-live="polite">12 of 12 shapes</span>
       </div>
 
       <div class="table-wrap">
@@ -1188,6 +1188,12 @@
               <td data-v="5">5 / syntax + severity + file nav + copy-finding</td>
             </tr>
             <tr>
+              <td>execution-log</td>
+              <td>Instrument</td>
+              <td>Builds, CI runs, repo sweeps, agent workflows</td>
+              <td data-v="6">6 / phase cards + progress + log filters + snapshot copy</td>
+            </tr>
+            <tr>
               <td>triage-board</td>
               <td>Instrument</td>
               <td>GTD reorg, inbox triage into Now/Next/Later/Cut</td>
@@ -1199,6 +1205,18 @@
               <td>People graphs, backlinks, dependencies</td>
               <td data-v="8">8 / SVG canvas + click-focus + edge highlight</td>
             </tr>
+            <tr>
+              <td>deck-review</td>
+              <td>Hybrid</td>
+              <td>Slide deck review, approval, and send-back workflows</td>
+              <td data-v="5">5 / slide nav + local notes + encrypted unlock + export</td>
+            </tr>
+            <tr>
+              <td>podcast</td>
+              <td>Hybrid</td>
+              <td>Podcast episodes from the podcastextract pipeline</td>
+              <td data-v="5">5 / sibling views + term inspector + transcript browser</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -1206,12 +1224,13 @@
 
       <!-- SVG: register split -->
       <div class="chart-wrap">
-        <div class="chart-title">Nine shapes split across two registers</div>
-        <svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;font-family:var(--font-sans);font-size:11px;" role="img" aria-label="Bar chart: the nine page shapes split across two registers. Reading register holds three shapes — document, editorial, timeline. Instrument register holds six — dashboard, comparison, runbook, developer, triage-board, network-map. Bar height encodes the shape's interaction load, lowest for document, highest for network-map.">
+        <div class="chart-title">Twelve shapes split across three registers</div>
+        <svg viewBox="0 0 560 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;font-family:var(--font-sans);font-size:10px;" role="img" aria-label="Bar chart: the twelve page shapes split across three registers. Reading holds three, instrument holds seven, hybrid holds two. Bar height encodes interaction load.">
           <defs>
             <style>
               .bar-read  { fill: #8a3a1a; }
               .bar-instr { fill: #c2901a; }
+              .bar-hybrid { fill: #37a8d7; }
               .axis-line { stroke: #d9d1c2; stroke-width: 1; }
               .bar-label { fill: #4a443c; }
               .bar-val   { fill: #1a1815; font-weight: 600; }
@@ -1222,39 +1241,51 @@
           <text x="36" y="150" text-anchor="end" class="bar-label" font-size="10">0</text>
           <text x="36" y="50" text-anchor="end" class="bar-label" font-size="10">8</text>
           <!-- Reading shapes -->
-          <rect x="52" y="100" width="42" height="45" class="bar-read"/>
-          <text x="73" y="160" text-anchor="middle" class="bar-label">doc</text>
-          <text x="73" y="94" text-anchor="middle" class="bar-val" font-size="10">3</text>
-          <rect x="104" y="85" width="42" height="60" class="bar-read"/>
-          <text x="125" y="160" text-anchor="middle" class="bar-label">editorial</text>
-          <text x="125" y="79" text-anchor="middle" class="bar-val" font-size="10">4</text>
-          <rect x="156" y="85" width="42" height="60" class="bar-read"/>
-          <text x="177" y="160" text-anchor="middle" class="bar-label">timeline</text>
-          <text x="177" y="79" text-anchor="middle" class="bar-val" font-size="10">4</text>
+          <rect x="52" y="100" width="30" height="45" class="bar-read"/>
+          <text x="67" y="160" text-anchor="middle" class="bar-label">doc</text>
+          <text x="67" y="94" text-anchor="middle" class="bar-val" font-size="10">3</text>
+          <rect x="92" y="85" width="30" height="60" class="bar-read"/>
+          <text x="107" y="160" text-anchor="middle" class="bar-label">edit</text>
+          <text x="107" y="79" text-anchor="middle" class="bar-val" font-size="10">4</text>
+          <rect x="132" y="85" width="30" height="60" class="bar-read"/>
+          <text x="147" y="160" text-anchor="middle" class="bar-label">time</text>
+          <text x="147" y="79" text-anchor="middle" class="bar-val" font-size="10">4</text>
           <!-- Instrument shapes -->
-          <rect x="216" y="55" width="42" height="90" class="bar-instr"/>
-          <text x="237" y="160" text-anchor="middle" class="bar-label">dash</text>
-          <text x="237" y="49" text-anchor="middle" class="bar-val" font-size="10">6</text>
-          <rect x="268" y="55" width="42" height="90" class="bar-instr"/>
-          <text x="289" y="160" text-anchor="middle" class="bar-label">compare</text>
-          <text x="289" y="49" text-anchor="middle" class="bar-val" font-size="10">6</text>
-          <rect x="320" y="70" width="42" height="75" class="bar-instr"/>
-          <text x="341" y="160" text-anchor="middle" class="bar-label">runbook</text>
-          <text x="341" y="64" text-anchor="middle" class="bar-val" font-size="10">5</text>
-          <rect x="372" y="70" width="42" height="75" class="bar-instr"/>
-          <text x="393" y="160" text-anchor="middle" class="bar-label">dev</text>
-          <text x="393" y="64" text-anchor="middle" class="bar-val" font-size="10">5</text>
-          <rect x="424" y="40" width="42" height="105" class="bar-instr"/>
-          <text x="445" y="160" text-anchor="middle" class="bar-label">triage</text>
-          <text x="445" y="34" text-anchor="middle" class="bar-val" font-size="10">7</text>
-          <rect x="476" y="25" width="42" height="120" class="bar-instr"/>
-          <text x="497" y="160" text-anchor="middle" class="bar-label">net-map</text>
-          <text x="497" y="19" text-anchor="middle" class="bar-val" font-size="10">8</text>
+          <rect x="180" y="55" width="30" height="90" class="bar-instr"/>
+          <text x="195" y="160" text-anchor="middle" class="bar-label">dash</text>
+          <text x="195" y="49" text-anchor="middle" class="bar-val" font-size="10">6</text>
+          <rect x="220" y="55" width="30" height="90" class="bar-instr"/>
+          <text x="235" y="160" text-anchor="middle" class="bar-label">comp</text>
+          <text x="235" y="49" text-anchor="middle" class="bar-val" font-size="10">6</text>
+          <rect x="260" y="70" width="30" height="75" class="bar-instr"/>
+          <text x="275" y="160" text-anchor="middle" class="bar-label">run</text>
+          <text x="275" y="64" text-anchor="middle" class="bar-val" font-size="10">5</text>
+          <rect x="300" y="70" width="30" height="75" class="bar-instr"/>
+          <text x="315" y="160" text-anchor="middle" class="bar-label">dev</text>
+          <text x="315" y="64" text-anchor="middle" class="bar-val" font-size="10">5</text>
+          <rect x="340" y="55" width="30" height="90" class="bar-instr"/>
+          <text x="355" y="160" text-anchor="middle" class="bar-label">log</text>
+          <text x="355" y="49" text-anchor="middle" class="bar-val" font-size="10">6</text>
+          <rect x="380" y="40" width="30" height="105" class="bar-instr"/>
+          <text x="395" y="160" text-anchor="middle" class="bar-label">triage</text>
+          <text x="395" y="34" text-anchor="middle" class="bar-val" font-size="10">7</text>
+          <rect x="420" y="25" width="30" height="120" class="bar-instr"/>
+          <text x="435" y="160" text-anchor="middle" class="bar-label">map</text>
+          <text x="435" y="19" text-anchor="middle" class="bar-val" font-size="10">8</text>
+          <!-- Hybrid shapes -->
+          <rect x="478" y="70" width="30" height="75" class="bar-hybrid"/>
+          <text x="493" y="160" text-anchor="middle" class="bar-label">deck</text>
+          <text x="493" y="64" text-anchor="middle" class="bar-val" font-size="10">5</text>
+          <rect x="518" y="70" width="30" height="75" class="bar-hybrid"/>
+          <text x="533" y="160" text-anchor="middle" class="bar-label">pod</text>
+          <text x="533" y="64" text-anchor="middle" class="bar-val" font-size="10">5</text>
           <!-- Legend -->
           <rect x="52" y="14" width="10" height="10" class="bar-read"/>
           <text x="66" y="23" class="bar-label">Reading register</text>
           <rect x="180" y="14" width="10" height="10" class="bar-instr"/>
           <text x="194" y="23" class="bar-label">Instrument register</text>
+          <rect x="336" y="14" width="10" height="10" class="bar-hybrid"/>
+          <text x="350" y="23" class="bar-label">Hybrid register</text>
         </svg>
       </div>
     </section>
@@ -1472,7 +1503,7 @@
           <span class="fn-num">5</span>
           <span class="fn-peek">On the strange loop and the content-matched-shapes lineage...</span>
         </summary>
-        <div class="fn-body">render-as-html's canonical reference (its <code>index.html</code> component gallery) is itself a single self-contained HTML artifact rendered in the system it specifies — the design system eats its own cooking, which is the strongest available argument for the approach. The content-matched-shapes idea is credited to <code>clockless-org/html-anything</code>; the visual treatment and the nine shape contracts are this repo's contribution. Both attributions are carried in the skill's Credits section, and reproduced here because attribution discipline is part of the bar, not an afterthought.</div>
+        <div class="fn-body">render-as-html's canonical reference (its <code>index.html</code> component gallery) is itself a single self-contained HTML artifact rendered in the system it specifies — the design system eats its own cooking, which is the strongest available argument for the approach. The content-matched-shapes idea is credited to <code>clockless-org/html-anything</code>; the visual treatment and the twelve shape contracts are this repo's contribution. Both attributions are carried in the skill's Credits section, and reproduced here because attribution discipline is part of the bar, not an afterthought.</div>
       </details>
     </div>
 

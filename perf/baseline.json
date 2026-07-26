@@ -1,19 +1,19 @@
 {
   "skill_md": {
-    "total_bytes": 46832,
-    "total_tokens": 11617,
+    "total_bytes": 49339,
+    "total_tokens": 12241,
     "sections": [
       {
         "name": "Page shapes (pick before designing)",
-        "tokens": 2729
+        "tokens": 3291
       },
       {
         "name": "Design system",
-        "tokens": 2021
+        "tokens": 2074
       },
       {
         "name": "Rendering process",
-        "tokens": 1668
+        "tokens": 1677
       },
       {
         "name": "Canonical primitives (charts and tables)",
@@ -74,6 +74,10 @@
         "tokens": 238
       },
       {
+        "contract": "deck-review",
+        "tokens": 229
+      },
+      {
         "contract": "Log stream \u2014 chronological event table",
         "tokens": 223
       },
@@ -84,6 +88,10 @@
       {
         "contract": "runbook",
         "tokens": 211
+      },
+      {
+        "contract": "execution-log",
+        "tokens": 208
       },
       {
         "contract": "comparison",
@@ -141,7 +149,7 @@
     "oversized_contracts": []
   },
   "references": {
-    "total_tokens": 10860,
-    "file_count": 21
+    "total_tokens": 13603,
+    "file_count": 23
   }
 }

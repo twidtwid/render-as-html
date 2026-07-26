@@ -4,7 +4,7 @@
 >
 > Inspired by [@trq212's "Unreasonable Effectiveness of HTML"](https://x.com/trq212/status/2052809885763747935).
 
-**Version 2.7.1** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
+**Version 2.8.0** · live design system at **https://twidtwid.github.io/render-as-html/** · canonical primitives at [`examples/primitives.html`](https://twidtwid.github.io/render-as-html/examples/primitives.html).
 
 ## Install
 
@@ -48,7 +48,7 @@ flowchart LR
     IN["Input<br/>brief · file · URL · episode.json"] --> SK["SKILL.md<br/>pick shape + primitives"]
     SK -->|"load on demand"| REF["references/<br/>shape + primitive contracts"]
     SK --> R{"render path"}
-    R -->|"9 agent-authored shapes"| AG["agent writes HTML"]
+    R -->|"11 agent-authored shapes"| AG["agent writes HTML"]
     R -->|"podcast (deterministic)"| CLI["bin/render-podcast"]
     AG --> OUT["self-contained .html<br/>~/Reports/"]
     CLI --> OUT
@@ -62,7 +62,7 @@ The two non-obvious moves: the per-shape and per-primitive contracts load **on d
 - `SKILL.md` — read this first. Page shapes, design system, canonical primitives, copy-as-prompt, the "would this die outside HTML?" bar. Each shape and primitive carries a compact inline stub; the full contract loads on demand from `references/`.
 - `DESIGN.md` — the canonical design tokens in the [design.md](https://github.com/google-labs-code/design.md) format. The single source of truth for the palette/type that `SKILL.md` and `index.html` derive from. Internal build input, not a user-tunable knob.
 - `index.html` — the design system as a single file (the live link above).
-- `examples/` — thirteen self-contained artifacts: one per page shape (now including `podcast-transcript.html` for the transcript view), plus a canonical-primitives reference. Browse the [example gallery](https://twidtwid.github.io/render-as-html/examples/).
+- `examples/` — fifteen self-contained artifacts: one per page shape (with `podcast-transcript.html` as the podcast sibling view), plus the checklist sub-pattern and canonical-primitives reference. Browse the [example gallery](https://twidtwid.github.io/render-as-html/examples/).
 - `bin/render-podcast` — Python CLI that consumes podcastify's `episode.package.json` and writes a `podcast-at-a-glance.html` + `annotated-transcript.html` pair matching the canonical examples. Usage: `bin/render-podcast <package.json> [-o OUT_DIR]`.
 - `bin/og-card.mjs` — renders a 1200×630 social-card PNG from an artifact's own title/description/design tokens via headless Chrome, and with `--inject` writes `og:image`/`twitter:image` into the artifact `<head>` (`node bin/og-card.mjs <artifact.html> --inject`). Required by the publish flow in `SKILL.md` step 8.
 - `tests/` — pytest suite (`uv run --with pytest pytest tests/ -v`) plus the fixture both canonical podcast examples render from.
@@ -74,7 +74,7 @@ The two non-obvious moves: the per-shape and per-primitive contracts load **on d
 
 ## Page shapes
 
-Pick the shape from content signals. Ten shapes, each with a contract — layout, required primitives, density, what to avoid:
+Pick the shape from content signals. Twelve shapes, each with a contract — layout, required primitives, density, what to avoid:
 
 | Shape | For | Distinct because |
 |---|---|---|
@@ -87,6 +87,8 @@ Pick the shape from content signals. Ten shapes, each with a contract — layout
 | <code>triage&#8209;board</code> | GTD reorg, inbox triage | Drag cards between Now/Next/Later/Cut columns |
 | `developer` | PR writeups, code review | Annotated diffs, severity findings, file nav |
 | `editorial` | Deep essays, research synthesis, analytical memos | Sustained argument front-to-back, italic thesis, entity inspector rail |
+| <code>execution&#8209;log</code> | Builds, CI runs, repo sweeps, agent workflows | Phase strip + progress + timestamped event stream with filters |
+| <code>deck&#8209;review</code> | Slide deck review and approval workflows | Status memo + slide preview + per-slide notes + send-back export |
 | `podcast` | Podcast episodes from the podcastextract pipeline | Briefing + transcript pair, episode hero + thesis + takeaways + claims + term inspector, hide-sidebar focus mode |
 
 ## Canonical primitives
@@ -112,7 +114,7 @@ Five rules cut across all of them: one palette, subgrid for cross-row column ali
 
 ## Optimization guard
 
-Run `make check` before changing the skill contract, examples, primitives, or `bin/render-podcast` — it runs the pytest suite, the perf harness, and the three Node linters; CI runs the same command on every push. The harness times the podcast renderer on the small fixture, a scaled fixture, and a complex synthetic Lenny's Podcast fixture based on public episode metadata from ["How to build a company that withstands any era"](https://www.lennysnewsletter.com/p/how-to-build-a-company-that-withstands). It also audits primitive registration and the "HTML is the source document" contract.
+Run `make check` before changing the skill contract, examples, primitives, or `bin/render-podcast` — it runs the pytest suite, the perf harness, and the three Node linters; CI runs the same command on every push. The harness times the podcast renderer on the small fixture, a scaled fixture, and a complex synthetic Lenny's Podcast fixture based on public episode metadata from ["How to build a company that withstands any era"](https://www.lennysnewsletter.com/p/how-to-build-a-company-that-withstands). It also audits shape/primitive registration and the "HTML is the source document" contract.
 
 Two companion linters cover the surfaces the harness can't: `node scripts/check-tokens.mjs` guards the palette against drift between `DESIGN.md`, `SKILL.md`, and `index.html`; and `node scripts/lint-artifact.mjs <file.html>` runs the mechanical pre-save checks against a freshly generated artifact at any path — the agent should run it on its own output before reporting done.
 

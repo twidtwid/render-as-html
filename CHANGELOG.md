@@ -2,6 +2,16 @@
 
 Newest first. Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 
+## 2.8.0 — 2026-07-26
+
+Shape refresh: two recent real-world artifact patterns are now first-class contracts.
+
+- **Added `execution-log` shape** for observed runs, branch telemetry, CI/build state, agent workflows, and other phase-plus-event-stream artifacts. It composes the existing `log-stream` primitive rather than adding a duplicate primitive.
+- **Added `deck-review` shape** for slide approval/preview workflows: status memo, slide preview, talk track, local per-slide notes, send-back export, and an optional WebCrypto encrypted payload gate.
+- Added canonical synthetic examples for both new shapes, keeping private source content out of the public repo.
+- Refreshed the gallery, dashboard, concept graph, document example, README, and version surfaces so they agree on twelve page shapes, ten primitives, and hybrid register usage.
+- Extended the performance harness with shape registration coverage so future shape additions cannot skip the example, reference, gallery, or `SKILL.md` wiring.
+
 ## 2.7.1 — 2026-07-14
 
 The gallery eats its own cooking.

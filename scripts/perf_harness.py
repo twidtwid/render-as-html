@@ -20,8 +20,9 @@ guard on the CLI and the publish-correctness invariants:
                      asserts linear scaling under a ceiling.
   5. self_contained— zero external resource requests in any examples/*.html
                      (GitHub Pages publish invariant).
-  6. primitives    — each canonical primitive has a file, gallery link, and contract.
-  7. source_doc    — examples keep HTML as the source document: local metadata,
+  6. shapes        — each page shape has an example, gallery link, reference, and contract.
+  7. primitives    — each canonical primitive has a file, gallery link, and contract.
+  8. source_doc    — examples keep HTML as the source document: local metadata,
                      blank favicon, no image-card promises without a hosted image,
                      no alternate-format copy affordances.
 
@@ -62,8 +63,24 @@ REPORTS = REPO / "perf" / "reports"
 SHAPE_FILES = [
     "dashboard.html", "document.html", "editorial.html", "timeline.html",
     "runbook.html", "comparison.html", "network-map.html", "triage-board.html",
-    "developer.html", "podcast.html", "podcast-transcript.html", "checklist.html",
+    "developer.html", "execution-log.html", "deck-review.html", "podcast.html",
+    "podcast-transcript.html", "checklist.html",
 ]
+
+SHAPE_REFERENCES = {
+    "dashboard": {"file": "examples/dashboard.html", "href": "dashboard.html"},
+    "document": {"file": "examples/document.html", "href": "document.html"},
+    "editorial": {"file": "examples/editorial.html", "href": "editorial.html"},
+    "timeline": {"file": "examples/timeline.html", "href": "timeline.html"},
+    "runbook": {"file": "examples/runbook.html", "href": "runbook.html"},
+    "comparison": {"file": "examples/comparison.html", "href": "comparison.html"},
+    "network-map": {"file": "examples/network-map.html", "href": "network-map.html"},
+    "triage-board": {"file": "examples/triage-board.html", "href": "triage-board.html"},
+    "developer": {"file": "examples/developer.html", "href": "developer.html"},
+    "execution-log": {"file": "examples/execution-log.html", "href": "execution-log.html"},
+    "deck-review": {"file": "examples/deck-review.html", "href": "deck-review.html"},
+    "podcast": {"file": "examples/podcast.html", "href": "podcast.html"},
+}
 
 PRIMITIVE_FILES = {
     "donut": {
@@ -505,7 +522,43 @@ def analyze_self_contained() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# 6. Primitive registry coverage
+# 6. Shape registry coverage
+# ---------------------------------------------------------------------------
+
+def analyze_shapes() -> dict:
+    skill = SKILL.read_text(encoding="utf-8")
+    gallery = (EXAMPLES / "index.html").read_text(encoding="utf-8")
+    violations: list[str] = []
+    rows = []
+    for name, spec in SHAPE_REFERENCES.items():
+        example_path = REPO / spec["file"]
+        reference_path = REPO / "references" / "shapes" / f"{name}.md"
+        has_example = example_path.exists()
+        has_reference = reference_path.exists()
+        has_gallery_link = spec["href"] in gallery
+        has_contract = re.search(rf"#### `{re.escape(name)}`", skill) is not None
+        if not has_example:
+            violations.append(f"{name}: missing {spec['file']}")
+        if not has_reference:
+            violations.append(f"{name}: missing references/shapes/{name}.md")
+        if not has_gallery_link:
+            violations.append(f"{name}: gallery missing link {spec['href']}")
+        if not has_contract:
+            violations.append(f"{name}: SKILL.md missing compact contract")
+        rows.append({
+            "name": name,
+            "file": spec["file"],
+            "reference": f"references/shapes/{name}.md",
+            "has_example": has_example,
+            "has_reference": has_reference,
+            "has_gallery_link": has_gallery_link,
+            "has_contract": has_contract,
+        })
+    return {"clean": not violations, "violations": violations, "shapes": rows}
+
+
+# ---------------------------------------------------------------------------
+# 7. Primitive registry coverage
 # ---------------------------------------------------------------------------
 
 def analyze_primitives() -> dict:
@@ -544,7 +597,7 @@ def analyze_primitives() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# 7. HTML-as-source-document audit
+# 8. HTML-as-source-document audit
 # ---------------------------------------------------------------------------
 
 _REQUIRED_META = [
@@ -648,6 +701,7 @@ def build_report(extra_fixture: Path | None = None) -> dict:
         "output_sizes": analyze_sizes(),
         "cli": analyze_cli(extra_fixture),
         "self_contained": analyze_self_contained(),
+        "shapes": analyze_shapes(),
         "primitives": analyze_primitives(),
         "source_document": analyze_source_document(),
     }
@@ -664,6 +718,9 @@ def regressions(report: dict, baseline: dict | None) -> list[str]:
     if not report["self_contained"]["clean"]:
         files = ", ".join(report["self_contained"]["violations"])
         out.append(f"SELF-CONTAINMENT: external resource refs in {files}")
+    shapes = report.get("shapes")
+    if shapes and not shapes["clean"]:
+        out.append("SHAPES: " + "; ".join(shapes["violations"]))
     prim = report.get("primitives")
     if prim and not prim["clean"]:
         out.append("PRIMITIVES: " + "; ".join(prim["violations"]))
@@ -692,7 +749,7 @@ def warnings(report: dict) -> list[str]:
 def to_markdown(report: dict, baseline: dict | None) -> str:
     s, bp, cli = report["skill_md"], report["boilerplate"], report["cli"]
     refs = report["references"]
-    prim, src = report["primitives"], report["source_document"]
+    shapes, prim, src = report["shapes"], report["primitives"], report["source_document"]
     L = ["# render-as-html perf harness", f"_generated {report['generated_at']}_", ""]
     delta = ""
     if baseline:
@@ -719,6 +776,10 @@ def to_markdown(report: dict, baseline: dict | None) -> str:
     L += ["", "## Self-containment",
           "- " + ("clean — zero external resource requests" if report["self_contained"]["clean"]
                   else f"VIOLATIONS: {report['self_contained']['violations']}")]
+    L += ["", "## Shape coverage",
+          f"- registry: {sum(1 for s in shapes['shapes'] if s['has_example'] and s['has_reference'] and s['has_gallery_link'] and s['has_contract'])}/{len(shapes['shapes'])} complete",
+          "- " + ("clean — every shape has an example, gallery link, reference, and compact contract" if shapes["clean"]
+                  else f"VIOLATIONS: {shapes['violations']}")]
     L += ["", "## Primitive coverage",
           f"- registry: {sum(1 for p in prim['primitives'] if p['has_file'] and p['has_gallery_link'] and p['has_contract'])}/{len(prim['primitives'])} complete",
           "- " + ("clean — every primitive has a file, gallery link, and contract" if prim["clean"]

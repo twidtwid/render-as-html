@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>render-as-html — execution log shape</title>
+<meta name="description" content="A live-style execution telemetry shape with phase cards, progress, filters, and a log stream.">
+<meta property="og:title" content="render-as-html — execution log shape">
+<meta property="og:description" content="A live-style execution telemetry shape with phase cards, progress, filters, and a log stream.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="render-as-html">
+<meta name="twitter:card" content="summary">
+<style>
+:root{
+  --paper:#faf6ef;--tint:#f3ede1;--card:#fbf7f0;--ink:#1a1815;--soft:#4a443c;--muted:#736d62;
+  --rule:#d9d1c2;--rule-soft:#ece5d6;--accent:#8a3a1a;--accent-2:#c2901a;--ok:#3e8f55;--warn:#b06c00;--bad:#b94a48;--info:#4475aa;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;max-width:100%;overflow-x:hidden}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.shell{max-width:1280px;margin:0 auto;padding:0 18px 44px}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(250,246,239,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 2px}
+.brand,.observed{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.brand{color:var(--ink);font-weight:800;display:flex;align-items:center;gap:9px}
+.dot{width:10px;height:10px;border-radius:999px;background:var(--ok);box-shadow:0 0 0 6px rgba(62,143,85,.12)}
+.mode{display:inline-flex;align-items:center;gap:7px}
+.hero{padding:44px 0 30px;border-bottom:1px solid var(--rule)}
+h1{font-size:clamp(36px,6vw,64px);line-height:.98;letter-spacing:-.02em;margin:0 0 12px;font-weight:850;max-width:900px}
+.lede{font-size:18px;max-width:800px;color:var(--soft);margin:0}
+.summary{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:26px;align-items:stretch;margin:28px 0 24px}
+.phases{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:var(--card)}
+.phase{padding:18px 18px 20px;min-height:145px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:12px}
+.phase:last-child{border-right:0}
+.phase-id{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.phase h2{font-size:16px;line-height:1.1;margin:0;font-weight:850}
+.state{margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:7px;border:1px solid currentColor;border-radius:999px;padding:4px 9px;font-family:var(--mono);font-size:11px;font-weight:800;text-transform:uppercase}
+.state.done{color:var(--ok)}.state.running{color:var(--info)}.state.pending{color:var(--muted)}.state.warn{color:var(--warn)}
+.progress{border:1px solid var(--rule);border-radius:8px;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;min-height:145px}
+.progress svg{width:110px;height:110px;display:block}
+.progress strong{font-family:var(--mono);font-size:22px}
+.progress span{font-family:var(--mono);font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.controls{display:grid;grid-template-columns:minmax(240px,1fr) auto auto;gap:10px;align-items:center;margin:22px 0 10px}
+label.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+input[type=search]{width:100%;font:15px var(--sans);background:var(--card);border:1px solid var(--rule);border-radius:6px;color:var(--ink);padding:12px 13px}
+button{font:800 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ink);background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:11px 14px;cursor:pointer;min-height:42px}
+button:hover,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip[aria-pressed=true],#pause[aria-pressed=true]{background:var(--accent-2);border-color:var(--accent-2);color:var(--ink)}
+.table-wrap{border:1px solid var(--rule);border-radius:8px;overflow:auto;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:760px}
+thead th{position:sticky;top:58px;background:var(--tint);z-index:3;text-align:left;font:800 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--rule)}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+td.time{font-family:var(--mono);color:var(--muted);white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid currentColor;border-radius:999px;padding:2px 8px;font:800 11px var(--mono)}
+.pill::before{content:"";width:6px;height:6px;border-radius:999px;background:currentColor}
+.PASS{color:var(--ok)}.WARN{color:var(--warn)}.FAIL{color:var(--bad)}.INFO{color:var(--info)}
+.message{font-weight:650;color:var(--soft)}
+.detail-btn{padding:5px 8px;min-height:30px;font-size:11px}
+tr.detail td{background:#fffaf2}
+.detail-row td{padding-top:0;color:var(--muted);font-family:var(--mono);font-size:12px}
+.detail-row pre{white-space:pre-wrap;margin:0;border-left:3px solid var(--rule);padding:10px 12px;background:var(--paper)}
+mark{background:var(--accent-2);color:var(--ink);border-radius:2px;padding:0 .1em}
+.statusline{font-family:var(--mono);font-size:12px;color:var(--muted);margin:8px 0 20px}
+#fallback-wrap{display:none;margin-top:16px;border:1px solid var(--rule);border-radius:8px;background:var(--card);padding:12px}
+#fallback-wrap.visible{display:block}
+#fallback-wrap strong{display:block;font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+textarea{width:100%;min-height:180px;resize:vertical;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);font:13px/1.45 var(--mono);padding:12px}
+footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:28px;padding-top:14px;border-top:1px solid var(--rule);font:12px var(--mono);color:var(--muted)}
+@media(max-width:900px){.summary{grid-template-columns:1fr}.phases{grid-template-columns:repeat(2,minmax(0,1fr))}.phase:nth-child(2){border-right:0}.observed{text-align:right}}
+@media(max-width:640px){.shell{padding:0 12px 36px}.topbar{align-items:flex-start}.summary{gap:14px}.phases{grid-template-columns:1fr}.phase{border-right:0;border-bottom:1px solid var(--rule)}.phase:last-child{border-bottom:0}.controls{grid-template-columns:1fr}.chips{display:grid;grid-template-columns:repeat(2,1fr)}button{width:100%}thead th{top:0}}
+</style>
+</head>
+<body>
+<main class="shell">
+  <div class="topbar">
+    <div class="brand"><span class="dot" aria-hidden="true"></span><span>Live · branch telemetry</span></div>
+    <div class="observed" id="observed">Observed 07:40 PDT · 5 changed files</div>
+  </div>
+
+  <section class="hero" aria-labelledby="title">
+    <h1 id="title">Make every state change visible.</h1>
+    <p class="lede">Execution is ordered around a hard release invariant: every phase has a named owner, every event is timestamped, every warning stays visible, and the snapshot can be copied back into the work.</p>
+  </section>
+
+  <section class="summary" aria-label="Execution summary">
+    <div class="phases" id="phases"></div>
+    <aside class="progress" aria-label="Approved plans progress">
+      <svg id="donut" viewBox="0 0 110 110" role="img" aria-label="Three of four plans approved"></svg>
+      <strong id="pct">75%</strong>
+      <span id="progress-label">3 / 4 plans approved</span>
+    </aside>
+  </section>
+
+  <section aria-label="Log controls">
+    <div class="controls">
+      <div>
+        <label class="sr" for="search">Filter log lines</label>
+        <input id="search" type="search" placeholder="Filter log lines, commits, files..." autocomplete="off">
+      </div>
+      <div class="chips" role="group" aria-label="Filter by log level">
+        <button class="chip" type="button" data-filter="INFO" aria-pressed="false">INFO</button>
+        <button class="chip" type="button" data-filter="PASS" aria-pressed="false">PASS</button>
+        <button class="chip" type="button" data-filter="WARN" aria-pressed="false">WARN</button>
+        <button class="chip" type="button" data-filter="FAIL" aria-pressed="false">FAIL</button>
+      </div>
+      <div class="chips">
+        <button id="pause" type="button" aria-pressed="false">pause tail</button>
+        <button id="copy" type="button">copy snapshot</button>
+      </div>
+    </div>
+    <p class="statusline" id="statusline">12 visible events · snapshot mode</p>
+  </section>
+
+  <div class="table-wrap">
+    <table aria-label="Execution log stream">
+      <thead><tr><th scope="col">Time</th><th scope="col">Level</th><th scope="col">Execution log</th><th scope="col">Detail</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="fallback-wrap" aria-live="polite">
+    <strong>Clipboard fallback</strong>
+    <textarea id="fallback" readonly aria-label="Copy snapshot fallback text"></textarea>
+  </div>
+
+  <footer><span>examples/execution-log.html · v2.8.0</span><span>render-as-html · execution-log shape</span></footer>
+</main>
+
+<script>
+const writeClipboard = (text) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(text)
+  : Promise.reject(new Error('clipboard unavailable'));
+const DATA_BEGIN = 'BEGIN ARTIFACT STATE DATA';
+const DATA_END = 'END ARTIFACT STATE DATA';
+
+const RUN = {
+  branch: 'codex/shape-refresh-log-deck',
+  observedAt: '07:40 PDT',
+  changedFiles: 5,
+  mode: 'snapshot'
+};
+const PHASES = [
+  { id:'PLAN 001', title:'Executable shape registry', state:'done' },
+  { id:'PLAN 002', title:'Encrypted review workflow', state:'done' },
+  { id:'PLAN 003', title:'Gallery and harness wiring', state:'running' },
+  { id:'PLAN 004', title:'Validation and PR handoff', state:'pending' }
+];
+const LOGS = [
+  { at:'07:31:10', level:'PASS', message:'Fetched latest origin/main and created isolated shape refresh branch.', detail:'branch codex/shape-refresh-log-deck · base 892806d' },
+  { at:'07:32:42', level:'INFO', message:'Inspected current shape registry: ten page shapes, ten primitives, log-stream already canonical.', detail:'log-stream remains a primitive; execution-log composes it as a page shape.' },
+  { at:'07:34:05', level:'WARN', message:'Example dashboard still described nine page shapes even though podcast was already registered.', detail:'refresh includes gallery drift cleanup.' },
+  { at:'07:36:18', level:'PASS', message:'Deck review source confirmed browser-only decrypt and local notes storage.', detail:'PBKDF2 + AES-GCM · passphrase kept for the session · notes saved by the browser.' },
+  { at:'07:38:20', level:'PASS', message:'Execution log reference added with phase strip, progress, filters, expandable rows, and copy snapshot contract.', detail:'references/shapes/execution-log.md' },
+  { at:'07:39:12', level:'INFO', message:'Synthetic example data selected to avoid committing private hostnames, branch logs, or deck payloads.', detail:'public examples must stay self-contained and non-sensitive.' },
+  { at:'07:40:01', level:'PASS', message:'Search and level chips keep a visible clear path and report exact visible-row count.', detail:'filter state never lies about source data.' },
+  { at:'07:40:17', level:'INFO', message:'Pause tail control demonstrates live-state affordance while this canonical example remains static.', detail:'live endpoints are optional and must label stale/error states.' },
+  { at:'07:40:33', level:'WARN', message:'Copy snapshot needs a visible fallback for hardened browsers and file:// contexts.', detail:'navigator.clipboard is guarded before use.' },
+  { at:'07:40:49', level:'PASS', message:'Artifact clears the three-feature floor: search, filters, SVG progress, expandable rows, copy snapshot.', detail:'features die on flatten; styling alone is not the artifact.' },
+  { at:'07:41:05', level:'INFO', message:'Remaining work: update docs, gallery, perf harness shape audit, and version surfaces.', detail:'make check is the hard gate before push.' },
+  { at:'07:41:22', level:'PASS', message:'Working tree changes are intentionally scoped to render-as-html shape refresh.', detail:'no private source payload copied into examples.' }
+];
+
+const tbody = document.getElementById('tbody');
+const search = document.getElementById('search');
+const chips = [...document.querySelectorAll('.chip')];
+const statusline = document.getElementById('statusline');
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function mark(text, term) {
+  const clean = escapeHTML(text);
+  if (!term) return clean;
+  const rx = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig');
+  return clean.replace(rx, m => '<mark>' + m + '</mark>');
+}
+function activeLevels() {
+  return chips.filter(c => c.getAttribute('aria-pressed') === 'true').map(c => c.dataset.filter);
+}
+function visibleLogs() {
+  const term = search.value.trim().toLowerCase();
+  const levels = activeLevels();
+  return LOGS.filter(row => {
+    const hay = (row.at + ' ' + row.level + ' ' + row.message + ' ' + row.detail).toLowerCase();
+    return (!term || hay.includes(term)) && (!levels.length || levels.includes(row.level));
+  });
+}
+function renderPhases() {
+  document.getElementById('phases').innerHTML = PHASES.map(p => {
+    const icon = p.state === 'done' ? '●' : p.state === 'running' ? '◐' : '○';
+    return `<article class="phase"><span class="phase-id">${p.id}</span><h2>${escapeHTML(p.title)}</h2><span class="state ${p.state}">${icon} ${p.state}</span></article>`;
+  }).join('');
+}
+function renderDonut() {
+  const done = PHASES.filter(p => p.state === 'done').length;
+  const pct = Math.round(done / PHASES.length * 100);
+  const r = 42, c = 2 * Math.PI * r;
+  document.getElementById('donut').innerHTML =
+    `<circle cx="55" cy="55" r="${r}" fill="none" stroke="var(--rule-soft)" stroke-width="12"></circle>
+     <circle cx="55" cy="55" r="${r}" fill="none" stroke="var(--ok)" stroke-width="12" stroke-linecap="round" transform="rotate(-90 55 55)" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct / 100)}"></circle>
+     <text x="55" y="60" text-anchor="middle" font-family="var(--mono)" font-size="21" font-weight="800" fill="var(--ink)">${pct}%</text>`;
+  document.getElementById('pct').textContent = pct + '%';
+  document.getElementById('progress-label').textContent = `${done} / ${PHASES.length} plans approved`;
+}
+function renderRows() {
+  const term = search.value.trim();
+  const rows = visibleLogs();
+  tbody.innerHTML = rows.map((row, ix) => {
+    return `<tr data-row="${ix}" data-level="${row.level}">
+      <td class="time">${mark(row.at, term)}</td>
+      <td><span class="pill ${row.level}">${row.level}</span></td>
+      <td class="message">${mark(row.message, term)}</td>
+      <td><button class="detail-btn" type="button" data-detail="${ix}" aria-expanded="false">open</button></td>
+    </tr>
+    <tr class="detail-row" data-detail-row="${ix}" hidden><td colspan="4"><pre>${mark(row.detail, term)}</pre></td></tr>`;
+  }).join('');
+  const levels = activeLevels();
+  statusline.textContent = `${rows.length} visible event${rows.length === 1 ? '' : 's'} · ${RUN.mode} mode${levels.length ? ' · ' + levels.join(' + ') : ''}`;
+}
+function snapshotText() {
+  const rows = visibleLogs().map(r => `- [${r.level}] ${r.at} ${r.message}`).join('\n');
+  return `${DATA_BEGIN}
+Run: execution-log shape example
+Branch: ${RUN.branch}
+Observed: ${RUN.observedAt}
+Changed files: ${RUN.changedFiles}
+Visible filters: ${activeLevels().join(', ') || 'none'} / search "${search.value.trim() || 'none'}"
+Visible log rows:
+${rows}
+${DATA_END}
+
+Update examples/execution-log.html to reflect this execution state.`;
+}
+
+renderPhases();
+renderDonut();
+renderRows();
+
+search.addEventListener('input', renderRows);
+chips.forEach(chip => chip.addEventListener('click', () => {
+  chip.setAttribute('aria-pressed', chip.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+  renderRows();
+}));
+document.getElementById('pause').addEventListener('click', e => {
+  const pressed = e.currentTarget.getAttribute('aria-pressed') === 'true';
+  e.currentTarget.setAttribute('aria-pressed', pressed ? 'false' : 'true');
+  e.currentTarget.textContent = pressed ? 'pause tail' : 'tail paused';
+  RUN.mode = pressed ? 'snapshot' : 'paused';
+  renderRows();
+});
+tbody.addEventListener('click', e => {
+  const btn = e.target.closest('[data-detail]');
+  if (!btn) return;
+  const row = tbody.querySelector(`[data-detail-row="${btn.dataset.detail}"]`);
+  const open = btn.getAttribute('aria-expanded') === 'true';
+  btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+  btn.textContent = open ? 'open' : 'close';
+  row.hidden = open;
+  btn.closest('tr').classList.toggle('detail', !open);
+});
+document.getElementById('copy').addEventListener('click', async () => {
+  const text = snapshotText();
+  const fallbackWrap = document.getElementById('fallback-wrap');
+  const fallback = document.getElementById('fallback');
+  fallback.value = text;
+  try {
+    await writeClipboard(text);
+    statusline.textContent = 'Snapshot copied · paste it into the next edit request.';
+    fallbackWrap.classList.remove('visible');
+  } catch (err) {
+    fallbackWrap.classList.add('visible');
+    fallback.focus();
+    fallback.select();
+    statusline.textContent = 'Clipboard blocked · fallback text selected.';
+  }
+});
+</script>
+</body>
+</html>
