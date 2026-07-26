@@ -319,6 +319,7 @@ td.reg-cell { font-family: var(--font-mono); font-size: 12px; }
 .pill-green { background: rgba(47,125,68,.15); color: var(--ok); }
 .pill-note  { background: rgba(47,111,179,.15); color: var(--note); }
 .pill-amber { background: rgba(155,100,29,.15); color: var(--warn); }
+.pill-blue  { background: rgba(55,168,215,.16); color: var(--note); }
 
 /* ── Kind tag ──────────────────────────────────────────────────── */
 .kind {
@@ -522,22 +523,22 @@ footer {
   <div class="hero">
     <div class="tile">
       <div class="t-label">Building blocks</div>
-      <div class="t-value" id="tile-total">14</div>
-      <div class="t-sub">9 shapes + 5 sub-patterns</div>
+      <div class="t-value" id="tile-total">17</div>
+      <div class="t-sub">12 shapes + 5 sub-patterns</div>
     </div>
     <div class="tile">
       <div class="t-label">Register split</div>
-      <div class="t-value" id="tile-split">6 / 3</div>
-      <div class="t-sub">instrument / reading shapes</div>
+      <div class="t-value" id="tile-split">7 / 3 / 2</div>
+      <div class="t-sub">instrument / reading / hybrid</div>
     </div>
     <div class="tile">
       <div class="t-label">Avg dimensions</div>
-      <div class="t-value" id="tile-dims">4.9</div>
+      <div class="t-value" id="tile-dims">5.1</div>
       <div class="t-sub">of 8, across all blocks</div>
     </div>
     <div class="tile ok-tile">
       <div class="t-label">Pass the bar</div>
-      <div class="t-value" id="tile-pass">14 / 14</div>
+      <div class="t-value" id="tile-pass">17 / 17</div>
       <div class="t-sub">≥3 HTML-native features</div>
     </div>
   </div>
@@ -549,7 +550,7 @@ footer {
     <div class="panel">
       <div class="panel-head">
         <strong>Shape coverage</strong>
-        <span id="row-count">14 blocks</span>
+        <span id="row-count">17 blocks</span>
       </div>
       <div class="table-wrap">
         <table id="shape-table" aria-label="render-as-html building-block coverage">
@@ -577,13 +578,13 @@ footer {
     <!-- RIGHT: charts -->
     <div class="charts-col">
 
-      <!-- Donut: register distribution (9 shapes) -->
+      <!-- Donut: register distribution (12 shapes) -->
       <div class="panel">
-        <div class="panel-head"><strong>Register distribution</strong><span>9 shapes</span></div>
+        <div class="panel-head"><strong>Register distribution</strong><span>12 shapes</span></div>
         <div class="chart-inner">
           <div class="chart-title">reading vs instrument</div>
           <div class="donut-wrap">
-            <svg id="donut-svg" width="110" height="110" viewBox="0 0 110 110" role="img" aria-label="Register split across the 9 shapes: 6 instrument shapes (67 percent), 3 reading shapes (33 percent)."></svg>
+            <svg id="donut-svg" width="110" height="110" viewBox="0 0 110 110" role="img" aria-label="Register split across the 12 shapes: 7 instrument shapes, 3 reading shapes, 2 hybrid shapes."></svg>
             <div class="donut-legend" id="donut-legend"></div>
           </div>
         </div>
@@ -594,7 +595,7 @@ footer {
         <div class="panel-head"><strong>HTML-native features</strong><span>per shape</span></div>
         <div class="chart-inner">
           <div class="chart-title">count by shape — bar floor is 3 (the bar)</div>
-          <svg id="feat-bar-svg" class="svg-bar" viewBox="0 0 320 150" role="img" aria-label="HTML-native feature count per shape, every shape clearing the floor of 3: dashboard 6, document 4, editorial 4, timeline 5, runbook 4, comparison 4, network-map 5, triage-board 5, developer 5."></svg>
+          <svg id="feat-bar-svg" class="svg-bar" viewBox="0 0 320 150" role="img" aria-label="HTML-native feature count per shape; every shape clears the floor of 3."></svg>
         </div>
       </div>
 
@@ -656,6 +657,9 @@ const BLOCKS = [
   { name:'network-map',       kind:'shape',       reg:'instrument', prim:7, feat:5, dims:6, kb:26, bar:'pass' },
   { name:'triage-board',      kind:'shape',       reg:'instrument', prim:6, feat:5, dims:5, kb:23, bar:'pass' },
   { name:'developer',         kind:'shape',       reg:'instrument', prim:6, feat:5, dims:6, kb:27, bar:'pass' },
+  { name:'execution-log',     kind:'shape',       reg:'instrument', prim:4, feat:6, dims:6, kb:18, bar:'pass' },
+  { name:'deck-review',       kind:'shape',       reg:'hybrid',     prim:4, feat:5, dims:6, kb:21, bar:'pass' },
+  { name:'podcast',           kind:'shape',       reg:'hybrid',     prim:7, feat:5, dims:6, kb:52, bar:'pass' },
   { name:'checklist',         kind:'sub-pattern', reg:'inherits',   prim:2, feat:3, dims:4, kb:14, bar:'pass' },
   { name:'exploration-grid',  kind:'sub-pattern', reg:'inherits',   prim:2, feat:3, dims:4, kb:16, bar:'pass' },
   { name:'config-editor',     kind:'sub-pattern', reg:'inherits',   prim:3, feat:4, dims:4, kb:17, bar:'pass' },
@@ -667,13 +671,14 @@ const BLOCKS = [
 const REG_COLOR = {
   instrument: '#8a3a1a',  // terracotta
   reading:    '#c2901a',  // ochre fill
+  hybrid:     '#37a8d7',  // slide/review blue
   inherits:   '#8a8378',  // neutral
 };
 
 // ── Helpers ────────────────────────────────────────────────────────
 function regPill(reg) {
-  const map = { instrument:'pill-green', reading:'pill-amber', inherits:'pill-note' };
-  const lbl = { instrument:'instrument', reading:'reading', inherits:'inherits' };
+  const map = { instrument:'pill-green', reading:'pill-amber', hybrid:'pill-blue', inherits:'pill-note' };
+  const lbl = { instrument:'instrument', reading:'reading', hybrid:'hybrid', inherits:'inherits' };
   return `<span class="pill ${map[reg]}">${lbl[reg]}</span>`;
 }
 function barCell(bar) {
@@ -689,14 +694,15 @@ function computeAggregates() {
   const shapes = BLOCKS.filter(b => b.kind === 'shape');
   const inst = shapes.filter(b => b.reg === 'instrument').length;
   const read = shapes.filter(b => b.reg === 'reading').length;
+  const hybrid = shapes.filter(b => b.reg === 'hybrid').length;
   const avgDims = (BLOCKS.reduce((s,b)=>s+b.dims,0) / total);
   const passes = BLOCKS.filter(b => b.bar === 'pass').length;
-  return { total, inst, read, avgDims, passes };
+  return { total, inst, read, hybrid, avgDims, passes };
 }
 function paintTiles() {
   const a = computeAggregates();
   document.getElementById('tile-total').textContent = a.total;
-  document.getElementById('tile-split').textContent = `${a.inst} / ${a.read}`;
+  document.getElementById('tile-split').textContent = `${a.inst} / ${a.read} / ${a.hybrid}`;
   document.getElementById('tile-dims').textContent  = a.avgDims.toFixed(1);
   document.getElementById('tile-pass').textContent  = `${a.passes} / ${a.total}`;
 }
@@ -730,7 +736,7 @@ function buildRows() {
   });
 }
 
-// ── Donut: register distribution across the 9 shapes ───────────────
+// ── Donut: register distribution across the 12 shapes ──────────────
 function buildDonut() {
   const shapes = BLOCKS.filter(b => b.kind === 'shape');
   const counts = {};
@@ -753,7 +759,7 @@ function buildDonut() {
     angle += slice;
   });
   document.getElementById('donut-svg').innerHTML = paths +
-    `<text x="55" y="51" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" font-weight="700" fill="var(--ink)">9</text>
+    `<text x="55" y="51" text-anchor="middle" font-family="ui-monospace,monospace" font-size="13" font-weight="700" fill="var(--ink)">${total}</text>
      <text x="55" y="63" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9" fill="var(--muted)">shapes</text>`;
 
   const legend = document.getElementById('donut-legend');
@@ -819,6 +825,7 @@ function buildBarSummary() {
 const CHIP_DEFS = [
   { key:'reg:instrument', label:'instrument', color:REG_COLOR.instrument },
   { key:'reg:reading',    label:'reading',    color:REG_COLOR.reading },
+  { key:'reg:hybrid',     label:'hybrid',     color:REG_COLOR.hybrid },
   { key:'reg:inherits',   label:'inherits',   color:REG_COLOR.inherits },
   { key:'kind:shape',       label:'shape',       color:'var(--ink-soft)' },
   { key:'kind:sub-pattern', label:'sub-pattern', color:'var(--ink-soft)' },

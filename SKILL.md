@@ -1,6 +1,6 @@
 ---
 name: render-as-html
-version: 2.7.1
+version: 2.8.0
 description: Create or update a designed, self-contained HTML artifact as the source of truth. Use when the user says "make an HTML artifact", "render this as html", "make me a pretty version", "I want to read this carefully", "make it interactive/readable", "update this HTML", or "/render-as-html". Output is an editable HTML file, not a conversion preview of another canonical document.
 ---
 
@@ -192,6 +192,8 @@ Different content wants different bones. Pick the shape first from content signa
 | **`triage-board`** | Bucketing items into 3-5 columns (Now/Next/Later/Cut), inbox triage, GTD reorg |
 | **`developer`** | PR writeups, code review, "explain this code" — annotated diff with severity findings |
 | **`editorial`** | Argument-driven long-form where the reader absorbs a sustained position — deep essays, research synthesis, analytical memos, argument-driven briefings |
+| **`execution-log`** | Live or snapshot execution telemetry — branch status, plan progress, event stream, observed state |
+| **`deck-review`** | Slide deck review/approval surfaces — status memo, slide preview, per-slide notes, send-back workflow |
 | **`podcast`** | A podcast episode rendered as a briefing — bottom line, takeaways, claims, terms — alongside a transcript browser. Consumes `episode.package.json` from the podcastextract pipeline. |
 
 **Auto-pick rules:**
@@ -200,6 +202,8 @@ Different content wants different bones. Pick the shape first from content signa
 - Source has dates as primary structure → `timeline`
 - Source is procedural (ordered steps with commands) → `runbook`
 - Source is a sustained argument read front-to-back with named entities worth a reference rail → `editorial`
+- Source is a long-running build, CI run, agent workflow, or repo observation with phases plus event lines → `execution-log`
+- Source is a slide deck, Keynote/PPT export, presenter script, approval link, or reviewer notes workflow → `deck-review`
 - Source is an `episode.package.json` with `schema_version` starting `podcast-transformer/` → `podcast`
 - Ambiguous? Ask.
 
@@ -261,6 +265,18 @@ Explicit user override always wins.
 - **Required:** syntax highlighting via **local CSS classes** (no CDN/Prism), per-file diffs with `+`/`−` gutter tints, inline margin annotations anchored to lines (not a sidebar), severity-coded finding cards (severity carried 3 ways, never color-only), files-changed nav, copy-link-to-finding.
 - **HTML-native ≥3:** local-CSS syntax highlighting, severity-color findings + "show nits" toggle, jump-to-file, click-to-copy a finding, side-by-side before/after. **Avoid:** generic document with code blocks (that's `document`); findings in a sidebar; runtime tokenizers.
 - **Detailed contract:** load [`references/shapes/developer.md`](references/shapes/developer.md) before building.
+
+#### `execution-log`
+- **Register:** Instrument. **Layout:** compact observed-state bar + invariant hero + phase/status strip + progress primitive + log-stream table; max-width 1280px; optional live source clearly labeled.
+- **Required:** run metadata, phase cards with state carried by icon/text/color, progress donut or bar, search, level/status filter chips, timestamped log stream, snapshot/export affordance. The phase strip plus log stream IS the shape.
+- **HTML-native ≥3:** live search/filter, level toggles, inline progress SVG, row expand/copy, pause/resume live tail, copy snapshot. **Avoid:** raw terminal dump; artifact-counting hero stats; hiding live-source failure; filters with no clear path.
+- **Detailed contract:** load [`references/shapes/execution-log.md`](references/shapes/execution-log.md) before building.
+
+#### `deck-review`
+- **Register:** Hybrid (status memo Reading; slide browser + notes workflow Instrument). **Layout:** sticky review topbar with status/slides/send-back views; slide preview and talk track stay synchronized; notes are local state.
+- **Required:** status context, slide preview, previous/next + dots, per-slide presenter notes/talk track, per-slide reviewer textarea, visible notes count, export/mail/copy fallback, clear-notes control. Optional encrypted payload gate uses WebCrypto only.
+- **HTML-native ≥3:** tabbed views, slide navigation, localStorage notes, textarea capture, encrypted unlock, copy/mail export, cross-highlight current slide. **Avoid:** unencrypted confidential payloads, remote note submission, screenshot-only slide review, mailto truncation without warning.
+- **Detailed contract:** load [`references/shapes/deck-review.md`](references/shapes/deck-review.md) before building.
 
 #### `podcast`
 - **Register:** Hybrid (briefing thesis Reading, rest compact Instrument; transcript Instrument). **Input:** `episode.package.json` from podcastify/podcast-transformer (deterministic — produced by `bin/render-podcast`, not hand-authored). **Output:** two sibling docs linked by topbar folder tabs — `podcast-at-a-glance.html` + `annotated-transcript.html`.
@@ -409,7 +425,8 @@ Application is determined by the shape's register, never chosen by the user or s
 | Register | Shapes | Display | Body | Size / line-height | Mono usage |
 |---|---|---|---|---|---|
 | **Reading** | `document`, `editorial`, `timeline` | serif, 700, tight tracking | serif | 17–18px / 1.6 | metadata, timestamps, numerals |
-| **Instrument** | `dashboard`, `comparison`, `developer`, `runbook`, `triage-board`, `network-map` | sans, 700 | sans | 14–15px / 1.5 | numerics, code, IDs |
+| **Instrument** | `dashboard`, `comparison`, `developer`, `execution-log`, `runbook`, `triage-board`, `network-map` | sans, 700 | sans | 14–15px / 1.5 | numerics, code, IDs |
+| **Hybrid** | `deck-review`, `podcast` | serif thesis/display inside compact sans frame | sans + serif prose blocks | 14–17px mixed | transcript turns, terms, episode metadata, review notes |
 
 ### Color
 
@@ -493,7 +510,7 @@ Dark (via prefers-color-scheme):
 4. **Write the HTML** — single self-contained file, all CSS inline, all JS (vanilla, ~100-200 lines) inline, no external fonts or CDN assets by default; include the Open Graph / Twitter summary card in `<head>` (see Output)
 5. **Pre-save checklist — hard fail, not a vibe check.** Run every item; if any answer is "no" or "I don't know", do not save yet. This is the load-bearing self-review that catches the "styled prose with a link button" failure mode before it ships.
 
-   - **Shape**: I picked one from the contract list (`dashboard` / `document` / `editorial` / `timeline` / `runbook` / `comparison` / `network-map` / `triage-board` / `developer` / `podcast`). I did not invent a shape.
+   - **Shape**: I picked one from the contract list (`dashboard` / `document` / `editorial` / `timeline` / `runbook` / `comparison` / `network-map` / `triage-board` / `developer` / `execution-log` / `deck-review` / `podcast`). I did not invent a shape.
    - **HTML-native features ≥3**: I can name at least three, specifically, in this artifact. *Not* "it has nice CSS" — concrete interactions: search-with-nav, click-entity-to-highlight, copy-as-prompt, sortable headers, scroll-spy, drag-to-bucket, etc.
    - **Information dimensions ≥4** out of the 8 listed in §The 8 information dimensions.
    - **Flatten test (author self-check, NOT a shipped control)**: I mentally stripped all JS and SVG. What disappeared? If only a hover state changed, this is styled prose, not an artifact — redesign. Do NOT ship a "flatten test" toggle in the delivered artifact — it's a meta-gimmick, not a reader feature.

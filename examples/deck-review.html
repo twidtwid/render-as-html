@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>render-as-html — deck review shape</title>
+<meta name="description" content="An encrypted slide deck review shape with status, slide preview, local notes, and send-back export.">
+<meta property="og:title" content="render-as-html — deck review shape">
+<meta property="og:description" content="An encrypted slide deck review shape with status, slide preview, local notes, and send-back export.">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="render-as-html">
+<meta name="twitter:card" content="summary">
+<style>
+:root{
+  --paper:#faf6ef;--tint:#f3ede1;--card:#fbf7f0;--ink:#1a1815;--soft:#4a443c;--muted:#736d62;
+  --rule:#d9d1c2;--rule-soft:#ece5d6;--accent:#8a3a1a;--accent-2:#c2901a;--blue:#37a8d7;
+  --serif:"Charter","Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Source Serif Pro",serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;max-width:100%;overflow-x:hidden}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.48;-webkit-font-smoothing:antialiased}
+button,a.button{font:800 13px var(--sans);color:var(--ink);background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:11px 16px;cursor:pointer;text-decoration:none;min-height:42px;display:inline-flex;align-items:center;justify-content:center}
+button:hover,a.button:hover,button:focus-visible,a.button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.app{min-height:100dvh}
+body.locked .app{display:none}
+.gate{min-height:100dvh;display:grid;place-items:center;padding:24px}
+body:not(.locked) .gate{display:none}
+.gate-card{width:min(520px,100%);border:1px solid var(--rule);border-radius:8px;background:var(--card);padding:28px;box-shadow:0 18px 60px rgba(26,24,21,.08)}
+.gate-card svg{width:54px;height:54px;margin-bottom:16px}
+.gate-card h1{font-family:var(--serif);font-size:34px;line-height:1.05;margin:0 0 8px}
+.gate-card p{color:var(--soft);margin:0 0 16px}
+.gate-card code{font-family:var(--mono);background:var(--tint);border:1px solid var(--rule);border-radius:4px;padding:1px 5px}
+.field{display:flex;gap:8px;margin-top:18px}
+input[type=password]{flex:1;min-width:0;font:16px var(--sans);background:var(--paper);border:1px solid var(--rule);border-radius:6px;color:var(--ink);padding:11px 12px}
+.error{min-height:22px;margin-top:12px;color:#9b3028;font:13px var(--sans)}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(250,246,239,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--rule);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;padding:14px 18px}
+.brand{font-weight:850;white-space:nowrap}
+.tabs{display:flex;align-items:center;gap:8px}
+.tab[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.badge{justify-self:start;font:800 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--rule);border-radius:999px;padding:7px 13px}
+.counter{font:15px var(--mono);color:var(--muted);white-space:nowrap}
+.view{display:none}
+.view.on{display:block}
+.wrap{max-width:1080px;margin:0 auto;padding:42px 22px 74px}
+.status{max-width:760px;margin:0 auto;font-family:var(--serif);font-size:21px;line-height:1.65}
+.kicker{font-family:var(--mono);font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:800;margin:0 0 12px}
+.status h1,.send h1{font-family:var(--serif);font-size:clamp(38px,6vw,58px);line-height:1.03;letter-spacing:-.01em;margin:0 0 14px}
+.status h1 em,.send h1 em{color:var(--accent);font-style:italic}
+.status p{margin:0 0 24px}
+.callout{font-family:var(--sans);font-size:16px;line-height:1.5;border:1px solid var(--rule);border-radius:8px;background:var(--tint);padding:16px 18px;margin:26px 0}
+.start-row{margin-top:22px}
+.slide-shell{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;gap:18px;align-items:center}
+.navbtn{width:56px;height:56px;border-radius:999px;padding:0;font-size:30px;font-family:var(--serif);line-height:1}
+.slide-card{min-width:0}
+.preview{border:1px solid var(--rule);border-radius:8px;background:white;overflow:hidden;box-shadow:0 10px 30px rgba(26,24,21,.08)}
+.preview svg{display:block;width:100%;height:auto;aspect-ratio:16/9}
+.slide-meta{display:flex;justify-content:space-between;gap:12px;align-items:end;margin:26px 0 8px}
+.slide-meta h2{font-family:var(--serif);font-size:30px;line-height:1.1;margin:0}
+.slide-meta span{font-family:var(--mono);font-size:14px;color:var(--muted);white-space:nowrap}
+.review-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,1fr);gap:28px;margin-top:24px}
+.track,.notes{min-width:0}
+.section-label{font-family:var(--mono);font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800;border-top:3px solid var(--ink);padding-top:14px;margin:0 0 14px}
+.track p{font-family:var(--serif);font-size:20px;line-height:1.55;margin:0 0 13px}
+textarea{width:100%;min-height:240px;resize:vertical;border:1px solid var(--rule);border-radius:8px;background:var(--card);color:var(--ink);font:16px/1.5 var(--sans);padding:14px}
+.saved{font:13px var(--mono);color:var(--muted);min-height:20px;margin-top:8px}
+.dots{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:24px 0 0}
+.dot{width:34px;height:34px;border-radius:999px;padding:0;font:800 12px var(--mono)}
+.dot[aria-current=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.dot.has::after{content:"";display:block;width:6px;height:6px;border-radius:999px;background:var(--accent-2);margin:2px auto 0}
+.send{max-width:840px;margin:0 auto}
+.send p{font-size:20px;color:var(--soft);margin:0 0 20px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}
+.button.off{opacity:.48;pointer-events:none}
+#exportbox{min-height:320px;font-family:var(--mono);font-size:14px;background:var(--card)}
+.hint{font:14px var(--sans);color:var(--muted);min-height:22px;margin-top:8px}
+footer{max-width:1080px;margin:0 auto;padding:16px 22px 28px;border-top:1px solid var(--rule);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font:12px var(--mono);color:var(--muted)}
+@media(max-width:820px){.topbar{grid-template-columns:1fr}.tabs{overflow:auto;padding-bottom:2px}.counter{justify-self:start}.wrap{padding:28px 14px 54px}.slide-shell{grid-template-columns:1fr}.navbtn{display:none}.review-grid{grid-template-columns:1fr}.slide-meta{align-items:start;flex-direction:column}.field{flex-direction:column}.field button{width:100%}}
+</style>
+</head>
+<body class="locked">
+<section class="gate" id="gate" aria-labelledby="gate-title">
+  <form class="gate-card" id="gateform">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="14" y="27" width="36" height="27" rx="6" fill="var(--tint)" stroke="var(--accent)" stroke-width="3"></rect>
+      <path d="M22 27v-8c0-6 4-11 10-11s10 5 10 11v8" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"></path>
+      <circle cx="32" cy="40" r="3" fill="var(--accent)"></circle>
+    </svg>
+    <p class="kicker">encrypted payload</p>
+    <h1 id="gate-title">Open the deck review.</h1>
+    <p>The slides are encrypted inside this file. They decrypt in your browser; the passphrase is never sent anywhere. Demo passphrase: <code>demo</code>.</p>
+    <div class="field">
+      <input id="pass" type="password" autocomplete="current-password" placeholder="Passphrase" aria-label="Passphrase">
+      <button id="unlock" type="submit">Unlock</button>
+    </div>
+    <div class="error" id="gateerr" role="status"></div>
+  </form>
+</section>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand" id="brand">Deck review</div>
+    <div class="tabs" role="group" aria-label="Review views">
+      <button class="tab" id="tab-status" type="button" aria-pressed="true">Status</button>
+      <button class="tab" id="tab-slides" type="button" aria-pressed="false">Slides</button>
+      <button class="tab" id="tab-send" type="button" aria-pressed="false">Send it back</button>
+      <span class="badge" id="badge">no notes yet</span>
+    </div>
+    <div class="counter" id="counter">Status</div>
+  </div>
+
+  <main class="wrap">
+    <section class="view status on" id="view-status">
+      <p class="kicker" id="status-kicker">review status</p>
+      <h1>The deck changed shape <em>today</em>.</h1>
+      <div id="status-body"></div>
+      <div class="start-row"><button id="start" type="button">Open slides</button></div>
+    </section>
+
+    <section class="view" id="view-slide" aria-label="Slide review">
+      <div class="slide-shell">
+        <button class="navbtn" id="prev" type="button" aria-label="Previous slide">‹</button>
+        <div class="slide-card">
+          <div class="preview" id="preview"></div>
+          <div class="slide-meta">
+            <div>
+              <p class="kicker" id="slide-kicker">Slide 01 of 03</p>
+              <h2 id="slide-title">Slide title</h2>
+            </div>
+            <span id="duration"></span>
+          </div>
+          <div class="review-grid">
+            <div class="track">
+              <p class="section-label">What the presenter says here</p>
+              <div id="track"></div>
+            </div>
+            <div class="notes">
+              <p class="section-label">Your note on this slide</p>
+              <textarea id="note" placeholder="Anything at all — a word, a rewrite, a disagreement."></textarea>
+              <div class="saved" id="saved"></div>
+            </div>
+          </div>
+          <div class="dots" id="dots" aria-label="Slide picker"></div>
+        </div>
+        <button class="navbtn" id="next" type="button" aria-label="Next slide">›</button>
+      </div>
+    </section>
+
+    <section class="view send" id="view-send">
+      <p class="kicker">last step</p>
+      <h1>Send it back to <em>the owner</em>.</h1>
+      <p id="send-copy">Open the slides and leave a note under any of them.</p>
+      <div class="actions">
+        <a class="button off" id="mail" href="#">Email it</a>
+        <button id="copyall" type="button">Copy instead</button>
+        <button id="clearall" type="button">Clear my notes</button>
+      </div>
+      <div class="hint" id="hint">Write a note on at least one slide first.</div>
+      <p class="section-label">What goes in the email</p>
+      <textarea id="exportbox" readonly aria-label="Deck review export text"></textarea>
+    </section>
+  </main>
+
+  <footer><span>examples/deck-review.html · v2.8.0</span><span>render-as-html · deck-review shape</span></footer>
+</div>
+
+<script>
+const ENC = {
+  salt: 'CBUiN1mQ6Q0aJzRBTltodQ==',
+  iv: 'BQoPFBkeIygtMjc8',
+  ct: [
+  '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',
+  ].join(''),
+  iters: 200000
+};
+const $ = (id) => document.getElementById(id);
+const writeClipboard = (text) => navigator.clipboard?.writeText
+  ? navigator.clipboard.writeText(text)
+  : Promise.reject(new Error('clipboard unavailable'));
+const SKEY = 'render-as-html.deck-review.demo.pass';
+let DATA = null;
+let slides = [];
+let view = 0;
+let lastSlide = 1;
+let booted = false;
+
+function b64d(s) {
+  return Uint8Array.from(atob(s), c => c.charCodeAt(0));
+}
+async function decrypt(pass) {
+  if (!crypto.subtle) throw new Error('webcrypto unavailable');
+  const enc = new TextEncoder();
+  const base = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt:b64d(ENC.salt), iterations:ENC.iters, hash:'SHA-256' },
+    base, { name:'AES-GCM', length:256 }, false, ['decrypt']
+  );
+  const plain = await crypto.subtle.decrypt({ name:'AES-GCM', iv:b64d(ENC.iv) }, key, b64d(ENC.ct));
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+function storeKey() {
+  return 'render-as-html.deck-review.notes.' + (DATA?.deck?.title || 'demo').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+}
+function loadNotes() {
+  try { return JSON.parse(localStorage.getItem(storeKey()) || '{}'); } catch (err) { return {}; }
+}
+function saveNotes(notes) {
+  try { localStorage.setItem(storeKey(), JSON.stringify(notes)); } catch (err) {}
+}
+function noteCount() {
+  return Object.values(loadNotes()).filter(v => String(v || '').trim()).length;
+}
+function setBadge() {
+  const n = noteCount();
+  $('badge').textContent = n === 0 ? 'no notes yet' : n + (n === 1 ? ' slide noted' : ' slides noted');
+}
+function slideSVG(s) {
+  const accent = s.accent || '#8a3a1a';
+  return `<svg viewBox="0 0 1600 900" role="img" aria-label="Slide ${s.n}: ${s.title}">
+    <rect width="1600" height="900" fill="#fffefd"></rect>
+    <rect x="0" y="0" width="1600" height="900" fill="#f7f2e8"></rect>
+    <rect x="84" y="84" width="1432" height="732" rx="24" fill="#fffefd" stroke="#d9d1c2" stroke-width="3"></rect>
+    <text x="150" y="185" font-family="ui-monospace, SF Mono, Menlo, monospace" font-size="32" letter-spacing="8" fill="#736d62">${s.kicker.toUpperCase()}</text>
+    <text x="150" y="330" font-family="ui-sans-serif, system-ui" font-size="82" font-weight="850" fill="#1a1815">${s.headline}</text>
+    <rect x="152" y="390" width="540" height="12" rx="6" fill="${accent}"></rect>
+    <foreignObject x="150" y="455" width="620" height="210"><div xmlns="http://www.w3.org/1999/xhtml" style="font:34px/1.3 system-ui;color:#4a443c">${s.body}</div></foreignObject>
+    <rect x="930" y="254" width="390" height="390" rx="24" fill="${accent}" opacity=".12"></rect>
+    <circle cx="1125" cy="449" r="128" fill="${accent}" opacity=".72"></circle>
+    <path d="M1062 456l46 46 92-118" fill="none" stroke="#fffefd" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"></path>
+  </svg>`;
+}
+function renderDots() {
+  const notes = loadNotes();
+  $('dots').innerHTML = slides.map((s, i) => {
+    const current = i + 1 === view;
+    const has = String(notes['n' + (i + 1)] || '').trim();
+    return `<button class="dot${has ? ' has' : ''}" type="button" data-slide="${i + 1}" aria-current="${current ? 'true' : 'false'}" aria-label="Go to slide ${i + 1}">${i + 1}</button>`;
+  }).join('');
+}
+function renderSlide() {
+  const s = slides[view - 1];
+  if (!s) return;
+  $('preview').innerHTML = slideSVG(s);
+  $('slide-kicker').textContent = 'Slide ' + String(s.n).padStart(2, '0') + ' of ' + slides.length;
+  $('slide-title').textContent = s.title;
+  $('duration').textContent = s.time ? s.time + ' spoken' : '';
+  $('track').innerHTML = s.lines.map(line => '<p>' + line + '</p>').join('');
+  $('note').value = loadNotes()['n' + view] || '';
+  $('saved').textContent = '';
+  renderDots();
+}
+function buildExport() {
+  const notes = loadNotes();
+  const parts = slides.map((s, ix) => {
+    const note = String(notes['n' + (ix + 1)] || '').trim();
+    return note ? 'Slide ' + String(ix + 1).padStart(2, '0') + ' — ' + s.title + '\n' + note : '';
+  }).filter(Boolean);
+  const head = DATA.deck.title + '\n' + DATA.deck.subtitle + '\nNotes on ' + parts.length + ' of ' + slides.length + ' slides\n';
+  $('exportbox').value = parts.length ? head + '\n' + parts.join('\n\n') : head + '\nNo notes were left on any slide.';
+  $('send-copy').textContent = parts.length ? parts.length + (parts.length === 1 ? ' slide has notes.' : ' slides have notes.') : 'Open the slides and leave a note under any of them.';
+  const href = 'mailto:' + encodeURIComponent(DATA.deck.ownerEmail) + '?subject=' + encodeURIComponent(DATA.deck.title + ' notes') + '&body=' + encodeURIComponent($('exportbox').value);
+  $('mail').href = href;
+  $('mail').classList.toggle('off', parts.length === 0);
+  $('hint').textContent = parts.length === 0 ? 'Write a note on at least one slide first.'
+    : href.length > 1900 ? 'That is a lot of notes. If the email looks short, use Copy instead and paste it in.'
+    : 'Nothing is sent until you press send in your mail app.';
+}
+function setTabs(which) {
+  for (const [id, on] of [['tab-status', which === 0], ['tab-slides', which > 0 && which <= slides.length], ['tab-send', which === slides.length + 1]]) {
+    $(id).setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+}
+function go(which) {
+  const max = slides.length + 1;
+  view = Math.max(0, Math.min(max, which));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+  if (view === 0) $('view-status').classList.add('on');
+  else if (view === max) { $('view-send').classList.add('on'); buildExport(); }
+  else { $('view-slide').classList.add('on'); lastSlide = view; renderSlide(); }
+  $('counter').textContent = view === 0 ? 'Status' : view === max ? 'Send it back' : 'Slide ' + view + ' / ' + slides.length;
+  $('prev').disabled = view <= 1;
+  $('next').disabled = view >= slides.length;
+  setTabs(view);
+  setBadge();
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+function boot() {
+  if (booted) return;
+  booted = true;
+  $('start').addEventListener('click', () => go(1));
+  $('tab-status').addEventListener('click', () => go(0));
+  $('tab-slides').addEventListener('click', () => go(lastSlide));
+  $('tab-send').addEventListener('click', () => go(slides.length + 1));
+  $('prev').addEventListener('click', () => go(view - 1));
+  $('next').addEventListener('click', () => go(view + 1));
+  $('dots').addEventListener('click', e => {
+    const btn = e.target.closest('[data-slide]');
+    if (btn) go(Number(btn.dataset.slide));
+  });
+  $('note').addEventListener('input', e => {
+    const notes = loadNotes();
+    notes['n' + view] = e.target.value;
+    saveNotes(notes);
+    $('saved').textContent = e.target.value.trim() ? 'Saved in this browser' : '';
+    setBadge();
+    renderDots();
+  });
+  $('copyall').addEventListener('click', async () => {
+    buildExport();
+    try {
+      await writeClipboard($('exportbox').value);
+      $('hint').textContent = 'Copied. Paste it into an email or the next edit request.';
+    } catch (err) {
+      $('exportbox').focus();
+      $('exportbox').select();
+      $('hint').textContent = 'Clipboard blocked. The export text is selected for manual copy.';
+    }
+  });
+  $('mail').addEventListener('click', e => { if (noteCount() === 0) e.preventDefault(); });
+  $('clearall').addEventListener('click', () => {
+    if (!confirm('Delete every note you have written on this page? This cannot be undone.')) return;
+    saveNotes({});
+    buildExport();
+    renderDots();
+    setBadge();
+    $('hint').textContent = 'Cleared.';
+  });
+  document.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'textarea' || tag === 'input') return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(view + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); go(view - 1); }
+  });
+}
+async function unlock(pass, quiet=false) {
+  const button = $('unlock');
+  if (!quiet) { button.disabled = true; button.textContent = 'Unlocking...'; $('gateerr').textContent = ''; }
+  try {
+    DATA = await decrypt(pass);
+    slides = DATA.slides;
+    $('brand').textContent = DATA.deck.title;
+    $('status-kicker').textContent = DATA.deck.version + ' · for ' + DATA.deck.recipient;
+    $('status-body').innerHTML = DATA.statusHtml;
+    try { sessionStorage.setItem(SKEY, pass); } catch (err) {}
+    document.body.classList.remove('locked');
+    boot();
+    go(0);
+  } catch (err) {
+    if (!quiet) {
+      $('gateerr').textContent = 'That passphrase does not open this file. Check it and try again.';
+      button.disabled = false;
+      button.textContent = 'Unlock';
+      $('pass').select();
+    }
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  $('gateform').addEventListener('submit', e => {
+    e.preventDefault();
+    unlock($('pass').value.trim());
+  });
+  let remembered = null;
+  try { remembered = sessionStorage.getItem(SKEY); } catch (err) {}
+  if (remembered) unlock(remembered, true);
+  else $('pass').focus();
+});
+</script>
+</body>
+</html>

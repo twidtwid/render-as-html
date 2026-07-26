@@ -72,6 +72,17 @@ def test_primitives_have_gallery_files_and_contracts():
                for p in audit["primitives"])
 
 
+def test_shapes_have_gallery_files_references_and_contracts():
+    h = _load_harness()
+    audit = h.analyze_shapes()
+    assert audit["clean"], "shape audit violations: " + "; ".join(audit["violations"])
+    assert len(audit["shapes"]) == 12
+    assert any(s["name"] == "execution-log" and s["has_example"] and s["has_reference"]
+               and s["has_gallery_link"] and s["has_contract"] for s in audit["shapes"])
+    assert any(s["name"] == "deck-review" and s["has_example"] and s["has_reference"]
+               and s["has_gallery_link"] and s["has_contract"] for s in audit["shapes"])
+
+
 def test_source_document_contract_is_clean():
     h = _load_harness()
     audit = h.analyze_source_document()

@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:,">
 <title>render-as-html — example gallery</title>
-<meta name="description" content="A self-referential gallery — one render-as-html artifact per page shape.">
+<meta name="description" content="A self-referential gallery of render-as-html shapes, sub-patterns, and primitive references.">
 <meta property="og:title" content="render-as-html — example gallery">
-<meta property="og:description" content="A self-referential gallery — one render-as-html artifact per page shape.">
+<meta property="og:description" content="A self-referential gallery of render-as-html shapes, sub-patterns, and primitive references.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="render-as-html">
 <meta name="twitter:card" content="summary">
@@ -99,8 +99,8 @@
 <main class="wrap">
   <p class="kicker">render-as-html · example gallery</p>
   <h1>The examples are about the thing that made them.</h1>
-  <p class="lede">Twelve self-contained artifacts — one per document type the skill produces, plus a canonical-primitives reference — and every one is about render-as-html itself or <a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">@trq212's "The Unreasonable Effectiveness of HTML."</a> A gallery that documents the system by being built in it.</p>
-  <p class="meta">12 examples · <b>self-contained</b>, zero external requests · WCAG-AA · mobile-tested</p>
+  <p class="lede">Fourteen self-contained gallery entries — twelve page shapes, plus a checklist sub-pattern and canonical-primitives reference — and every one is about render-as-html itself or <a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">@trq212's "The Unreasonable Effectiveness of HTML."</a> A gallery that documents the system by being built in it.</p>
+  <p class="meta">14 entries · <b>self-contained</b>, zero external requests · WCAG-AA · mobile-tested</p>
   <hr>
 
   <div class="controls">
@@ -112,16 +112,16 @@
     <div class="chips" role="group" aria-label="Filter by register">
       <button class="chip" type="button" data-filter="reading" aria-pressed="false">reading</button>
       <button class="chip" type="button" data-filter="instrument" aria-pressed="false">instrument</button>
-      <button class="chip" type="button" data-filter="briefing" aria-pressed="false">briefing</button>
+      <button class="chip" type="button" data-filter="hybrid" aria-pressed="false">hybrid</button>
       <button class="chip" type="button" data-filter="sub-pattern" aria-pressed="false">sub-pattern</button>
       <button class="chip" type="button" data-filter="reference" aria-pressed="false">reference</button>
     </div>
     <button id="clear-filters" type="button">× clear all</button>
   </div>
-  <p class="count" id="count"><b>12</b> of 12 examples</p>
+  <p class="count" id="count"><b>14</b> of 14 examples</p>
 
   <div class="grid">
-    <a class="card" data-shape="dashboard" data-register="instrument" href="dashboard.html"><span class="tag">dashboard · instrument</span><div class="ct">Shape coverage</div><p class="cd">The skill's own 9 shapes + 5 sub-patterns as a dense table — register split, dimensions, passes-the-bar — with live filter, sortable headers, a register donut, copy-as-prompt.</p></a>
+    <a class="card" data-shape="dashboard" data-register="instrument" href="dashboard.html"><span class="tag">dashboard · instrument</span><div class="ct">Shape coverage</div><p class="cd">The skill's shapes and sub-patterns as a dense table — register split, dimensions, passes-the-bar — with live filter, sortable headers, a register donut, copy-as-prompt.</p></a>
     <a class="card" data-shape="document" data-register="reading" href="document.html"><span class="tag">document · reading</span><div class="ct">The Unreasonable Effectiveness of HTML</div><p class="cd">A briefing on @trq212's thesis and how render-as-html operationalizes it — sticky TOC, open footnotes, a sortable shapes table, and a live "is your doc an instrument?" scorer.</p></a>
     <a class="card" data-shape="timeline" data-register="reading" href="timeline.html"><span class="tag">timeline · reading</span><div class="ct">From idea to one truth — a build log</div><p class="cd">render-as-html's real idea→ship history on a date spine: live event search, tag-chip filters, week cluster-collapse, per-event copy-as-quote.</p></a>
     <a class="card" data-shape="runbook" data-register="instrument" href="runbook.html"><span class="tag">runbook · instrument</span><div class="ct">Author an artifact that passes the bar</div><p class="cd">The procedure for producing a good render-as-html artifact: sticky progress, steps expanded by default, per-block code copy, a redesign branch, an "I'm stuck" prompt.</p></a>
@@ -130,17 +130,19 @@
     <a class="card" data-shape="triage-board" data-register="instrument" href="triage-board.html"><span class="tag">triage-board · instrument</span><div class="ct">Roadmap triage</div><p class="cd">Where the skill goes next — candidate improvements dragged across Now / Next / Later / Cut (with a touch move-picker), live counts, rationale notes, copy-as-prompt.</p></a>
     <a class="card" data-shape="developer" data-register="instrument" href="developer.html"><span class="tag">developer · instrument</span><div class="ct">PR: the one-truth design system</div><p class="cd">An annotated-diff + severity-findings writeup of render-as-html's real PR — files-changed nav, local syntax highlighting, click-to-copy findings.</p></a>
     <a class="card" data-shape="editorial" data-register="reading" href="editorial.html"><span class="tag">editorial · reading</span><div class="ct">Why the file you keep should be pokeable</div><p class="cd">An essay that demonstrates its own thesis: take a position on each claim, watch it compose a round-trip prompt live, then hit "flatten" to see what dies.</p></a>
-    <a class="card" data-shape="podcast" data-register="briefing" href="podcast.html"><span class="tag">podcast · briefing</span><div class="ct">The instrument you keep — fictional episode</div><p class="cd">An imagined podcast about render-as-html itself, rendered as a briefing — bottom line, takeaways, claims, term inspector, hide-sidebar focus mode, independently scrollable rails. Consumes the podcastextract JSON contract.</p></a>
+    <a class="card" data-shape="execution-log" data-register="instrument" href="execution-log.html"><span class="tag">execution-log · instrument</span><div class="ct">Make every state change visible</div><p class="cd">A live-style execution report — observed-state bar, phase cards, progress ring, searchable log stream, level chips, expandable details, copy snapshot.</p></a>
+    <a class="card" data-shape="deck-review" data-register="hybrid" href="deck-review.html"><span class="tag">deck-review · hybrid</span><div class="ct">The deck changed shape today</div><p class="cd">A slide-review workflow with encrypted synthetic payload, status memo, slide preview, local per-slide notes, mailto/copy send-back, and clear notes.</p></a>
+    <a class="card" data-shape="podcast" data-register="hybrid" href="podcast.html"><span class="tag">podcast · hybrid</span><div class="ct">The instrument you keep — fictional episode</div><p class="cd">An imagined podcast about render-as-html itself, rendered as a briefing — bottom line, takeaways, claims, term inspector, hide-sidebar focus mode, independently scrollable rails. Consumes the podcastextract JSON contract.</p></a>
     <a class="card" data-shape="checklist" data-register="sub-pattern" href="checklist.html"><span class="tag">checklist · sub-pattern</span><div class="ct">Pre-ship review</div><p class="cd">render-as-html's own pre-ship criteria — star + note per item, sticky live count, batch copy-as-prompt with a visible textarea fallback.</p></a>
     <a class="card" data-shape="primitives" data-register="reference" href="primitives.html"><span class="tag">primitives · reference</span><div class="ct">Ten canonical chart and table primitives</div><p class="cd">The bones the page shapes are built on — donut, ranked bar, sparkline cluster, stacked bar, topology, dense table, comparison matrix, annotated diff, log stream, scatter — each with contract, when-to-pick, and anti-patterns.</p></a>
   </div>
-  <p class="empty" id="empty">No example matches that. <button id="empty-clear" type="button" style="background:none;border:0;color:var(--accent);cursor:pointer;font:inherit;text-decoration:underline">Clear the filters</button> to see all twelve.</p>
-  <footer><span>examples/index.html · v2.7.1</span><span>render-as-html · <a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">the unreasonable effectiveness of HTML</a></span></footer>
+  <p class="empty" id="empty">No example matches that. <button id="empty-clear" type="button" style="background:none;border:0;color:var(--accent);cursor:pointer;font:inherit;text-decoration:underline">Clear the filters</button> to see all fourteen.</p>
+  <footer><span>examples/index.html · v2.8.0</span><span>render-as-html · <a href="https://x.com/trq212/status/2052809885763747935" target="_blank" rel="noopener noreferrer">the unreasonable effectiveness of HTML</a></span></footer>
 </main>
 
 <script>
 // Gallery as instrument: live search + register chips, cross-highlighting the
-// matched text in place. The counts always report against the full set of 12 —
+// matched text in place. The counts always report against the full gallery —
 // filters hide cards, they never lie about how many exist.
 const cards = [...document.querySelectorAll('a.card')];
 const search = document.getElementById('gallery-search');

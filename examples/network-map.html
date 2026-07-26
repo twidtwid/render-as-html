@@ -536,7 +536,7 @@ const CLUSTER_COLORS = {
 
 // Nodes: id, label, cluster, size (r ~ centrality), note
 const NODES = [
-  // Shapes — the nine page shapes
+  // Shapes — the twelve page shapes
   { id: 's-dashboard',  label: 'dashboard',     cluster: 'Shapes',     r: 16, note: 'Instrument shape for tabular ops data: multi-column grid, filter chips, dense tables, inline charts.' },
   { id: 's-document',   label: 'document',      cluster: 'Shapes',     r: 17, note: 'Reading shape for prose-heavy specs and plans: single column, sticky TOC, per-section copy.' },
   { id: 's-timeline',   label: 'timeline',      cluster: 'Shapes',     r: 15, note: 'Reading shape for dated logs and retros: vertical spine, date markers, event cards.' },
@@ -546,6 +546,9 @@ const NODES = [
   { id: 's-triage',     label: 'triage-board',  cluster: 'Shapes',     r: 15, note: 'Instrument shape for bucketing: 3–5 columns, drag cards between Now/Next/Later/Cut.' },
   { id: 's-developer',  label: 'developer',     cluster: 'Shapes',     r: 15, note: 'Instrument shape for code review: annotated diffs, severity findings, file navigator.' },
   { id: 's-editorial',  label: 'editorial',     cluster: 'Shapes',     r: 16, note: 'Reading shape for sustained argument: italic thesis, claim cards, right-rail entity inspector.' },
+  { id: 's-execution',  label: 'execution-log', cluster: 'Shapes',     r: 15, note: 'Instrument shape for observed runs: invariant hero, phase strip, progress, and timestamped log stream.' },
+  { id: 's-deck',       label: 'deck-review',   cluster: 'Shapes',     r: 16, note: 'Hybrid shape for slide approvals: status memo, slide preview, per-slide notes, and send-back export.' },
+  { id: 's-podcast',    label: 'podcast',       cluster: 'Shapes',     r: 16, note: 'Hybrid deterministic shape for podcast packages: briefing plus transcript browser with linked sibling views.' },
 
   // Sub-patterns — interaction patterns that ride inside shapes
   { id: 'p-checklist',  label: 'checklist',          cluster: 'Patterns', r: 13, note: 'Unordered set of state-bearing items with notes and a sticky batch export. Rides inside other shapes.' },
@@ -587,6 +590,9 @@ const EDGES = [
   { s: 's-triage',     t: 'pr-bar', rel: 'gated-by→' },
   { s: 's-developer',  t: 'pr-bar', rel: 'gated-by→' },
   { s: 's-editorial',  t: 'pr-bar', rel: 'gated-by→' },
+  { s: 's-execution',  t: 'pr-bar', rel: 'gated-by→' },
+  { s: 's-deck',       t: 'pr-bar', rel: 'gated-by→' },
+  { s: 's-podcast',    t: 'pr-bar', rel: 'gated-by→' },
 
   // Every shape uses copy-as-prompt
   { s: 's-dashboard',  t: 'pr-copy', rel: 'uses→' },
@@ -594,11 +600,17 @@ const EDGES = [
   { s: 's-triage',     t: 'pr-copy', rel: 'uses→' },
   { s: 's-editorial',  t: 'pr-copy', rel: 'uses→' },
   { s: 's-network',    t: 'pr-copy', rel: 'uses→' },
+  { s: 's-execution',  t: 'pr-copy', rel: 'uses→' },
+  { s: 's-deck',       t: 'pr-copy', rel: 'exports→' },
+  { s: 's-podcast',    t: 'pr-copy', rel: 'links→' },
 
   // Shape relationships
   { s: 's-editorial',  t: 's-document',  rel: 'sibling-of→' },
   { s: 's-comparison', t: 's-dashboard', rel: 'axis-flip-of→' },
   { s: 's-runbook',    t: 's-document',  rel: 'not-just→' },
+  { s: 's-execution',  t: 's-dashboard', rel: 'ops-cousin→' },
+  { s: 's-deck',       t: 's-document',  rel: 'review-of→' },
+  { s: 's-podcast',    t: 's-editorial', rel: 'briefs-like→' },
 
   // Sub-patterns ride inside shapes
   { s: 'p-checklist', t: 's-editorial', rel: 'rides-in→' },
@@ -642,6 +654,9 @@ const POS = {
   's-runbook':    [0.52, 0.92],
   's-triage':     [0.78, 0.66],
   's-developer':  [0.86, 0.82],
+  's-execution':  [0.66, 0.92],
+  's-deck':       [0.34, 0.78],
+  's-podcast':    [0.10, 0.84],
 
   // Sub-patterns — left edge
   'p-checklist':  [0.07, 0.62],
