@@ -21,6 +21,7 @@ versions:
 
 contracts:
 	node scripts/review-contracts.mjs
+	node scripts/check-contracts.mjs
 
 # Every page under examples/ is a real artifact and faces the full gate, incl.
 # the >=3 HTML-native feature floor. Only examples/primitives/*.html — the
