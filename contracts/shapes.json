@@ -6,8 +6,7 @@
       "register": "instrument",
       "requiredFeatures": ["search", "table", "copy_as_prompt"],
       "example": "examples/dashboard.html",
-      "href": "dashboard.html",
-      "reference": "references/shapes/dashboard.md"
+      "href": "dashboard.html"
     },
     {
       "id": "document",
@@ -15,8 +14,7 @@
       "register": "reading",
       "requiredFeatures": [],
       "example": "examples/document.html",
-      "href": "document.html",
-      "reference": "references/shapes/document.md"
+      "href": "document.html"
     },
     {
       "id": "timeline",
@@ -24,8 +22,7 @@
       "register": "reading",
       "requiredFeatures": ["filtering"],
       "example": "examples/timeline.html",
-      "href": "timeline.html",
-      "reference": "references/shapes/timeline.md"
+      "href": "timeline.html"
     },
     {
       "id": "runbook",
@@ -33,8 +30,7 @@
       "register": "instrument",
       "requiredFeatures": ["copy_as_prompt", "toggle"],
       "example": "examples/runbook.html",
-      "href": "runbook.html",
-      "reference": "references/shapes/runbook.md"
+      "href": "runbook.html"
     },
     {
       "id": "comparison",
@@ -42,8 +38,7 @@
       "register": "instrument",
       "requiredFeatures": ["table", "copy_as_prompt"],
       "example": "examples/comparison.html",
-      "href": "comparison.html",
-      "reference": "references/shapes/comparison.md"
+      "href": "comparison.html"
     },
     {
       "id": "network-map",
@@ -51,8 +46,7 @@
       "register": "instrument",
       "requiredFeatures": ["search", "inline_svg"],
       "example": "examples/network-map.html",
-      "href": "network-map.html",
-      "reference": "references/shapes/network-map.md"
+      "href": "network-map.html"
     },
     {
       "id": "triage-board",
@@ -60,8 +54,7 @@
       "register": "instrument",
       "requiredFeatures": ["drag", "copy_as_prompt"],
       "example": "examples/triage-board.html",
-      "href": "triage-board.html",
-      "reference": "references/shapes/triage-board.md"
+      "href": "triage-board.html"
     },
     {
       "id": "developer",
@@ -69,8 +62,7 @@
       "register": "instrument",
       "requiredFeatures": ["table", "textarea"],
       "example": "examples/developer.html",
-      "href": "developer.html",
-      "reference": "references/shapes/developer.md"
+      "href": "developer.html"
     },
     {
       "id": "editorial",

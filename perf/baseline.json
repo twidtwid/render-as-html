@@ -1,31 +1,23 @@
 {
   "skill_md": {
-    "total_bytes": 49339,
-    "total_tokens": 12241,
+    "total_bytes": 29935,
+    "total_tokens": 7429,
     "sections": [
       {
-        "name": "Page shapes (pick before designing)",
-        "tokens": 3291
+        "name": "Rendering process",
+        "tokens": 1643
       },
       {
         "name": "Design system",
-        "tokens": 2074
-      },
-      {
-        "name": "Rendering process",
-        "tokens": 1677
+        "tokens": 1153
       },
       {
         "name": "Canonical primitives (charts and tables)",
-        "tokens": 1478
+        "tokens": 1134
       },
       {
-        "name": "Artifact forms",
-        "tokens": 833
-      },
-      {
-        "name": "Output",
-        "tokens": 773
+        "name": "Page shapes (pick before designing)",
+        "tokens": 892
       },
       {
         "name": "Copy-as-prompt",
@@ -38,6 +30,14 @@
       {
         "name": "Sub-patterns (within shapes, not standalone shapes)",
         "tokens": 489
+      },
+      {
+        "name": "Artifact forms",
+        "tokens": 253
+      },
+      {
+        "name": "Output",
+        "tokens": 240
       },
       {
         "name": "The 8 information dimensions HTML can carry",
@@ -56,100 +56,11 @@
         "tokens": 66
       }
     ],
-    "contracts": [
-      {
-        "contract": "podcast",
-        "tokens": 289
-      },
-      {
-        "contract": "editorial",
-        "tokens": 283
-      },
-      {
-        "contract": "network-map",
-        "tokens": 253
-      },
-      {
-        "contract": "developer",
-        "tokens": 238
-      },
-      {
-        "contract": "deck-review",
-        "tokens": 229
-      },
-      {
-        "contract": "Log stream \u2014 chronological event table",
-        "tokens": 223
-      },
-      {
-        "contract": "triage-board",
-        "tokens": 217
-      },
-      {
-        "contract": "runbook",
-        "tokens": 211
-      },
-      {
-        "contract": "execution-log",
-        "tokens": 208
-      },
-      {
-        "contract": "comparison",
-        "tokens": 207
-      },
-      {
-        "contract": "timeline",
-        "tokens": 181
-      },
-      {
-        "contract": "document",
-        "tokens": 150
-      },
-      {
-        "contract": "dashboard",
-        "tokens": 141
-      },
-      {
-        "contract": "Scatter \u2014 two-dimension trade-off",
-        "tokens": 110
-      },
-      {
-        "contract": "Annotated diff \u2014 code review primitive",
-        "tokens": 68
-      },
-      {
-        "contract": "Dense ops table",
-        "tokens": 67
-      },
-      {
-        "contract": "Comparison matrix \u2014 items as columns",
-        "tokens": 66
-      },
-      {
-        "contract": "Sparkline \u2014 stat-tile cluster",
-        "tokens": 63
-      },
-      {
-        "contract": "Stacked bar \u2014 composition over time",
-        "tokens": 63
-      },
-      {
-        "contract": "Topology \u2014 inline service graph",
-        "tokens": 57
-      },
-      {
-        "contract": "Donut \u2014 categorical status mix",
-        "tokens": 55
-      },
-      {
-        "contract": "Bar \u2014 ranked top-N",
-        "tokens": 49
-      }
-    ],
+    "contracts": [],
     "oversized_contracts": []
   },
   "references": {
-    "total_tokens": 13603,
-    "file_count": 23
+    "total_tokens": 9928,
+    "file_count": 15
   }
 }

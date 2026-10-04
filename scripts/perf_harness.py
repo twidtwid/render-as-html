@@ -482,6 +482,9 @@ def analyze_self_contained() -> dict:
 # 6. Shape registry coverage
 # ---------------------------------------------------------------------------
 
+THICK_SHAPES = {"editorial", "podcast", "execution-log", "deck-review"}
+
+
 def analyze_shapes() -> dict:
     skill = SKILL.read_text(encoding="utf-8")
     gallery = (EXAMPLES / "index.html").read_text(encoding="utf-8")
@@ -493,15 +496,15 @@ def analyze_shapes() -> dict:
         has_example = example_path.exists()
         has_reference = reference_path.exists()
         has_gallery_link = spec["href"] in gallery
-        has_contract = re.search(rf"#### `{re.escape(name)}`", skill) is not None
+        has_contract = f"`{name}`" in skill
         if not has_example:
             violations.append(f"{name}: missing {spec['file']}")
-        if not has_reference:
+        if name in THICK_SHAPES and not has_reference:
             violations.append(f"{name}: missing references/shapes/{name}.md")
         if not has_gallery_link:
             violations.append(f"{name}: gallery missing link {spec['href']}")
         if not has_contract:
-            violations.append(f"{name}: SKILL.md missing compact contract")
+            violations.append(f"{name}: SKILL.md missing picker-table id")
         rows.append({
             "name": name,
             "file": spec["file"],
@@ -510,6 +513,9 @@ def analyze_shapes() -> dict:
             "has_reference": has_reference,
             "has_gallery_link": has_gallery_link,
             "has_contract": has_contract,
+            "complete": has_example and has_gallery_link and has_contract and (
+                has_reference if name in THICK_SHAPES else True
+            ),
         })
     return {"clean": not violations, "violations": violations, "shapes": rows}
 
@@ -527,13 +533,13 @@ def analyze_primitives() -> dict:
         file_path = REPO / spec["file"]
         has_file = file_path.exists()
         has_gallery_link = spec["href"] in gallery
-        has_contract = re.search(spec["contract"], skill, re.I) is not None
+        has_contract = f"`{name}`" in skill
         if not has_file:
             violations.append(f"{name}: missing {spec['file']}")
         if not has_gallery_link:
             violations.append(f"{name}: gallery missing link {spec['href']}")
         if not has_contract:
-            violations.append(f"{name}: SKILL.md missing contract {spec['contract']}")
+            violations.append(f"{name}: SKILL.md missing picker-table id")
         rows.append({
             "name": name,
             "file": spec["file"],
@@ -734,8 +740,8 @@ def to_markdown(report: dict, baseline: dict | None) -> str:
           "- " + ("clean — zero external resource requests" if report["self_contained"]["clean"]
                   else f"VIOLATIONS: {report['self_contained']['violations']}")]
     L += ["", "## Shape coverage",
-          f"- registry: {sum(1 for s in shapes['shapes'] if s['has_example'] and s['has_reference'] and s['has_gallery_link'] and s['has_contract'])}/{len(shapes['shapes'])} complete",
-          "- " + ("clean — every shape has an example, gallery link, reference, and compact contract" if shapes["clean"]
+          f"- registry: {sum(1 for s in shapes['shapes'] if s['complete'])}/{len(shapes['shapes'])} complete",
+          "- " + ("clean — every shape has an example, gallery link, and compact contract; thick shapes keep a reference" if shapes["clean"]
                   else f"VIOLATIONS: {shapes['violations']}")]
     L += ["", "## Primitive coverage",
           f"- registry: {sum(1 for p in prim['primitives'] if p['has_file'] and p['has_gallery_link'] and p['has_contract'])}/{len(prim['primitives'])} complete",

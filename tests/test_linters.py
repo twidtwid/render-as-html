@@ -189,6 +189,28 @@ def test_check_contracts_fails_when_json_drops_shape_still_named_in_skill(tmp_pa
     assert dropped["id"] in out or "expected 12 shapes" in out
 
 
+def test_check_contracts_fails_when_json_lists_missing_stub_reference(tmp_path):
+    import json
+    import shutil
+
+    (tmp_path / "contracts").mkdir()
+    shapes = json.loads((REPO / "contracts" / "shapes.json").read_text())
+    stub = next(s for s in shapes["shapes"] if s["id"] == "dashboard")
+    stub["reference"] = "references/shapes/dashboard.md"
+    (tmp_path / "contracts" / "shapes.json").write_text(json.dumps(shapes))
+    shutil.copy(REPO / "contracts" / "primitives.json", tmp_path / "contracts" / "primitives.json")
+    for name in ("SKILL.md", "examples", "references", "scripts"):
+        (tmp_path / name).symlink_to(REPO / name)
+    r = subprocess.run(
+        [NODE, str(REPO / "scripts" / "check-contracts.mjs"), "--root", str(tmp_path)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "dashboard.md" in (r.stdout + r.stderr)
+
+
 # --- review-contracts.mjs -----------------------------------------------------
 
 def test_review_contracts_clean():

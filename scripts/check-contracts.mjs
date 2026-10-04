@@ -19,6 +19,7 @@ const FEATURE_KEYS = new Set([
   "hide_sidebar",
 ]);
 const NOT_SHAPES = new Set(["checklist", "podcast-transcript"]);
+const THICK_SHAPES = new Set(["editorial", "podcast", "execution-log", "deck-review"]);
 const STALE_COUNTS = [
   "Nine page shapes",
   "nine chart and table primitives",
@@ -83,8 +84,8 @@ for (const shape of shapes) {
   }
   if (!shape.example) note(`${shape.id}: missing example`);
   else if (!exists(shape.example)) note(`${shape.id}: missing ${shape.example}`);
-  if (!shape.reference) note(`${shape.id}: missing reference`);
-  else if (!exists(shape.reference)) note(`${shape.id}: missing ${shape.reference}`);
+  if (THICK_SHAPES.has(shape.id) && !shape.reference) note(`${shape.id}: missing reference`);
+  if (shape.reference && !exists(shape.reference)) note(`${shape.id}: missing ${shape.reference}`);
 }
 
 const primitiveIds = new Set();
@@ -125,24 +126,22 @@ try {
 for (const shape of shapes) {
   if (!shape.id) continue;
   if (!skill.includes(shape.id)) note(`${shape.id}: SKILL.md does not name this id`);
+  if (shape.pickWhen && !skill.includes(shape.pickWhen)) {
+    note(`${shape.id}: SKILL.md pickWhen does not match contracts/shapes.json`);
+  }
   if (shape.href && !gallery.includes(shape.href)) {
     note(`${shape.id}: gallery missing link ${shape.href}`);
   }
-  const heading = new RegExp(`#### \`${shape.id}\``);
-  if (skill && !heading.test(skill)) note(`${shape.id}: SKILL.md missing compact contract`);
 }
 
 for (const primitive of primitives) {
   if (!primitive.id) continue;
   if (!skill.includes(primitive.id)) note(`${primitive.id}: SKILL.md does not name this id`);
+  if (primitive.pickWhen && !skill.includes(primitive.pickWhen)) {
+    note(`${primitive.id}: SKILL.md pickWhen does not match contracts/primitives.json`);
+  }
   if (primitive.href && !primGallery.includes(primitive.href)) {
     note(`${primitive.id}: primitives gallery missing link ${primitive.href}`);
-  }
-  if (primitive.skillHeading) {
-    const heading = new RegExp(primitive.skillHeading, "i");
-    if (skill && !heading.test(skill)) {
-      note(`${primitive.id}: SKILL.md missing contract ${primitive.skillHeading}`);
-    }
   }
 }
 
@@ -166,6 +165,9 @@ if (exists("references/shapes")) {
     if (!name.endsWith(".md")) continue;
     const id = name.slice(0, -3);
     if (!shapeIds.has(id)) note(`references/shapes/${name} is not in contracts/shapes.json`);
+  }
+  for (const id of THICK_SHAPES) {
+    if (!exists(`references/shapes/${id}.md`)) note(`${id}: missing thick reference`);
   }
 }
 
