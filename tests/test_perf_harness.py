@@ -72,6 +72,12 @@ def test_primitives_have_gallery_files_and_contracts():
                for p in audit["primitives"])
 
 
+def test_harness_shape_count_matches_registry():
+    h = _load_harness()
+    registry = json.loads((REPO / "contracts" / "shapes.json").read_text())
+    assert list(h.SHAPE_REFERENCES) == [row["id"] for row in registry["shapes"]]
+
+
 def test_shapes_have_gallery_files_references_and_contracts():
     h = _load_harness()
     audit = h.analyze_shapes()

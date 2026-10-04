@@ -67,73 +67,30 @@ SHAPE_FILES = [
     "podcast-transcript.html", "checklist.html",
 ]
 
-SHAPE_REFERENCES = {
-    "dashboard": {"file": "examples/dashboard.html", "href": "dashboard.html"},
-    "document": {"file": "examples/document.html", "href": "document.html"},
-    "editorial": {"file": "examples/editorial.html", "href": "editorial.html"},
-    "timeline": {"file": "examples/timeline.html", "href": "timeline.html"},
-    "runbook": {"file": "examples/runbook.html", "href": "runbook.html"},
-    "comparison": {"file": "examples/comparison.html", "href": "comparison.html"},
-    "network-map": {"file": "examples/network-map.html", "href": "network-map.html"},
-    "triage-board": {"file": "examples/triage-board.html", "href": "triage-board.html"},
-    "developer": {"file": "examples/developer.html", "href": "developer.html"},
-    "execution-log": {"file": "examples/execution-log.html", "href": "execution-log.html"},
-    "deck-review": {"file": "examples/deck-review.html", "href": "deck-review.html"},
-    "podcast": {"file": "examples/podcast.html", "href": "podcast.html"},
-}
+def _load_contract_json(rel: str) -> dict:
+    return json.loads((REPO / rel).read_text(encoding="utf-8"))
 
-PRIMITIVE_FILES = {
-    "donut": {
-        "file": "examples/primitives/01-donut.html",
-        "href": "primitives/01-donut.html",
-        "contract": r"#### Donut\b",
-    },
-    "bar": {
-        "file": "examples/primitives/02-bar.html",
-        "href": "primitives/02-bar.html",
-        "contract": r"#### Bar\b",
-    },
-    "sparkline": {
-        "file": "examples/primitives/03-sparkline.html",
-        "href": "primitives/03-sparkline.html",
-        "contract": r"#### Sparkline\b",
-    },
-    "stacked-bar": {
-        "file": "examples/primitives/04-stacked-bar.html",
-        "href": "primitives/04-stacked-bar.html",
-        "contract": r"#### Stacked bar\b",
-    },
-    "topology": {
-        "file": "examples/primitives/05-topology.html",
-        "href": "primitives/05-topology.html",
-        "contract": r"#### Topology\b",
-    },
-    "dense-ops-table": {
-        "file": "examples/primitives/06-table-ops.html",
-        "href": "primitives/06-table-ops.html",
-        "contract": r"#### Dense ops table\b",
-    },
-    "comparison-matrix": {
-        "file": "examples/primitives/07-table-comparison.html",
-        "href": "primitives/07-table-comparison.html",
-        "contract": r"#### Comparison matrix\b",
-    },
-    "annotated-diff": {
-        "file": "examples/primitives/08-diff.html",
-        "href": "primitives/08-diff.html",
-        "contract": r"#### Annotated diff\b",
-    },
-    "log-stream": {
-        "file": "examples/primitives/09-logs.html",
-        "href": "primitives/09-logs.html",
-        "contract": r"#### Log stream\b",
-    },
-    "scatter": {
-        "file": "examples/primitives/10-scatter.html",
-        "href": "primitives/10-scatter.html",
-        "contract": r"#### Scatter\b",
-    },
-}
+
+def _shape_references() -> dict:
+    return {
+        row["id"]: {"file": row["example"], "href": row["href"]}
+        for row in _load_contract_json("contracts/shapes.json")["shapes"]
+    }
+
+
+def _primitive_files() -> dict:
+    return {
+        row["id"]: {
+            "file": row["example"],
+            "href": row["href"],
+            "contract": row["skillHeading"],
+        }
+        for row in _load_contract_json("contracts/primitives.json")["primitives"]
+    }
+
+
+SHAPE_REFERENCES = _shape_references()
+PRIMITIVE_FILES = _primitive_files()
 
 # Public episode metadata, synthetic body text. This exercises a recent,
 # long-form Lenny's Podcast episode without copying a transcript.

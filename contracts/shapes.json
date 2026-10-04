@@ -1,0 +1,112 @@
+{
+  "shapes": [
+    {
+      "id": "dashboard",
+      "pickWhen": "Network scans, system reports, device lists, ops data — anything tabular with categories that benefit from filtering",
+      "register": "instrument",
+      "requiredFeatures": ["search", "table", "copy_as_prompt"],
+      "example": "examples/dashboard.html",
+      "href": "dashboard.html",
+      "reference": "references/shapes/dashboard.md"
+    },
+    {
+      "id": "document",
+      "pickWhen": "Plans, specs, briefings, essays, brainstorms, meeting notes — prose-heavy where you'd read paragraph-to-paragraph",
+      "register": "reading",
+      "requiredFeatures": ["table", "copy_as_prompt"],
+      "example": "examples/document.html",
+      "href": "document.html",
+      "reference": "references/shapes/document.md"
+    },
+    {
+      "id": "timeline",
+      "pickWhen": "Dated logs, diaries, retrospectives, project histories, trip journals",
+      "register": "reading",
+      "requiredFeatures": ["filtering"],
+      "example": "examples/timeline.html",
+      "href": "timeline.html",
+      "reference": "references/shapes/timeline.md"
+    },
+    {
+      "id": "runbook",
+      "pickWhen": "Disaster recovery, deploy guides, machine rebuilds — sequential procedure being executed not read",
+      "register": "instrument",
+      "requiredFeatures": ["copy_as_prompt", "toggle"],
+      "example": "examples/runbook.html",
+      "href": "runbook.html",
+      "reference": "references/shapes/runbook.md"
+    },
+    {
+      "id": "comparison",
+      "pickWhen": "X vs Y vs Z decision matrices, model comparisons, vendor pickers",
+      "register": "instrument",
+      "requiredFeatures": ["table", "copy_as_prompt"],
+      "example": "examples/comparison.html",
+      "href": "comparison.html",
+      "reference": "references/shapes/comparison.md"
+    },
+    {
+      "id": "network-map",
+      "pickWhen": "People/relationships, brain backlinks, dependencies — connections matter",
+      "register": "instrument",
+      "requiredFeatures": ["search", "inline_svg"],
+      "example": "examples/network-map.html",
+      "href": "network-map.html",
+      "reference": "references/shapes/network-map.md"
+    },
+    {
+      "id": "triage-board",
+      "pickWhen": "Bucketing items into 3–5 columns (Now/Next/Later/Cut), inbox triage, GTD reorg",
+      "register": "instrument",
+      "requiredFeatures": ["drag", "copy_as_prompt"],
+      "example": "examples/triage-board.html",
+      "href": "triage-board.html",
+      "reference": "references/shapes/triage-board.md"
+    },
+    {
+      "id": "developer",
+      "pickWhen": "PR writeups, code review, explain this code — annotated diff with severity findings",
+      "register": "instrument",
+      "requiredFeatures": ["table", "textarea"],
+      "example": "examples/developer.html",
+      "href": "developer.html",
+      "reference": "references/shapes/developer.md"
+    },
+    {
+      "id": "editorial",
+      "pickWhen": "Argument-driven long-form where the reader absorbs a sustained position",
+      "register": "reading",
+      "requiredFeatures": ["search", "copy_as_prompt"],
+      "example": "examples/editorial.html",
+      "href": "editorial.html",
+      "reference": "references/shapes/editorial.md"
+    },
+    {
+      "id": "execution-log",
+      "pickWhen": "Live or snapshot execution telemetry — branch status, plan progress, event stream, observed state",
+      "register": "instrument",
+      "requiredFeatures": ["search", "table"],
+      "example": "examples/execution-log.html",
+      "href": "execution-log.html",
+      "reference": "references/shapes/execution-log.md"
+    },
+    {
+      "id": "deck-review",
+      "pickWhen": "Slide deck review/approval surfaces — status memo, slide preview, per-slide notes, send-back workflow",
+      "register": "hybrid",
+      "requiredFeatures": ["local_storage", "textarea"],
+      "example": "examples/deck-review.html",
+      "href": "deck-review.html",
+      "reference": "references/shapes/deck-review.md"
+    },
+    {
+      "id": "podcast",
+      "pickWhen": "A podcast episode rendered as a briefing alongside a transcript browser",
+      "register": "hybrid",
+      "requiredFeatures": ["local_storage", "toggle"],
+      "example": "examples/podcast.html",
+      "href": "podcast.html",
+      "reference": "references/shapes/podcast.md"
+    }
+  ]
+}

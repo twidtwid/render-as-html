@@ -153,11 +153,73 @@ def test_check_versions_clean():
     assert r.returncode == 0, r.stdout + r.stderr
 
 
+def test_check_contracts_clean():
+    r = _run("scripts/check-contracts.mjs")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "12 shapes" in r.stdout
+    assert "10 primitives" in r.stdout
+
+
+def test_check_contracts_fails_when_shape_removed(tmp_path):
+    """The JSON registry is the list. Dropping one shape from it must fail
+    even when SKILL.md and the examples still name that shape."""
+    import json
+    import shutil
+
+    (tmp_path / "contracts").mkdir()
+    shapes = json.loads((REPO / "contracts" / "shapes.json").read_text())
+    dropped = shapes["shapes"].pop(0)
+    (tmp_path / "contracts" / "shapes.json").write_text(json.dumps(shapes))
+    shutil.copy(REPO / "contracts" / "primitives.json", tmp_path / "contracts" / "primitives.json")
+    for name in ("SKILL.md", "examples", "references", "scripts"):
+        (tmp_path / name).symlink_to(REPO / name)
+    r = subprocess.run(
+        [NODE, str(REPO / "scripts" / "check-contracts.mjs"), "--root", str(tmp_path)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 1, r.stdout + r.stderr
+    out = r.stdout + r.stderr
+    assert dropped["id"] in out or "expected 12 shapes" in out
+
+
 def test_check_versions_covers_newest_examples():
     r = _run("scripts/check-versions.mjs")
     assert r.returncode == 0, r.stdout + r.stderr
     assert "OK    examples/execution-log.html" in r.stdout
     assert "OK    examples/deck-review.html" in r.stdout
+
+
+def test_check_contracts_clean():
+    r = _run("scripts/check-contracts.mjs")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "12 shapes" in r.stdout
+    assert "10 primitives" in r.stdout
+
+
+def test_check_contracts_fails_when_shape_removed(tmp_path):
+    """The JSON registry is the list. Dropping one shape from it must fail
+    even when SKILL.md and the examples still name that shape."""
+    import json
+    import shutil
+
+    (tmp_path / "contracts").mkdir()
+    shapes = json.loads((REPO / "contracts" / "shapes.json").read_text())
+    dropped = shapes["shapes"].pop(0)
+    (tmp_path / "contracts" / "shapes.json").write_text(json.dumps(shapes))
+    shutil.copy(REPO / "contracts" / "primitives.json", tmp_path / "contracts" / "primitives.json")
+    for name in ("SKILL.md", "examples", "references", "scripts"):
+        (tmp_path / name).symlink_to(REPO / name)
+    r = subprocess.run(
+        [NODE, str(REPO / "scripts" / "check-contracts.mjs"), "--root", str(tmp_path)],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 1, r.stdout + r.stderr
+    out = r.stdout + r.stderr
+    assert dropped["id"] in out or "expected 12 shapes" in out
 
 
 # --- review-contracts.mjs -----------------------------------------------------
