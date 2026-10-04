@@ -36,6 +36,8 @@ const FILES = [
   "examples/primitives.html",
   "examples/podcast.html",
   "examples/podcast-transcript.html",
+  "examples/execution-log.html",
+  "examples/deck-review.html",
   "bin/render-podcast",
 ];
 
