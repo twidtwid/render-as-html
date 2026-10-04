@@ -417,6 +417,35 @@ def test_lint_artifact_against_dropped_copy_prompt_fails(tmp_path):
     assert "copy-as-prompt" in r.stdout
 
 
+def test_lint_artifact_unguarded_clipboard_fails(tmp_path):
+    bad = tmp_path / "unguarded.html"
+    bad.write_text(
+        _META_HEAD
+        + '<svg></svg><input type="search"><table></table>'
+        + "<script>navigator.clipboard.writeText('x');</script>"
+        + "</body></html>"
+    )
+    r = _run("scripts/lint-artifact.mjs", str(bad))
+    assert r.returncode == 1
+    assert "writeClipboard" in r.stdout or "guard" in r.stdout.lower()
+
+
+def test_lint_artifact_writeClipboard_helper_passes(tmp_path):
+    ok = tmp_path / "helper.html"
+    ok.write_text(
+        _META_HEAD
+        + '<svg></svg><input type="search"><table></table>'
+        + "<script>"
+        + "const writeClipboard = (t) => navigator.clipboard?.writeText"
+        + "  ? navigator.clipboard.writeText(t)"
+        + "  : Promise.reject(new Error('clipboard unavailable'));"
+        + "writeClipboard('x');"
+        + "</script></body></html>"
+    )
+    r = _run("scripts/lint-artifact.mjs", str(ok))
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
 def test_lint_artifact_against_dropped_script_fails(tmp_path):
     src = (REPO / "examples" / "dashboard.html").read_text()
     bad = tmp_path / "dropped-script.html"

@@ -137,6 +137,8 @@ function lintOne(file) {
 
   // --- clipboard guard ---
   if (/navigator\.clipboard\.writeText/.test(html)) {
+    const hasHelper = /(?:const|function|let|var)\s+writeClipboard\b/.test(html);
+    if (!hasHelper) fails.push("navigator.clipboard.writeText appears without a writeClipboard helper in the same file");
     const guarded = /navigator\.clipboard\s*&&\s*navigator\.clipboard\.writeText|navigator\.clipboard\?\.writeText/.test(html);
     if (!guarded) fails.push("navigator.clipboard.writeText called without guarding navigator.clipboard first");
   }
