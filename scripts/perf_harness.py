@@ -513,6 +513,9 @@ def analyze_shapes() -> dict:
             "has_reference": has_reference,
             "has_gallery_link": has_gallery_link,
             "has_contract": has_contract,
+            "complete": has_example and has_gallery_link and has_contract and (
+                has_reference if name in THICK_SHAPES else True
+            ),
         })
     return {"clean": not violations, "violations": violations, "shapes": rows}
 
@@ -737,8 +740,8 @@ def to_markdown(report: dict, baseline: dict | None) -> str:
           "- " + ("clean — zero external resource requests" if report["self_contained"]["clean"]
                   else f"VIOLATIONS: {report['self_contained']['violations']}")]
     L += ["", "## Shape coverage",
-          f"- registry: {sum(1 for s in shapes['shapes'] if s['has_example'] and s['has_reference'] and s['has_gallery_link'] and s['has_contract'])}/{len(shapes['shapes'])} complete",
-          "- " + ("clean — every shape has an example, gallery link, reference, and compact contract" if shapes["clean"]
+          f"- registry: {sum(1 for s in shapes['shapes'] if s['complete'])}/{len(shapes['shapes'])} complete",
+          "- " + ("clean — every shape has an example, gallery link, and compact contract; thick shapes keep a reference" if shapes["clean"]
                   else f"VIOLATIONS: {shapes['violations']}")]
     L += ["", "## Primitive coverage",
           f"- registry: {sum(1 for p in prim['primitives'] if p['has_file'] and p['has_gallery_link'] and p['has_contract'])}/{len(prim['primitives'])} complete",

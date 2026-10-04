@@ -172,8 +172,8 @@ The picker table is generated from `contracts/shapes.json`. Checklist and podcas
 | `triage-board` | Bucketing items into 3–5 columns (Now/Next/Later/Cut), inbox triage, GTD reorg | instrument | `examples/triage-board.html` | copy the example |
 | `developer` | PR writeups, code review, explain this code — annotated diff with severity findings | instrument | `examples/developer.html` | copy the example |
 | `editorial` | Argument-driven long-form where the reader absorbs a sustained position | reading | `examples/editorial.html` | `references/shapes/editorial.md` then the example |
-| `execution-log` | Live or snapshot execution telemetry — branch status, plan progress, event stream | instrument | `examples/execution-log.html` | `references/shapes/execution-log.md` then the example |
-| `deck-review` | Slide deck review/approval — status memo, slide preview, per-slide notes | hybrid | `examples/deck-review.html` | `references/shapes/deck-review.md` then the example |
+| `execution-log` | Live or snapshot execution telemetry — branch status, plan progress, event stream, observed state | instrument | `examples/execution-log.html` | `references/shapes/execution-log.md` then the example |
+| `deck-review` | Slide deck review/approval surfaces — status memo, slide preview, per-slide notes, send-back workflow | hybrid | `examples/deck-review.html` | `references/shapes/deck-review.md` then the example |
 | `podcast` | A podcast episode rendered as a briefing alongside a transcript browser | hybrid | `examples/podcast.html` | `references/shapes/podcast.md` then the example |
 
 Do not invent a shape. Copy the gold HTML for a stub shape. Load the thick reference before building `editorial`, `podcast`, `execution-log`, or `deck-review`.
@@ -226,14 +226,14 @@ The primitive picker is generated from `contracts/primitives.json`. Load `refere
 |---|---|---|
 | `donut` | 2–5 mutually-exclusive categories where proportion-at-a-glance beats absolute counts | `examples/primitives/01-donut.html` |
 | `bar` | ≤12 items where order matters and a single magnitude per item is the signal | `examples/primitives/02-bar.html` |
-| `sparkline` | 2–4 hero metrics where each metric is the subject | `examples/primitives/03-sparkline.html` |
+| `sparkline` | 2–4 hero metrics where each metric is the subject; current value + recent-trend shape is the one-glance read | `examples/primitives/03-sparkline.html` |
 | `stacked-bar` | categories sum to a meaningful whole each period; 7–30 periods | `examples/primitives/04-stacked-bar.html` |
 | `topology` | connections are the point and node count is ≤30 | `examples/primitives/05-topology.html` |
 | `dense-ops-table` | flat list of records keyed by an identifier; ≥6 rows; filter/sort is the central interaction | `examples/primitives/06-table-ops.html` |
 | `comparison-matrix` | X vs Y vs Z decision matrix with shared criteria and live weight tuning | `examples/primitives/07-table-comparison.html` |
 | `annotated-diff` | code changes or line-anchored critique where adjacency to the source beats a side panel | `examples/primitives/08-diff.html` |
 | `log-stream` | a tail of timestamped events with a categorical level; newest-first reading | `examples/primitives/09-logs.html` |
-| `scatter` | two genuinely independent, well-spread dimensions across ≥10 points | `examples/primitives/10-scatter.html` |
+| `scatter` | two genuinely independent, well-spread dimensions across ≥10 points where the relationship is the signal | `examples/primitives/10-scatter.html` |
 
 ### Cross-cutting rules (primitives only)
 

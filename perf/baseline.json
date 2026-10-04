@@ -1,7 +1,7 @@
 {
   "skill_md": {
-    "total_bytes": 29794,
-    "total_tokens": 7394,
+    "total_bytes": 29935,
+    "total_tokens": 7429,
     "sections": [
       {
         "name": "Rendering process",
@@ -13,11 +13,11 @@
       },
       {
         "name": "Canonical primitives (charts and tables)",
-        "tokens": 1110
+        "tokens": 1134
       },
       {
         "name": "Page shapes (pick before designing)",
-        "tokens": 881
+        "tokens": 892
       },
       {
         "name": "Copy-as-prompt",

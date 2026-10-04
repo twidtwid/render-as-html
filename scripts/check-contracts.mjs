@@ -84,10 +84,8 @@ for (const shape of shapes) {
   }
   if (!shape.example) note(`${shape.id}: missing example`);
   else if (!exists(shape.example)) note(`${shape.id}: missing ${shape.example}`);
-  if (THICK_SHAPES.has(shape.id)) {
-    if (!shape.reference) note(`${shape.id}: missing reference`);
-    else if (!exists(shape.reference)) note(`${shape.id}: missing ${shape.reference}`);
-  }
+  if (THICK_SHAPES.has(shape.id) && !shape.reference) note(`${shape.id}: missing reference`);
+  if (shape.reference && !exists(shape.reference)) note(`${shape.id}: missing ${shape.reference}`);
 }
 
 const primitiveIds = new Set();
@@ -128,6 +126,9 @@ try {
 for (const shape of shapes) {
   if (!shape.id) continue;
   if (!skill.includes(shape.id)) note(`${shape.id}: SKILL.md does not name this id`);
+  if (shape.pickWhen && !skill.includes(shape.pickWhen)) {
+    note(`${shape.id}: SKILL.md pickWhen does not match contracts/shapes.json`);
+  }
   if (shape.href && !gallery.includes(shape.href)) {
     note(`${shape.id}: gallery missing link ${shape.href}`);
   }
@@ -136,6 +137,9 @@ for (const shape of shapes) {
 for (const primitive of primitives) {
   if (!primitive.id) continue;
   if (!skill.includes(primitive.id)) note(`${primitive.id}: SKILL.md does not name this id`);
+  if (primitive.pickWhen && !skill.includes(primitive.pickWhen)) {
+    note(`${primitive.id}: SKILL.md pickWhen does not match contracts/primitives.json`);
+  }
   if (primitive.href && !primGallery.includes(primitive.href)) {
     note(`${primitive.id}: primitives gallery missing link ${primitive.href}`);
   }
