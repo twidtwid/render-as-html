@@ -1,0 +1,263 @@
+{
+  "repo": "/workspace",
+  "lint": "scripts/lint-artifact.mjs",
+  "cases": [
+    {
+      "id": "magnifica-styled-prose",
+      "incident": "2026-05-25 Magnifica Humanitas / PR #5",
+      "expectFail": true,
+      "judgment": null,
+      "lintOk": false,
+      "exit": 1,
+      "caught": true,
+      "fails": [
+        "only 0 HTML-native feature(s) detected (none); need ≥3 — this reads as styled prose, not an artifact"
+      ],
+      "features": [],
+      "bytes": 618
+    },
+    {
+      "id": "magnifica-longform-floor",
+      "incident": "2026-05-25 Magnifica size smell / PR #5",
+      "expectFail": true,
+      "judgment": null,
+      "lintOk": false,
+      "exit": 1,
+      "caught": true,
+      "fails": [
+        "only 0 HTML-native feature(s) detected (none); need ≥3 — this reads as styled prose, not an artifact",
+        "20533 bytes < 30000B long-form floor — likely rendered off a summary / skipped features"
+      ],
+      "features": [],
+      "bytes": 20533
+    },
+    {
+      "id": "gallery-prose-features",
+      "incident": "v2.7.0 CHANGELOG: feature floor matched words in prose",
+      "expectFail": true,
+      "judgment": null,
+      "lintOk": false,
+      "exit": 1,
+      "caught": true,
+      "fails": [
+        "only 0 HTML-native feature(s) detected (none); need ≥3 — this reads as styled prose, not an artifact"
+      ],
+      "features": [],
+      "bytes": 585
+    },
+    {
+      "id": "dead-script-stray-brace",
+      "incident": "2026-07-04 dead-script shipped 3x / lint-artifact.mjs:121",
+      "expectFail": true,
+      "judgment": null,
+      "lintOk": false,
+      "exit": 1,
+      "caught": true,
+      "fails": [
+        "copy-as-prompt output must delimit collected state with BEGIN/END ARTIFACT STATE DATA",
+        "inline <script> #1 has a JS syntax error → the whole script is dead (all interactivity fails): Unexpected token ';'"
+      ],
+      "features": [
+        "search",
+        "inline_svg",
+        "copy_as_prompt",
+        "textarea"
+      ],
+      "bytes": 704
+    },
+    {
+      "id": "dead-control-missing-id",
+      "incident": "dead-control scan / e0278cb + 4b65691 compound selectors",
+      "expectFail": true,
+      "judgment": null,
+      "lintOk": false,
+      "exit": 1,
+      "caught": true,
+      "fails": [
+        "copy-as-prompt output must delimit collected state with BEGIN/END ARTIFACT STATE DATA",
+        "JS references #missing-chart but no element has id=\"missing-chart\" → that control is wired to nothing (dead)"
+      ],
+      "features": [
+        "search",
+        "inline_svg",
+        "copy_as_prompt",
+        "textarea"
+      ],
+      "bytes": 713
+    },
+    {
+      "id": "unguarded-clipboard",
+      "incident": "cbcaf99 clipboard guard",
+      "expectFail": true,
+      "judgment": null,
+      "lintOk": false,
+      "exit": 1,
+      "caught": true,
+      "fails": [
+        "copy-as-prompt output must delimit collected state with BEGIN/END ARTIFACT STATE DATA",
+        "navigator.clipboard.writeText called without guarding navigator.clipboard first"
+      ],
+      "features": [
+        "search",
+        "inline_svg",
+        "copy_as_prompt",
+        "textarea"
+      ],
+      "bytes": 699
+    },
+    {
+      "id": "artifact-html-placeholder",
+      "incident": "SKILL.md lint step: no <artifact.html> placeholder",
+      "expectFail": true,
+      "judgment": null,
+      "lintOk": false,
+      "exit": 1,
+      "caught": true,
+      "fails": [
+        "copy-as-prompt names the placeholder <artifact.html> instead of the real file path",
+        "copy-as-prompt output must delimit collected state with BEGIN/END ARTIFACT STATE DATA"
+      ],
+      "features": [
+        "search",
+        "inline_svg",
+        "copy_as_prompt",
+        "textarea"
+      ],
+      "bytes": 692
+    },
+    {
+      "id": "copy-as-markdown",
+      "incident": "SKILL anti-pattern + lint-artifact copy-as-markdown fail",
+      "expectFail": true,
+      "judgment": null,
+      "lintOk": false,
+      "exit": 1,
+      "caught": true,
+      "fails": [
+        "\"copy as markdown\" control implies another canonical format — prefer copy-as-prompt / copy-section"
+      ],
+      "features": [
+        "search",
+        "inline_svg",
+        "textarea"
+      ],
+      "bytes": 627
+    },
+    {
+      "id": "copy-prompt-no-delimiter",
+      "incident": "copy-as-prompt contract / review-contracts false positive fix v2.7.1",
+      "expectFail": true,
+      "judgment": null,
+      "lintOk": false,
+      "exit": 1,
+      "caught": true,
+      "fails": [
+        "copy-as-prompt output must delimit collected state with BEGIN/END ARTIFACT STATE DATA"
+      ],
+      "features": [
+        "search",
+        "inline_svg",
+        "copy_as_prompt",
+        "textarea"
+      ],
+      "bytes": 644
+    },
+    {
+      "id": "copy-prompt-prose-mention",
+      "incident": "v2.7.1 review-contracts regex spanned unrelated elements",
+      "expectFail": false,
+      "judgment": null,
+      "lintOk": true,
+      "exit": 0,
+      "caught": true,
+      "fails": [],
+      "features": [
+        "search",
+        "inline_svg",
+        "table",
+        "copy_as_prompt"
+      ],
+      "bytes": 628
+    },
+    {
+      "id": "cdn-script",
+      "incident": "self-containment / EXTERNAL_RESOURCE",
+      "expectFail": true,
+      "judgment": null,
+      "lintOk": false,
+      "exit": 1,
+      "caught": true,
+      "fails": [
+        "loads an external resource (no CDN/fonts/analytics by default): <script src=\"https:"
+      ],
+      "features": [
+        "search",
+        "inline_svg",
+        "table"
+      ],
+      "bytes": 626
+    },
+    {
+      "id": "svg-width-auto",
+      "incident": "lint-artifact SVG auto size",
+      "expectFail": true,
+      "judgment": null,
+      "lintOk": false,
+      "exit": 1,
+      "caught": true,
+      "fails": [
+        "SVG has width/height=\"auto\" (invalid attribute value); size responsively via CSS — <svg width=\"auto\" height=\"auto\">"
+      ],
+      "features": [
+        "search",
+        "inline_svg",
+        "table"
+      ],
+      "bytes": 599
+    },
+    {
+      "id": "wrong-shape-editorial-on-table",
+      "incident": "2026-05-25 omega-3 editorial draft on tabular data / PR #6",
+      "expectFail": false,
+      "judgment": "lint cannot detect wrong shape",
+      "lintOk": true,
+      "exit": 0,
+      "caught": true,
+      "fails": [],
+      "features": [
+        "search",
+        "inline_svg",
+        "table",
+        "copy_as_prompt",
+        "textarea"
+      ],
+      "bytes": 817
+    },
+    {
+      "id": "wrong-primitive-scatter",
+      "incident": "2026-05-25 omega-3 scatter for 8 clustered points / PR #6",
+      "expectFail": false,
+      "judgment": "lint cannot detect wrong chart primitive",
+      "lintOk": true,
+      "exit": 0,
+      "caught": true,
+      "fails": [],
+      "features": [
+        "search",
+        "inline_svg",
+        "copy_as_prompt",
+        "textarea"
+      ],
+      "bytes": 742
+    }
+  ],
+  "summary": {
+    "total": 14,
+    "caught": 14,
+    "missedMechanical": 0,
+    "judgmentGaps": [
+      "wrong-shape-editorial-on-table",
+      "wrong-primitive-scatter"
+    ]
+  }
+}

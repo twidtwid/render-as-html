@@ -1,0 +1,289 @@
+{
+  "skill": {
+    "bytes": 49339,
+    "lines": 540,
+    "words": 6703,
+    "tokensApprox": 12241,
+    "baselineTokens": 12241
+  },
+  "referencesDir": {
+    "shapes": 12,
+    "primitives": 10,
+    "designWords": 743
+  },
+  "rows": [
+    {
+      "kind": "shape",
+      "name": "comparison",
+      "skillStubLines": 6,
+      "skillStubWords": 96,
+      "refLines": 13,
+      "refWords": 277,
+      "refIsStub": true,
+      "exampleBytes": 29832,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "shape",
+      "name": "dashboard",
+      "skillStubLines": 6,
+      "skillStubWords": 61,
+      "refLines": 13,
+      "refWords": 294,
+      "refIsStub": true,
+      "exampleBytes": 39354,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "shape",
+      "name": "deck-review",
+      "skillStubLines": 6,
+      "skillStubWords": 101,
+      "refLines": 135,
+      "refWords": 922,
+      "refIsStub": false,
+      "exampleBytes": 22602,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "shape",
+      "name": "developer",
+      "skillStubLines": 6,
+      "skillStubWords": 116,
+      "refLines": 13,
+      "refWords": 272,
+      "refIsStub": true,
+      "exampleBytes": 49465,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "shape",
+      "name": "document",
+      "skillStubLines": 6,
+      "skillStubWords": 64,
+      "refLines": 13,
+      "refWords": 242,
+      "refIsStub": true,
+      "exampleBytes": 79557,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "shape",
+      "name": "editorial",
+      "skillStubLines": 6,
+      "skillStubWords": 123,
+      "refLines": 31,
+      "refWords": 948,
+      "refIsStub": false,
+      "exampleBytes": 74479,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "shape",
+      "name": "execution-log",
+      "skillStubLines": 6,
+      "skillStubWords": 100,
+      "refLines": 109,
+      "refWords": 773,
+      "refIsStub": false,
+      "exampleBytes": 18189,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "shape",
+      "name": "network-map",
+      "skillStubLines": 7,
+      "skillStubWords": 119,
+      "refLines": 13,
+      "refWords": 284,
+      "refIsStub": true,
+      "exampleBytes": 39314,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "shape",
+      "name": "podcast",
+      "skillStubLines": 6,
+      "skillStubWords": 132,
+      "refLines": 118,
+      "refWords": 790,
+      "refIsStub": false,
+      "exampleBytes": 32637,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "shape",
+      "name": "runbook",
+      "skillStubLines": 6,
+      "skillStubWords": 99,
+      "refLines": 13,
+      "refWords": 273,
+      "refIsStub": true,
+      "exampleBytes": 53953,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "shape",
+      "name": "timeline",
+      "skillStubLines": 6,
+      "skillStubWords": 86,
+      "refLines": 13,
+      "refWords": 248,
+      "refIsStub": true,
+      "exampleBytes": 38476,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "shape",
+      "name": "triage-board",
+      "skillStubLines": 6,
+      "skillStubWords": 102,
+      "refLines": 13,
+      "refWords": 249,
+      "refIsStub": true,
+      "exampleBytes": 40242,
+      "exampleHasScript": true,
+      "skillThickerThanRef": false
+    },
+    {
+      "kind": "primitive",
+      "name": "annotated-diff",
+      "refLines": 9,
+      "refWords": 191,
+      "refIsStub": true,
+      "exampleCount": 10
+    },
+    {
+      "kind": "primitive",
+      "name": "bar",
+      "refLines": 9,
+      "refWords": 133,
+      "refIsStub": true,
+      "exampleCount": 10
+    },
+    {
+      "kind": "primitive",
+      "name": "comparison-matrix",
+      "refLines": 9,
+      "refWords": 184,
+      "refIsStub": true,
+      "exampleCount": 10
+    },
+    {
+      "kind": "primitive",
+      "name": "dense-ops-table",
+      "refLines": 9,
+      "refWords": 134,
+      "refIsStub": true,
+      "exampleCount": 10
+    },
+    {
+      "kind": "primitive",
+      "name": "donut",
+      "refLines": 9,
+      "refWords": 127,
+      "refIsStub": true,
+      "exampleCount": 10
+    },
+    {
+      "kind": "primitive",
+      "name": "log-stream",
+      "refLines": 9,
+      "refWords": 182,
+      "refIsStub": true,
+      "exampleCount": 10
+    },
+    {
+      "kind": "primitive",
+      "name": "scatter",
+      "refLines": 16,
+      "refWords": 396,
+      "refIsStub": true,
+      "exampleCount": 10
+    },
+    {
+      "kind": "primitive",
+      "name": "sparkline",
+      "refLines": 9,
+      "refWords": 143,
+      "refIsStub": true,
+      "exampleCount": 10
+    },
+    {
+      "kind": "primitive",
+      "name": "stacked-bar",
+      "refLines": 9,
+      "refWords": 116,
+      "refIsStub": true,
+      "exampleCount": 10
+    },
+    {
+      "kind": "primitive",
+      "name": "topology",
+      "refLines": 9,
+      "refWords": 143,
+      "refIsStub": true,
+      "exampleCount": 10
+    }
+  ],
+  "stubShapes": [
+    "comparison",
+    "dashboard",
+    "developer",
+    "document",
+    "network-map",
+    "runbook",
+    "timeline",
+    "triage-board"
+  ],
+  "thickShapes": [
+    "deck-review",
+    "editorial",
+    "execution-log",
+    "podcast"
+  ],
+  "skillThickerThanRef": [],
+  "versionCheckerFiles": [
+    "SKILL.md",
+    "README.md",
+    "index.html",
+    "examples/index.html",
+    "examples/primitives.html",
+    "examples/podcast.html",
+    "examples/podcast-transcript.html",
+    "bin/render-podcast"
+  ],
+  "extraExampleStampsNotInChecker": [
+    "examples/execution-log.html",
+    "examples/deck-review.html"
+  ],
+  "clipboardSites": [
+    "examples/checklist.html",
+    "examples/comparison.html",
+    "examples/dashboard.html",
+    "examples/deck-review.html",
+    "examples/developer.html",
+    "examples/document.html",
+    "examples/editorial.html",
+    "examples/execution-log.html",
+    "examples/network-map.html",
+    "examples/podcast.html",
+    "examples/primitives/07-table-comparison.html",
+    "examples/primitives/08-diff.html",
+    "examples/runbook.html",
+    "examples/timeline.html",
+    "examples/triage-board.html"
+  ],
+  "plan009Shipped": true
+}
