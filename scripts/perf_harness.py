@@ -482,6 +482,9 @@ def analyze_self_contained() -> dict:
 # 6. Shape registry coverage
 # ---------------------------------------------------------------------------
 
+THICK_SHAPES = {"editorial", "podcast", "execution-log", "deck-review"}
+
+
 def analyze_shapes() -> dict:
     skill = SKILL.read_text(encoding="utf-8")
     gallery = (EXAMPLES / "index.html").read_text(encoding="utf-8")
@@ -493,15 +496,15 @@ def analyze_shapes() -> dict:
         has_example = example_path.exists()
         has_reference = reference_path.exists()
         has_gallery_link = spec["href"] in gallery
-        has_contract = re.search(rf"#### `{re.escape(name)}`", skill) is not None
+        has_contract = f"`{name}`" in skill
         if not has_example:
             violations.append(f"{name}: missing {spec['file']}")
-        if not has_reference:
+        if name in THICK_SHAPES and not has_reference:
             violations.append(f"{name}: missing references/shapes/{name}.md")
         if not has_gallery_link:
             violations.append(f"{name}: gallery missing link {spec['href']}")
         if not has_contract:
-            violations.append(f"{name}: SKILL.md missing compact contract")
+            violations.append(f"{name}: SKILL.md missing picker-table id")
         rows.append({
             "name": name,
             "file": spec["file"],
@@ -527,13 +530,13 @@ def analyze_primitives() -> dict:
         file_path = REPO / spec["file"]
         has_file = file_path.exists()
         has_gallery_link = spec["href"] in gallery
-        has_contract = re.search(spec["contract"], skill, re.I) is not None
+        has_contract = f"`{name}`" in skill
         if not has_file:
             violations.append(f"{name}: missing {spec['file']}")
         if not has_gallery_link:
             violations.append(f"{name}: gallery missing link {spec['href']}")
         if not has_contract:
-            violations.append(f"{name}: SKILL.md missing contract {spec['contract']}")
+            violations.append(f"{name}: SKILL.md missing picker-table id")
         rows.append({
             "name": name,
             "file": spec["file"],

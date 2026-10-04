@@ -27,24 +27,12 @@ If multiple inputs possible, ask which.
 
 ### URL handling
 
-Rendering a URL means producing an artifact that does justice to the source — not a few quotes and a link-out button. The failure mode is consistent and demoralizing: WebFetch returns a ~1–2KB model-summarized digest of an article that may be 5,000 or 50,000 words, and rendering against that digest produces a TOC + a handful of quote cards + a "read full article ↗" button. Zero HTML-native features. Zero entity index. Zero synthesis. The 2026-05-25 *Magnifica Humanitas* v1 incident named this: "you summarized a 43,000 word article into a few quotes and a TOC."
+Never render off a WebFetch summary. Magnifica (2026-05-25) shipped a TOC plus quotes from a 43,000 word article that way.
 
-The pipeline that doesn't fail:
-
-1. **`curl -sL "<url>" -o /tmp/<slug>-raw.html`** — get the actual bytes. WebFetch is summarization, not fetching.
-2. **Parse structure into JSON.** Strip script/style; extract the body; segment paragraphs; pull numbered paragraphs, section headings, footnotes — whatever structure the source carries. Save to `/tmp/<slug>-structured.json`.
-3. **Dispatch a synthesis subagent** against the structured JSON with a tight schema. The subagent reads the actual paragraphs (not just headings) and returns:
-   - `thesis` (one sentence) + `thesis_quote` (verbatim, ≤40 words) + `thesis_quote_ref` (¶N)
-   - `takeaways[]` — 6–10 numbered claims, each ≤30 words, **arguing position** not category label
-   - `claims[]` — 10–15 claim cards: `topic` (4–10 word arguing headline), `body` (1–3 sentence mechanism), `evidence_paras` (real ¶ numbers in the source), `evidence_note`
-   - `entities` grouped by category (predecessor documents with real URLs, people, concepts, etc.), each with the paragraph numbers where they appear
-   - `themes[]` — 8–12 with frequency counts via string-search on the paragraph texts
-   - `chapter_summaries[]` if the source has chapter structure
-4. **Render the editorial-shape (or appropriate-shape) artifact** with the full feature set: italic thesis pull-quote, stacked numbered takeaways, chapter-grouped claim cards whose Evidence ¶ links scroll-flash the matching paragraph in a full annotated-text section below, SVG theme bar chart, structural map, full body with anchor IDs, entity inspector with click-to-highlight-all-mentions, search with prev/next nav, hide-sidebar toggle, theme toggle.
-
-**"Render as an external link" is not an exemption.** The user may want a prominent CTA out to the source; that does not mean skip the synthesis. The artifact orients the reader, indexes the entities, and lets them navigate the document — the external link is one of the affordances, not the entire artifact.
-
-**Size sanity:** a serious editorial-shape render of long-form (≥5,000 source words) is rarely under ~50KB. Under 30KB on long-form input is a smell — likely zero HTML-native features and rendering off a summary.
+1. `curl -sL "<url>" -o /tmp/<slug>-raw.html`
+2. Parse the body into `/tmp/<slug>-structured.json` (paragraphs, headings, footnotes).
+3. Synthesize thesis, takeaways, claim cards, entities, and themes from that JSON.
+4. Render the matching shape. Long-form (≥5,000 source words) under 30KB is a smell.
 
 ## Output
 
@@ -54,33 +42,12 @@ The pipeline that doesn't fail:
 - Footer shows the artifact path and generated/updated timestamp.
 - Generated artifacts should be self-contained and make no external network requests by default.
 - Include `<link rel="icon" href="data:,">` in `<head>` so local serving does not trigger a noisy `/favicon.ico` request.
-- **Social card (always, in `<head>`)** so a hosted artifact unfurls as a titled preview:
-  - **Required tags:** `<meta name="description">`, `og:title`, `og:description`, `og:type`, `og:site_name`, `twitter:card`.
-  - **Sourcing:** `og:title` = the artifact `<title>`. `og:description` = one plain sentence (≤155 chars) describing *what the artifact is*, derived from the subtitle/thesis — not a production count, not "an HTML artifact about X". `og:type` = `article` for content, `website` for an index/gallery. `twitter:card` = `summary`.
-  - **Omit `og:url`** (final URL unknown at generation time; scrapers fall back to the request URL).
-  - **`og:image` is conditional.** Omit by default — it would need a hosted image file and breaks self-containment for `file://` artifacts. BUT when the artifact is shipped to a portal that hosts a sibling thumbnail (e.g. an `og-card.png` next to the entry), emit `og:image` + `twitter:image` as a relative path and upgrade `twitter:card` to `summary_large_image`. Generate the thumbnail from a 1200×630 HTML+inline-SVG template using the artifact's own design tokens, rendered via `chrome --headless --window-size=1200,630 --screenshot=…`.
-  - Inert on `file://`, ~6 lines, costs nothing — unconditional, not publish-gated.
-- If metadata mentions supporting context, label it as context/provenance. Do not present another file as canonical.
-- Any copy-as-prompt action must target the current `.html` artifact path, not a notes file, source file, or parallel document.
+- **Social card (always, in `<head>`):** `description`, `og:title`, `og:description`, `og:type`, `og:site_name`, `twitter:card`. Omit `og:url`. Omit `og:image` unless a sibling hosted thumbnail exists.
+- Any copy-as-prompt action must target the current `.html` artifact path.
 
-### Sharing (optional)
+### Sharing and publish scan
 
-The skill emits a self-contained `.html` file. Serve it however you want: locally, `uv run python -m http.server`, Tailscale Serve, Tailscale Funnel, GitHub Pages, S3.
-
-A common pattern is two tiers: a `private/` subdir for tailnet-only viewing and a `public/` subdir explicitly synced to a public host only when the user uses a trigger phrase like "publish this" or "make it public".
-
-### Sensitivity check (when publishing publicly)
-
-Before pushing an artifact to public hosting, scan the rendered HTML for:
-- Credential strings (`password`, `token`, `secret`, `key`, base64-like blobs)
-- Private LAN IPs (192.168.*, 10.*, 172.16-31.*) — usually OK in moderation but flag clusters
-- MAC addresses
-- File paths starting with `/Users/`, `/home/`, `~/`
-- Internal hostnames (`.local`, `.tailXXXX.ts.net`)
-- Personal info (phone numbers, addresses, account numbers)
-- External asset URLs that would leak document opens or private context to a third party
-
-If anything matches, list it to the user before publishing. They decide what to redact.
+Serve the file however you want. Before a public publish, list credential strings, LAN IPs, `/Users/` paths, and personal info to the user.
 
 ## The bar (read this every time)
 
@@ -179,23 +146,6 @@ Cost: ~20 lines of JS. The artifact gains a real edit loop.
 
 Different content wants different bones. Pick the shape first from content signals, then design inside it. The content-matched-shapes idea comes from [`clockless-org/html-anything`](https://github.com/clockless-org/html-anything); the visual treatment here is mine.
 
-### Shape selection
-
-| Shape | Pick when the artifact is… |
-|---|---|
-| **`dashboard`** | Network scans, system reports, device lists, ops data — anything tabular with categories that benefit from filtering |
-| **`document`** | Plans, specs, briefings, essays, brainstorms, meeting notes — prose-heavy where you'd read paragraph-to-paragraph |
-| **`timeline`** | Dated logs, diaries, retrospectives, project histories, trip journals |
-| **`runbook`** | Disaster recovery, deploy guides, machine rebuilds — sequential procedure being *executed* not read |
-| **`comparison`** | "X vs Y vs Z" decision matrices, model comparisons, vendor pickers |
-| **`network-map`** | People/relationships, brain backlinks, dependencies — connections matter |
-| **`triage-board`** | Bucketing items into 3-5 columns (Now/Next/Later/Cut), inbox triage, GTD reorg |
-| **`developer`** | PR writeups, code review, "explain this code" — annotated diff with severity findings |
-| **`editorial`** | Argument-driven long-form where the reader absorbs a sustained position — deep essays, research synthesis, analytical memos, argument-driven briefings |
-| **`execution-log`** | Live or snapshot execution telemetry — branch status, plan progress, event stream, observed state |
-| **`deck-review`** | Slide deck review/approval surfaces — status memo, slide preview, per-slide notes, send-back workflow |
-| **`podcast`** | A podcast episode rendered as a briefing — bottom line, takeaways, claims, terms — alongside a transcript browser. Consumes `episode.package.json` from the podcastextract pipeline. |
-
 **Auto-pick rules:**
 - Source has >5 tables of similar shape → `dashboard`
 - Source is mostly headings + paragraphs navigated as reference (spec/plan/notes) → `document`
@@ -209,80 +159,24 @@ Different content wants different bones. Pick the shape first from content signa
 
 Explicit user override always wins.
 
-### Shape contracts
+The picker table is generated from `contracts/shapes.json`. Checklist and podcast-transcript are not shapes.
 
-#### `dashboard`
-- **Register:** Instrument. **Layout:** max-width 1280px, 1.4fr/1fr two-column grid, sticky controls row.
-- **Required:** search, toggleable category chips, dense table (mono first col), stat tiles, inline-SVG donut, status pills, one topology/diagram.
-- **HTML-native ≥3:** live filter, click cross-highlight, inline charts, sortable headers, copy buttons. **Avoid:** narrow centered column, single-column scroll, generic h2/p/table.
-- **Detailed contract:** load [`references/shapes/dashboard.md`](references/shapes/dashboard.md) before building.
+| id | Pick when | Register | Gold file | Then load |
+|---|---|---|---|---|
+| `dashboard` | Network scans, system reports, device lists, ops data — anything tabular with categories that benefit from filtering | instrument | `examples/dashboard.html` | copy the example |
+| `document` | Plans, specs, briefings, essays, brainstorms, meeting notes — prose-heavy where you'd read paragraph-to-paragraph | reading | `examples/document.html` | copy the example |
+| `timeline` | Dated logs, diaries, retrospectives, project histories, trip journals | reading | `examples/timeline.html` | copy the example |
+| `runbook` | Disaster recovery, deploy guides, machine rebuilds — sequential procedure being executed not read | instrument | `examples/runbook.html` | copy the example |
+| `comparison` | X vs Y vs Z decision matrices, model comparisons, vendor pickers | instrument | `examples/comparison.html` | copy the example |
+| `network-map` | People/relationships, brain backlinks, dependencies — connections matter | instrument | `examples/network-map.html` | copy the example |
+| `triage-board` | Bucketing items into 3–5 columns (Now/Next/Later/Cut), inbox triage, GTD reorg | instrument | `examples/triage-board.html` | copy the example |
+| `developer` | PR writeups, code review, explain this code — annotated diff with severity findings | instrument | `examples/developer.html` | copy the example |
+| `editorial` | Argument-driven long-form where the reader absorbs a sustained position | reading | `examples/editorial.html` | `references/shapes/editorial.md` then the example |
+| `execution-log` | Live or snapshot execution telemetry — branch status, plan progress, event stream | instrument | `examples/execution-log.html` | `references/shapes/execution-log.md` then the example |
+| `deck-review` | Slide deck review/approval — status memo, slide preview, per-slide notes | hybrid | `examples/deck-review.html` | `references/shapes/deck-review.md` then the example |
+| `podcast` | A podcast episode rendered as a briefing alongside a transcript browser | hybrid | `examples/podcast.html` | `references/shapes/podcast.md` then the example |
 
-#### `document`
-- **Register:** Reading. **Layout:** max-width 880px, single column, sticky TOC sidebar; prose measure ≤46rem.
-- **Required:** TL;DR block, sticky TOC with scroll-spy, footnote pattern, inline dense tables, note/warn callouts, per-`h2` copy-as-prompt.
-- **HTML-native ≥3:** TOC scroll-spy, per-section copy, collapsible appendix, click-to-expand footnotes. **Avoid:** dashboard multi-column grid, line length >70ch, "executive summary card" headers, category-label titles.
-- **Detailed contract:** load [`references/shapes/document.md`](references/shapes/document.md) before building.
-
-#### `editorial`
-- **Register:** Reading. **Layout:** studio ~1320px, narrow–wide–narrow three-zone — context rail ~18rem · prose ≤50rem (~75ch) · entity inspector ~18rem. Inspector drops <1180px, single column <820px. Rails follow §Layout sticky-rail/footer/scrollbox invariants.
-- **Required:** italic left-aligned thesis pull-quote (no left-handle bar); stacked numbered takeaways (mono numerals, not a tile grid); claim cards (arguing headline + mechanism + **linked** `Evidence:` line); right-rail entity inspector; hide-sidebar focus toggle; "read next" list; per-section copy-as-prompt.
-- **HTML-native ≥3:** in-text `<mark>` search with prev/next nav; click-entity cross-highlight; per-section copy; hide-sidebar mode; scroll-spy. **Avoid:** artifact-counting stat tiles; left-handle bars; category-label titles; prose >75ch; **unlinked `Evidence:` when source URLs were available**.
-- **Detailed contract:** load [`references/shapes/editorial.md`](references/shapes/editorial.md) before building — load-bearing cross-link scroll semantics, search-nav contract, evidence-linking self-check, narrative-cards-not-tables rule.
-
-#### `timeline`
-- **Register:** Reading; mono small-caps for date/kicker lines. **Layout:** vertical spine left (~140px), event cards right (~720px), max-width ~1000px, sticky year/month group headers.
-- **Required:** spine line + date-marker dots, event cards (timestamp/title/body/tags), sticky group headers, jump-to-date picker, per-event "copy as quote".
-- **HTML-native ≥3:** search across events with `<mark>`, date-range filter pills, cluster-collapse (month/year → count), tag-chip filter, per-event copy. **Avoid:** CV-style animations, wall of dates with no spine, cards so wide they read as paragraphs.
-- **Detailed contract:** load [`references/shapes/timeline.md`](references/shapes/timeline.md) before building.
-
-#### `runbook`
-- **Register:** Instrument, prominent mono code blocks. **Layout:** sticky "Step X of N" + progress bar header; max-width 960px single column; step cards stacked. An *instrument being executed*, not reading material.
-- **Required:** step card `[number][checkbox][title]` + expandable body (header keyboard-operable, `tabindex=0` + keydown); code block with per-block copy (load-bearing); "expected output" collapsibles; branch markers; sticky progress bar; "I'm stuck" copy-as-prompt.
-- **HTML-native ≥3:** per-code-block copy (visible fallback, never offscreen), live progress tracking, "stuck" prompt generator, conditional step bodies. **Avoid:** plain numbered list with code blocks; looking like `document` shape.
-- **Detailed contract:** load [`references/shapes/runbook.md`](references/shapes/runbook.md) before building.
-
-#### `comparison`
-- **Register:** Instrument. **Layout:** items as **columns**, criteria as **rows** (the axis flip vs dashboard); sticky item-name header row; weight column left; aggregate-winner row bottom; max-width 1280px.
-- **Required:** column-header item cards, criterion rows with per-item values, per-row winner highlight (tint + ★), weight inputs (full-height +/− stepper), live-recomputing aggregate footer, red→amber→green numeric scale (paired with text), copy-as-recommendation.
-- **HTML-native ≥3:** live weight tuning recomputes winners, column sort by aggregate, "must-have" criterion toggle, copy-as-recommendation. **Avoid:** dashboard layout (entities as rows) — the axis flip *is* the shape.
-- **Detailed contract:** load [`references/shapes/comparison.md`](references/shapes/comparison.md) before building.
-
-#### `network-map`
-- **Register:** Instrument. **Layout:** big graph canvas center (60–70%), entity-detail right rail (~280px), filter chips top. The graph IS the primary view.
-- **Required:** SVG canvas with positioned nodes (hand-positioned ≤30; vanilla force-directed only at 30+), edges, node sizing by importance, cluster color-coding (paired with label/shape), right-rail entity card updating on click, top filter chips, search-to-focus, click-node-to-focus (dim others, highlight direct edges).
-- **Focus-state invariant (load-bearing):** search-to-focus and click-to-focus write the *same* focused-node state — both dim non-neighbors, light direct edges, update the inspector; a `× clear focus` resets.
-- **HTML-native ≥3:** click-to-focus, hover-edge-highlight, search-to-focus, cluster toggle, shortest-path. **Avoid:** a table of names with a connections column (that's a dashboard).
-- **Detailed contract:** load [`references/shapes/network-map.md`](references/shapes/network-map.md) before building.
-
-#### `triage-board`
-- **Register:** Instrument. **Layout:** title + brief instruction + 3–5 horizontal column boards (Now/Next/Later/Cut), cards inside columns, sticky export bar at bottom. The horizontal layout WITH drag IS the shape.
-- **Required:** column headers with live count, draggable cards (HTML5 DnD, **vanilla — no framework**), per-card one-line rationale input, pre-sorted suggested distribution at load, sticky copy/export + copy-as-prompt bar, undo. Provide a touch fallback (move buttons/`<select>`) under ~700px.
-- **HTML-native ≥3:** drag-between-columns, live column counts, copy-as-prompt exporting assignments, undo, filter/search across cards. **Avoid:** vertical lists with status badges (dashboard); a framework drag library.
-- **Detailed contract:** load [`references/shapes/triage-board.md`](references/shapes/triage-board.md) before building.
-
-#### `developer`
-- **Register:** Instrument, mono 13px for code. **Layout:** title + PR/commit metadata strip + risk callouts + annotated diff body + summary footer; max-width 1280px; optional files-changed left rail. The annotated diff + severity findings IS the shape.
-- **Required:** syntax highlighting via **local CSS classes** (no CDN/Prism), per-file diffs with `+`/`−` gutter tints, inline margin annotations anchored to lines (not a sidebar), severity-coded finding cards (severity carried 3 ways, never color-only), files-changed nav, copy-link-to-finding.
-- **HTML-native ≥3:** local-CSS syntax highlighting, severity-color findings + "show nits" toggle, jump-to-file, click-to-copy a finding, side-by-side before/after. **Avoid:** generic document with code blocks (that's `document`); findings in a sidebar; runtime tokenizers.
-- **Detailed contract:** load [`references/shapes/developer.md`](references/shapes/developer.md) before building.
-
-#### `execution-log`
-- **Register:** Instrument. **Layout:** compact observed-state bar + invariant hero + phase/status strip + progress primitive + log-stream table; max-width 1280px; optional live source clearly labeled.
-- **Required:** run metadata, phase cards with state carried by icon/text/color, progress donut or bar, search, level/status filter chips, timestamped log stream, snapshot/export affordance. The phase strip plus log stream IS the shape.
-- **HTML-native ≥3:** live search/filter, level toggles, inline progress SVG, row expand/copy, pause/resume live tail, copy snapshot. **Avoid:** raw terminal dump; artifact-counting hero stats; hiding live-source failure; filters with no clear path.
-- **Detailed contract:** load [`references/shapes/execution-log.md`](references/shapes/execution-log.md) before building.
-
-#### `deck-review`
-- **Register:** Hybrid (status memo Reading; slide browser + notes workflow Instrument). **Layout:** sticky review topbar with status/slides/send-back views; slide preview and talk track stay synchronized; notes are local state.
-- **Required:** status context, slide preview, previous/next + dots, per-slide presenter notes/talk track, per-slide reviewer textarea, visible notes count, export/mail/copy fallback, clear-notes control. Optional encrypted payload gate uses WebCrypto only.
-- **HTML-native ≥3:** tabbed views, slide navigation, localStorage notes, textarea capture, encrypted unlock, copy/mail export, cross-highlight current slide. **Avoid:** unencrypted confidential payloads, remote note submission, screenshot-only slide review, mailto truncation without warning.
-- **Detailed contract:** load [`references/shapes/deck-review.md`](references/shapes/deck-review.md) before building.
-
-#### `podcast`
-- **Register:** Hybrid (briefing thesis Reading, rest compact Instrument; transcript Instrument). **Input:** `episode.package.json` from podcastify/podcast-transformer (deterministic — produced by `bin/render-podcast`, not hand-authored). **Output:** two sibling docs linked by topbar folder tabs — `podcast-at-a-glance.html` + `annotated-transcript.html`.
-- **Required:** topbar folder tabs, hide-sidebar focus mode, opt-in theme toggle, episode hero, host/guest cards, italic thesis card, numbered takeaways, claim cards with Evidence lines, grouped term inspector, read-next list, speaker turns, chapter rail, out-of-grid colophon footer.
-- **Hard invariants:** identical topbar brand + toggle slot across both docs; folder tabs are plain links with `aria-current="page"` (no ARIA tab roles); transcript has `<h1 class="sr-only">`; sticky rails are bounded scrollboxes; footer outside the grid; never fabricate term URLs.
-- **Detailed contract:** load [`references/shapes/podcast.md`](references/shapes/podcast.md) before changing `bin/render-podcast`, the canonical podcast examples, mobile/topbar behavior, or generated podcast output.
+Do not invent a shape. Copy the gold HTML for a stub shape. Load the thick reference before building `editorial`, `podcast`, `execution-log`, or `deck-review`.
 
 ## Sub-patterns (within shapes, not standalone shapes)
 
@@ -326,51 +220,20 @@ Reach for the right one *before* writing SVG. The 2026-05-25 omega-3 dashboard s
 
 **Self-check before drawing:** if a label needs leader lines or "smart placement heuristics" to not collide, the primitive is wrong — switch.
 
-Each primitive's full contract (Required / Interaction / Avoid) lives in `references/primitives/<name>.md` — **load that file before implementing or changing the primitive.** The picker above + the one-line "pick when" below are enough to choose; the reference carries the locked details. Reference implementations: `examples/primitives/`.
+The primitive picker is generated from `contracts/primitives.json`. Load `references/primitives/<id>.md` before implementing a primitive. Copy the matching file under `examples/primitives/`.
 
-### Charts
-
-#### Donut — categorical status mix
-- **Pick when:** 2–5 mutually-exclusive categories where proportion-at-a-glance beats absolute counts.
-- **Contract:** [`references/primitives/donut.md`](references/primitives/donut.md)
-
-#### Bar — ranked top-N
-- **Pick when:** ≤12 items where order matters and a single magnitude per item is the signal.
-- **Contract:** [`references/primitives/bar.md`](references/primitives/bar.md)
-
-#### Sparkline — stat-tile cluster
-- **Pick when:** 2–4 hero metrics where each metric is the subject; current value + recent-trend shape is the one-glance read.
-- **Contract:** [`references/primitives/sparkline.md`](references/primitives/sparkline.md)
-
-#### Stacked bar — composition over time
-- **Pick when:** categories sum to a meaningful whole each period (buckets, traffic mix, deal stages); 7–30 periods.
-- **Contract:** [`references/primitives/stacked-bar.md`](references/primitives/stacked-bar.md)
-
-#### Topology — inline service graph
-- **Pick when:** connections are the point and node count is ≤30 (≤10 inline; 10–30 hand-positioned).
-- **Contract:** [`references/primitives/topology.md`](references/primitives/topology.md)
-
-#### Scatter — two-dimension trade-off
-- **Pick when:** two genuinely independent, well-spread dimensions across ≥10 points where the *relationship* (trade-off, outliers, quadrants) is the signal — not a ranking. If points cluster tight on either axis or there are ≤8, labels collide: rank with `bar` instead (the 2026-05-25 omega-3 failure).
-- **Contract:** [`references/primitives/scatter.md`](references/primitives/scatter.md)
-
-### Tables
-
-#### Dense ops table
-- **Pick when:** flat list of records keyed by an identifier; ≥6 rows; filter/sort is the central interaction. The instrument-register workhorse.
-- **Contract:** [`references/primitives/dense-ops-table.md`](references/primitives/dense-ops-table.md)
-
-#### Comparison matrix — items as columns
-- **Pick when:** "X vs Y vs Z" decision matrix with shared criteria and live weight tuning; 2–5 items, 3–10 criteria.
-- **Contract:** [`references/primitives/comparison-matrix.md`](references/primitives/comparison-matrix.md)
-
-#### Annotated diff — code review primitive
-- **Pick when:** code changes / security findings / any line-anchored critique where adjacency to the source beats a side panel.
-- **Contract:** [`references/primitives/annotated-diff.md`](references/primitives/annotated-diff.md)
-
-#### Log stream — chronological event table
-- **Pick when:** a tail of timestamped events with a categorical level; newest-first reading; payloads worth expanding.
-- **Contract:** [`references/primitives/log-stream.md`](references/primitives/log-stream.md)
+| id | Pick when | Gold file |
+|---|---|---|
+| `donut` | 2–5 mutually-exclusive categories where proportion-at-a-glance beats absolute counts | `examples/primitives/01-donut.html` |
+| `bar` | ≤12 items where order matters and a single magnitude per item is the signal | `examples/primitives/02-bar.html` |
+| `sparkline` | 2–4 hero metrics where each metric is the subject | `examples/primitives/03-sparkline.html` |
+| `stacked-bar` | categories sum to a meaningful whole each period; 7–30 periods | `examples/primitives/04-stacked-bar.html` |
+| `topology` | connections are the point and node count is ≤30 | `examples/primitives/05-topology.html` |
+| `dense-ops-table` | flat list of records keyed by an identifier; ≥6 rows; filter/sort is the central interaction | `examples/primitives/06-table-ops.html` |
+| `comparison-matrix` | X vs Y vs Z decision matrix with shared criteria and live weight tuning | `examples/primitives/07-table-comparison.html` |
+| `annotated-diff` | code changes or line-anchored critique where adjacency to the source beats a side panel | `examples/primitives/08-diff.html` |
+| `log-stream` | a tail of timestamped events with a categorical level; newest-first reading | `examples/primitives/09-logs.html` |
+| `scatter` | two genuinely independent, well-spread dimensions across ≥10 points | `examples/primitives/10-scatter.html` |
 
 ### Cross-cutting rules (primitives only)
 
@@ -385,19 +248,7 @@ One palette, two registers, determined entirely by shape. The **reading register
 
 Slightly warm and non-corporate, but keep public artifacts professional by default.
 
-`index.html` is the canonical component gallery for maintaining the design system, but do **not** read the whole gallery during normal renders. For ordinary artifact generation, use the compact shape contracts and tokens in this skill. Open `index.html` only when the user asks to inspect the design system, when changing the design system, or when a visual/detail decision is genuinely blocked.
-
-### Performance defaults
-
-- Pick the shape quickly. If the artifact is procedural, choose `runbook` without a long comparison pass.
-- Treat the shape log as the planning budget. Once the source signals clearly pick a shape, start writing from that shape contract instead of rereading the gallery or comparing every possible layout.
-- Reuse the shape contract, token names, and copy-as-prompt helper instead of inventing a new CSS/JS system for each artifact.
-- Keep normal artifacts to the primitives the shape needs. A runbook usually needs progress, checkboxes, copy-code buttons, collapsible troubleshooting, and stuck-copy-as-prompt. It does not need swatches, charts, topology, tables, and every shared component unless the artifact calls for them.
-- Use a scaffold-first build order: `<head>` metadata + blank data favicon, design tokens, shape layout, required primitives, copy-as-prompt, footer. Fill content into that scaffold. This avoids polishing prose before the artifact has its HTML-native spine.
-- Open only the specific primitive reference needed (`examples/primitives/07-table-comparison.html`, etc.) when implementing an unfamiliar primitive. Do not open `index.html` or the full gallery as a default generation step.
-- For updates to an existing artifact, diff and patch the smallest behavioral surface that satisfies the request. Preserve working element IDs, localStorage keys, and copy-as-prompt state formats unless changing them is the point.
-- Use cheap verification gates during normal generation: no external requests, no body horizontal scroll at ~375px, visible form controls ≥16px on phones, tables/graphs inside internal scroll containers, copy-as-prompt names the current HTML path and writes the textarea before clipboard attempt. Reserve full multi-page/gallery audits for changes to this repo or the design system.
-- For private/internal artifacts where speed matters more than portability, ask before using a shared local CSS/JS runtime instead of inlining all boilerplate. Self-contained remains the default for public or shareable artifacts.
+Do not open `index.html` during a normal render. Copy the gold example and the tokens below.
 
 ### Layout, density, and interactivity (detailed contract on demand)
 
@@ -469,20 +320,8 @@ Dark (via prefers-color-scheme):
 
 ### Anti-patterns
 
-- Still exactly three faces (serif, sans, mono); no fourth
-- Drop shadows on everything; gradients for their own sake
-- Emoji explosion (1-3 across the whole doc, not one per heading)
-- Generic AI-report decoration: redundant boxes, ornamental "Key Insights" headers
-- Centered body text outside of titles
-- Tailwind utility-class soup (hand-written CSS reads better)
-- Narrow centered columns on data-heavy content
-- Excessive whitespace as a stand-in for design taste
-- Running a generic document converter and calling it done
-- Pulling in a JS framework. Single file, vanilla JS.
-- External fonts, analytics, or CDN assets in private artifacts unless the user explicitly approves them.
-- Copy/export buttons that imply another canonical format. Prefer "copy section", "copy recommendation", "copy board state", or "copy as prompt"; avoid "copy as markdown" unless the user explicitly wants a one-off export.
-- No left-handle accent bars. A 3–4px accent-colored vertical line on the left edge of a card or quote is the visual fingerprint of AI-generated layouts. Convey emphasis through type, whitespace, horizontal rules, color, and position. A horizontal rule (top border) between sections is fine; a pull-quote may use larger italic type without a bar.
-- Identical-tile grids read as SaaS dashboards; cards stack as columns by default. Only lay out as a grid of equal tiles when the data is genuinely parallel and comparison across tiles is the point.
+- Three faces only. No JS framework. No CDN fonts. No copy-as-markdown.
+- No left-handle accent bars. No artifact-counting hero stats. No category-label titles.
 
 ## Rendering process
 
@@ -495,12 +334,12 @@ Dark (via prefers-color-scheme):
    REJECTED:     <1-2 shapes considered but wrong, with one-word reasons>
    PRIMITIVES:   <3-5 primitives this shape needs from §Canonical primitives>
    DIMENSIONS:   <which of the 8 dimensions, aiming for ≥4>
-   READ:         <reference files to load now: references/shapes/<shape>.md (every shape has one) + references/primitives/<name>.md for each chosen primitive + references/design.md for any multi-zone/sticky-rail/search-heavy build>
+   READ:         <examples/<shape>.html always; references/shapes/<shape>.md only for editorial, podcast, execution-log, deck-review; references/primitives/<name>.md for each chosen primitive; references/design.md for any multi-zone/sticky-rail/search-heavy build>
    ```
 
-   Run the auto-pick table from §Shape selection against the real content first; do not invent a shape; do not pick `editorial` for tabular data with filterable categories (that is `dashboard`).
+   Run the auto-pick rules against the real content first; do not invent a shape; do not pick `editorial` for tabular data with filterable categories (that is `dashboard`).
 
-   **Then actually Read the files named in `READ:` before step 3 — this is not optional.** Every shape (`references/shapes/<shape>.md`) and every primitive (`references/primitives/<name>.md`) has a detailed contract loaded on demand, not carried in this skill; the compact inline stubs above are enough to *pick* and scaffold but NOT to *build correctly*. Building any shape or an unfamiliar primitive from the inline stub alone reintroduces the exact omega-3 / *Magnifica* failure modes the detailed contracts exist to prevent.
+   **Then actually Read the files named in `READ:` before step 3 — this is not optional.** The gold HTML is the contract for stub shapes. Thick references stay for `editorial`, `podcast`, `execution-log`, and `deck-review`. Building from this picker table alone reintroduces the omega-3 / Magnifica failure modes.
 
 3. **Plan the instrument:**
    - What's the central interaction? (filter? compare? execute? explore?)

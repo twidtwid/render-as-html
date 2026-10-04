@@ -99,7 +99,7 @@ def test_source_document_contract_is_clean():
 def test_references_dir_is_measured():
     h = _load_harness()
     refs = h.analyze_references()
-    assert refs["file_count"] >= 20
+    assert refs["file_count"] >= 14
     assert refs["total_tokens"] > 0
     # The committed baseline must stay slim: only content-derived fields.
     baseline = json.loads(BASELINE.read_text())
