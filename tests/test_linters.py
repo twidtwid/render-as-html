@@ -153,6 +153,13 @@ def test_check_versions_clean():
     assert r.returncode == 0, r.stdout + r.stderr
 
 
+def test_check_versions_covers_newest_examples():
+    r = _run("scripts/check-versions.mjs")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "OK    examples/execution-log.html" in r.stdout
+    assert "OK    examples/deck-review.html" in r.stdout
+
+
 # --- review-contracts.mjs -----------------------------------------------------
 
 def test_review_contracts_clean():
