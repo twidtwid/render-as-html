@@ -363,6 +363,49 @@ def test_js_python_vocabulary_parity():
 
 # --- the gallery pages are artifacts, not static lists -------------------------
 
+def test_lint_artifact_against_same_file_passes():
+    r = _run(
+        "scripts/lint-artifact.mjs",
+        "--against",
+        "examples/dashboard.html",
+        "examples/dashboard.html",
+    )
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_lint_artifact_against_dropped_ids_fails(tmp_path):
+    src = (REPO / "examples" / "dashboard.html").read_text()
+    bad = tmp_path / "dropped-id.html"
+    bad.write_text(src.replace('id="donut-svg"', 'id="donut-moved"'))
+    r = _run("scripts/lint-artifact.mjs", "--against", "examples/dashboard.html", str(bad))
+    assert r.returncode == 1
+    assert "donut-svg" in r.stdout
+
+
+def test_lint_artifact_against_dropped_copy_prompt_fails(tmp_path):
+    src = (REPO / "examples" / "dashboard.html").read_text()
+    stripped = src
+    for needle in ("copy as prompt", "copyAsPrompt", "copyPrompt", "prompt-output"):
+        stripped = stripped.replace(needle, "copy-plain")
+        stripped = stripped.replace(needle.replace(" ", "-"), "copy-plain")
+    bad = tmp_path / "dropped-copy.html"
+    bad.write_text(stripped)
+    r = _run("scripts/lint-artifact.mjs", "--against", "examples/dashboard.html", str(bad))
+    assert r.returncode == 1
+    assert "copy-as-prompt" in r.stdout
+
+
+def test_lint_artifact_against_dropped_script_fails(tmp_path):
+    src = (REPO / "examples" / "dashboard.html").read_text()
+    bad = tmp_path / "dropped-script.html"
+    bad.write_text(
+        __import__("re").sub(r"<script\b[^>]*>[\s\S]*?</script>", "", src, flags=__import__("re").I)
+    )
+    r = _run("scripts/lint-artifact.mjs", "--against", "examples/dashboard.html", str(bad))
+    assert r.returncode == 1
+    assert "script" in r.stdout.lower()
+
+
 def test_gallery_pages_pass_the_full_artifact_gate():
     """examples/index.html and examples/primitives.html used to clear the >=3
     feature floor on phantom prose matches ("search"/"filter"/"toggle" as WORDS)

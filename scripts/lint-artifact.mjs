@@ -20,23 +20,36 @@ import vm from "node:vm";
 import { REQUIRED_META, FEATURES, EXTERNAL_RESOURCE, hasMeta, attrValue, hasAccessibleName } from "./lib/html-checks.mjs";
 
 const argv = process.argv.slice(2);
-const opts = { longform: false, reference: false, json: false, published: false, files: [] };
-for (const a of argv) {
+const opts = {
+  longform: false,
+  reference: false,
+  json: false,
+  published: false,
+  against: null,
+  allowDroppedIds: new Set(),
+  files: [],
+};
+for (let i = 0; i < argv.length; i++) {
+  const a = argv[i];
   if (a === "--longform") opts.longform = true;
   else if (a === "--reference") opts.reference = true;
   else if (a === "--json") opts.json = true;
   else if (a === "--published") opts.published = true;
+  else if (a === "--against") opts.against = argv[++i];
+  else if (a === "--allow-dropped-id") opts.allowDroppedIds.add(argv[++i]);
   else if (a === "-h" || a === "--help") { usage(); process.exit(0); }
   else opts.files.push(a);
 }
-if (!opts.files.length) { usage(); process.exit(2); }
+if (!opts.files.length || (opts.against === undefined)) { usage(); process.exit(2); }
 
 const LONGFORM_FLOOR = 30_000;
 
 function usage() {
   process.stderr.write(
-    "usage: node scripts/lint-artifact.mjs [--longform] [--reference] [--published] [--json] <file.html> [more.html ...]\n" +
-    "  --reference   single-primitive reference pages: skip the >=3 HTML-native feature floor (all other checks still run)\n",
+    "usage: node scripts/lint-artifact.mjs [--longform] [--reference] [--published] [--json] [--against prior.html] [--allow-dropped-id id] <file.html> [more.html ...]\n" +
+    "  --reference          single-primitive reference pages: skip the >=3 HTML-native feature floor (all other checks still run)\n" +
+    "  --against prior.html fail the update if it dropped ids, copy-as-prompt, or every inline script\n" +
+    "  --allow-dropped-id   permit one dropped id when the rename is the point of the update; repeat as needed\n",
   );
 }
 
@@ -151,7 +164,56 @@ function lintOne(file) {
   return { file, ok: fails.length === 0, fails, warns, features, bytes };
 }
 
+function collectIds(html) {
+  return new Set([...html.matchAll(/\bid=["']([^"']+)["']/g)].map((m) => m[1]));
+}
+
+function countInlineScripts(html) {
+  return [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+    .filter((m) => !/\bsrc=/i.test(m[1]) && !/type\s*=\s*["']application\/(json|ld\+json)["']/i.test(m[1]))
+    .length;
+}
+
+function hasCopyPrompt(html) {
+  return /copy as prompt|copyPrompt|prompt-output/i.test(html);
+}
+
+function againstFails(priorHtml, nextHtml) {
+  const fails = [];
+  const dropped = [...collectIds(priorHtml)].filter(
+    (id) => !collectIds(nextHtml).has(id) && !opts.allowDroppedIds.has(id),
+  );
+  if (dropped.length) fails.push(`dropped ids: ${dropped.join(", ")}`);
+  if (countInlineScripts(priorHtml) > 0 && countInlineScripts(nextHtml) === 0) {
+    fails.push("update deleted every inline script");
+  }
+  if (hasCopyPrompt(priorHtml) && !hasCopyPrompt(nextHtml)) {
+    fails.push("update dropped copy-as-prompt");
+  }
+  return fails;
+}
+
 const results = opts.files.map(lintOne);
+if (opts.against) {
+  let priorHtml = "";
+  try {
+    priorHtml = fs.readFileSync(opts.against, "utf8");
+  } catch (e) {
+    console.error(`cannot read --against file: ${e.message}`);
+    process.exit(2);
+  }
+  for (const r of results) {
+    let nextHtml = "";
+    try {
+      nextHtml = fs.readFileSync(r.file, "utf8");
+    } catch {
+      continue;
+    }
+    const extra = againstFails(priorHtml, nextHtml);
+    r.fails.push(...extra);
+    if (extra.length) r.ok = false;
+  }
+}
 
 if (opts.json) {
   console.log(JSON.stringify({ results, ok: results.every((r) => r.ok) }, null, 2));
