@@ -15,6 +15,8 @@ const FEATURE_KEYS = new Set([
   "toggle",
   "textarea",
   "cross_highlight",
+  "thesis",
+  "hide_sidebar",
 ]);
 const NOT_SHAPES = new Set(["checklist", "podcast-transcript"]);
 const STALE_COUNTS = [

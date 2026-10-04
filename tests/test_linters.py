@@ -65,7 +65,7 @@ def test_lint_artifact_passes_on_example():
 
 
 def test_lint_artifact_passes_on_scatter_primitive():
-    r = _run("scripts/lint-artifact.mjs", "examples/primitives/10-scatter.html")
+    r = _run("scripts/lint-artifact.mjs", "--reference", "examples/primitives/10-scatter.html")
     assert r.returncode == 0, r.stdout + r.stderr
 
 
@@ -125,7 +125,7 @@ def test_lint_artifact_flags_placeholder_path(tmp_path):
 def test_lint_artifact_longform_floor(tmp_path):
     small = tmp_path / "small.html"
     small.write_text(
-        '<!doctype html><html lang="en"><head>'
+        '<!doctype html><html lang="en" data-shape="document"><head>'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
         '<link rel="icon" href="data:,">'
         '<meta name="description" content="x">'
@@ -230,7 +230,7 @@ def test_lint_artifact_reference_flag_skips_feature_floor():
 
 
 _META_HEAD = (
-    '<!doctype html><html lang="en"><head>'
+    '<!doctype html><html lang="en" data-shape="document"><head>'
     '<meta name="viewport" content="width=device-width, initial-scale=1">'
     '<link rel="icon" href="data:,">'
     '<meta name="description" content="x">'
@@ -418,6 +418,41 @@ def test_gallery_pages_pass_the_full_artifact_gate():
     # Each must clear the floor on real, markup-anchored detectors.
     for feat in ("search", "filtering", "toggle", "cross_highlight"):
         assert feat in r.stdout, f"{feat} should be detected in the rebuilt galleries"
+
+
+def test_lint_artifact_editorial_table_fixture_fails_declared_shape(tmp_path):
+    """Omega-3 shaped table tagged editorial, without editorial required
+    features, must fail and name the missing feature."""
+    bad = tmp_path / "omega3.html"
+    bad.write_text(
+        '<!doctype html><html lang="en" data-shape="editorial"><head>'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        '<link rel="icon" href="data:,">'
+        '<meta name="description" content="x">'
+        '<meta property="og:title" content="x">'
+        '<meta property="og:description" content="x">'
+        '<meta property="og:type" content="article">'
+        '<meta property="og:site_name" content="x">'
+        '<meta name="twitter:card" content="summary">'
+        "</head><body>"
+        "<table><tr><td>EPA</td><td>1860</td></tr></table>"
+        "<article class=\"editorial\"><p>An essay about supplements.</p></article>"
+        "</body></html>"
+    )
+    r = _run("scripts/lint-artifact.mjs", str(bad))
+    assert r.returncode == 1
+    assert "search" in r.stdout or "copy_as_prompt" in r.stdout or "thesis" in r.stdout
+
+
+def test_lint_artifact_rejects_invented_shape(tmp_path):
+    bad = tmp_path / "invented.html"
+    bad.write_text(
+        _META_HEAD.replace('data-shape="document"', 'data-shape="not-a-shape"')
+        + '<svg></svg><input type="search"><table></table></body></html>'
+    )
+    r = _run("scripts/lint-artifact.mjs", str(bad))
+    assert r.returncode == 1
+    assert "contracts/shapes.json" in r.stdout
 
 
 def test_review_contracts_copy_prompt_trigger_is_per_button(tmp_path):

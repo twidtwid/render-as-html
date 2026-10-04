@@ -510,7 +510,7 @@ Dark (via prefers-color-scheme):
 4. **Write the HTML** — single self-contained file, all CSS inline, all JS (vanilla, ~100-200 lines) inline, no external fonts or CDN assets by default; include the Open Graph / Twitter summary card in `<head>` (see Output)
 5. **Pre-save checklist — hard fail, not a vibe check.** Run every item; if any answer is "no" or "I don't know", do not save yet. This is the load-bearing self-review that catches the "styled prose with a link button" failure mode before it ships.
 
-   - **Shape**: I picked one from the contract list (`dashboard` / `document` / `editorial` / `timeline` / `runbook` / `comparison` / `network-map` / `triage-board` / `developer` / `execution-log` / `deck-review` / `podcast`). I did not invent a shape.
+   - **Shape**: I picked one from the contract list (`dashboard` / `document` / `editorial` / `timeline` / `runbook` / `comparison` / `network-map` / `triage-board` / `developer` / `execution-log` / `deck-review` / `podcast`). I did not invent a shape. `<html>` must set `data-shape` to that `contracts/shapes.json` id.
    - **HTML-native features ≥3**: I can name at least three, specifically, in this artifact. *Not* "it has nice CSS" — concrete interactions: search-with-nav, click-entity-to-highlight, copy-as-prompt, sortable headers, scroll-spy, drag-to-bucket, etc.
    - **Information dimensions ≥4** out of the 8 listed in §The 8 information dimensions.
    - **Flatten test (author self-check, NOT a shipped control)**: I mentally stripped all JS and SVG. What disappeared? If only a hover state changed, this is styled prose, not an artifact — redesign. Do NOT ship a "flatten test" toggle in the delivered artifact — it's a meta-gimmick, not a reader feature.

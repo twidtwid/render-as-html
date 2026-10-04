@@ -16,8 +16,15 @@
 // stdlib only, no dependencies.
 
 import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import vm from "node:vm";
-import { REQUIRED_META, FEATURES, EXTERNAL_RESOURCE, hasMeta, attrValue, hasAccessibleName } from "./lib/html-checks.mjs";
+import { REQUIRED_META, FEATURES, SHAPE_FEATURES, EXTERNAL_RESOURCE, hasMeta, attrValue, hasAccessibleName } from "./lib/html-checks.mjs";
+
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SHAPE_REGISTRY = JSON.parse(fs.readFileSync(path.join(REPO, "contracts/shapes.json"), "utf8"));
+const SHAPE_BY_ID = Object.fromEntries(SHAPE_REGISTRY.shapes.map((s) => [s.id, s]));
+const FEATURE_DETECTORS = { ...FEATURES, ...SHAPE_FEATURES };
 
 const argv = process.argv.slice(2);
 const opts = {
@@ -95,6 +102,23 @@ function lintOne(file) {
   const features = Object.entries(FEATURES).filter(([, rx]) => rx.test(html)).map(([k]) => k);
   if (!opts.reference && features.length < 3)
     fails.push(`only ${features.length} HTML-native feature(s) detected (${features.join(", ") || "none"}); need ≥3 — this reads as styled prose, not an artifact`);
+
+  // --- declared shape (read <html data-shape> only, never gallery-card attrs) ---
+  if (!opts.reference) {
+    const htmlTag = html.match(/<html\b[^>]*>/i)?.[0] || "";
+    const declared = attrValue(htmlTag, "data-shape");
+    if (!declared) {
+      fails.push('missing <html data-shape="…"> — set it to a contracts/shapes.json id');
+    } else if (!SHAPE_BY_ID[declared]) {
+      fails.push(`data-shape="${declared}" is not a contracts/shapes.json id`);
+    } else {
+      for (const key of SHAPE_BY_ID[declared].requiredFeatures || []) {
+        const rx = FEATURE_DETECTORS[key];
+        if (!rx) fails.push(`data-shape="${declared}" requires unknown feature ${key}`);
+        else if (!rx.test(html)) fails.push(`data-shape="${declared}" is missing required feature ${key}`);
+      }
+    }
+  }
 
   // --- copy-as-prompt contract ---
   // Trigger on the JS identifiers of a real control, or on "copy as prompt"
