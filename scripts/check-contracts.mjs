@@ -1,12 +1,4 @@
 #!/usr/bin/env node
-// check-contracts.mjs — fail when SKILL.md, references/, examples/, or the
-// harness disagree with contracts/shapes.json and contracts/primitives.json.
-//
-//   node scripts/check-contracts.mjs
-//   node scripts/check-contracts.mjs --root /path/to/tree
-//
-// stdlib only. Exit 0 on a matching tree. Exit 1 on drift.
-
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
