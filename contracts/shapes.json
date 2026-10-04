@@ -13,7 +13,7 @@
       "id": "document",
       "pickWhen": "Plans, specs, briefings, essays, brainstorms, meeting notes — prose-heavy where you'd read paragraph-to-paragraph",
       "register": "reading",
-      "requiredFeatures": ["table", "copy_as_prompt"],
+      "requiredFeatures": [],
       "example": "examples/document.html",
       "href": "document.html",
       "reference": "references/shapes/document.md"
@@ -76,7 +76,7 @@
       "id": "editorial",
       "pickWhen": "Argument-driven long-form where the reader absorbs a sustained position",
       "register": "reading",
-      "requiredFeatures": ["search", "copy_as_prompt"],
+      "requiredFeatures": ["search", "copy_as_prompt", "thesis"],
       "example": "examples/editorial.html",
       "href": "editorial.html",
       "reference": "references/shapes/editorial.md"

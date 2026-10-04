@@ -28,6 +28,13 @@ export const FEATURES = {
   cross_highlight: /scrollIntoView|IntersectionObserver|classList\.(?:add|toggle)\(/i,
 };
 
+// Shape-only detectors. Not part of the ≥3 feature floor. A declared shape
+// can require these so a dashboard tagged editorial still fails.
+export const SHAPE_FEATURES = {
+  thesis: /class=["'][^"']*\bthesis\b/i,
+  hide_sidebar: /hide sidebar|inspector-hidden|hide-sidebar/i,
+};
+
 // Resource-LOADING external refs only. Anchor href="https://" is navigation, allowed.
 export const EXTERNAL_RESOURCE = [
   /<script[^>]+src=['"]https?:/i,
